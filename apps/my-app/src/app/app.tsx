@@ -2,12 +2,15 @@
 // import styles from './app.module.css';
 import NxWelcome from './nx-welcome';
 import ResizableTable from "./resizeabletable";
+import {MantineProvider} from "@mantine/core";
 
 export function App() {
   return (
-    <div>
-      <ResizableTable columns={[{label: "A", accessor: "a"}, {label: "AAAAAA", accessor: "b"}]} data={[{a: "A", b: "asdf"}, {a: "B"}]}/>
-    </div>
+      <MantineProvider>
+          <div>
+              <ResizableTable columns={[{label: "A", accessor: "a"}, {label: "AAAAAA", accessor: "b"}]} data={[{a: "A", b: "asdf"}, {a: "B"}]}/>
+          </div>
+       </MantineProvider>
   );
 }
 
