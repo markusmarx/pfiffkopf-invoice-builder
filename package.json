@@ -37,12 +37,16 @@
     "tslib": "^2.3.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.19.0",
-    "vite": "^6.0.0",
+    "vite": "^6.2.2",
     "vitest": "^3.0.0"
   },
   "dependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.18.6",
+    "@babel/plugin-proposal-decorators": "^7.25.9",
     "@mantine/core": "^7.17.2",
+    "@mantine/form": "^7.17.2",
     "@mantine/hooks": "^7.17.2",
+    "@open-xchange/vite-plugin-es-decorators": "^1.0.3",
     "react": "19.0.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

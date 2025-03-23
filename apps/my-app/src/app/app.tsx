@@ -1,21 +1,22 @@
 // Uncomment this line to use CSS modules
 // import styles from './app.module.css';
 import { Editor } from './editor/editor';
-import {MantineProvider} from "@mantine/core";
 import { TestTemplate } from './testTemplate';
 
 export function App() {
-  const template : TestTemplate = {
-    letterpaper : {
-      bold: true,
-      watermark: "",
-      test: 0
-    }
+  const template : TestTemplate = new TestTemplate();
+  template.letterpaper = {
+    bold: true,
+    watermark: "",
+    test: 0
+  };
+  template.header = {
+    boldX: true,
+    watermarkX: "",
+    testX: 1
   };
   return (
-      <MantineProvider>
-          <Editor template={template}/>
-       </MantineProvider>
+    <Editor template={template}/>
   );
 }
 
