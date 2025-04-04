@@ -1,23 +1,41 @@
-import { inspectableBool, inspectableFloat, inspectableString } from "./editor/decorators";
-import { Template } from "./editor/types";
+import { FileInput, Title } from "@mantine/core";
+import { Template, TemplateTab } from "./editor/types";
 import React, { JSX } from "react";
-class LetterpaperSection{
-    @inspectableBool()
+import { useForm } from "@mantine/form";
+export class LetterpaperSection implements TemplateTab{
+    //@inspectableBool()
     bold?: boolean;
-    @inspectableString()
+    //@inspectableString()
     watermark?: string;
     test?: number;
+    drawUI(): JSX.Element {
+
+        return <div>
+            <FileInput
+                label="Briefpapier hochladen"
+            />
+        </div>
+    }
+    displayName() : string{
+        return "Briefpapier";
+    }
 }
-class HeaderSection{
+export class HeaderSection implements TemplateTab{
     boldX?: boolean;
     watermarkX?: string;
-    @inspectableFloat()
     testX? : number;
+
+    drawUI(): JSX.Element {
+        return <div>
+            
+        </div>
+    }
+    displayName() : string{
+        return "Anrede";
+    }
 }
 export class TestTemplate implements Template{
-    @inspectableFloat()
     letterpaper?: LetterpaperSection;
-    @inspectableString()
     header?: HeaderSection;
     draw(): JSX.Element {
         return <div>
