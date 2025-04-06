@@ -16,8 +16,18 @@ export interface PropertysProperty {
 export function Propertys(properties: PropertysProperty) {
   const tabs = Object.keys(properties.template);
   const values = Object.values(properties.template);
+
+  function findFirstTab() : string{
+    for(let i = 0; i < tabs.length; i++){
+      if (typeof values[i] === "object" && values[i] !== null) {
+        return tabs[i];
+      }
+    }
+    
+    return "undefined";
+  }
   return (
-    <Tabs orientation="vertical" defaultValue={tabs[0]}>
+    <Tabs orientation="vertical" defaultValue={findFirstTab()}>
       <Tabs.List>
         {tabs.map((name, idx) => {
           if (typeof values[idx] !== "object" || values[idx] === null) {
