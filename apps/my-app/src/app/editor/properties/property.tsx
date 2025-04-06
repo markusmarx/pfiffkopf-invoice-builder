@@ -5,15 +5,14 @@ import {
   Space,
   Tabs,
   Text,
-  TextInput,
   Title,
 } from "@mantine/core";
 import { Template, TemplateTab } from "../types";
-import { JSX } from "react";
 
 export interface PropertysProperty {
   template: Template;
 }
+
 export function Propertys(properties: PropertysProperty) {
   const tabs = Object.keys(properties.template);
   const values = Object.values(properties.template);
@@ -26,7 +25,7 @@ export function Propertys(properties: PropertysProperty) {
           }
           return (
             <Tabs.Tab value={name}>
-              <Text>{(values[idx] as TemplateTab).displayName()}</Text>
+              <Text>{(values[idx] as TemplateTab).DisplayName()}</Text>
             </Tabs.Tab>
           );
         })}
@@ -38,12 +37,12 @@ export function Propertys(properties: PropertysProperty) {
         return (
           <Tabs.Panel value={id}>
             <Center>
-              <Title>{(values[idx] as TemplateTab).displayName()}</Title>
+              <Title>{(values[idx] as TemplateTab).DisplayName()}</Title>
             </Center>
             <Space h="xs" />
             <Divider/>
             <ScrollArea scrollbars="y">
-                {(values[idx] as TemplateTab).drawUI()}
+                {(values[idx] as TemplateTab).DrawUI(properties.template)}
             </ScrollArea>
           </Tabs.Panel>
         );

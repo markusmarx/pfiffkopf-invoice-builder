@@ -1,12 +1,21 @@
 import { JSX } from "react";
-export interface Template
+export abstract class Template
 {
-    draw() : JSX.Element;
+    private refreshUI?: () => void;
+    public abstract DrawPaper() : JSX.Element;
+    public Redraw() {
+        if(this.refreshUI){
+            this.refreshUI();
+        }
+    }
+    public SetData(refreshUI: () => void){
+        this.refreshUI = refreshUI;
+    }
 }
-export interface TemplateTab
+export abstract class TemplateTab
 {
-    drawUI() : JSX.Element;
-    displayName() : string;
+    public abstract DrawUI(template: Template) : JSX.Element;
+    public abstract DisplayName() : string;    
 }
 export interface ViewProperties
 {

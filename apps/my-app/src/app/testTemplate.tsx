@@ -1,45 +1,44 @@
-import { FileInput, Title } from "@mantine/core";
+import { FileInput, Text, TextInput } from "@mantine/core";
 import { Template, TemplateTab } from "./editor/types";
 import React, { JSX } from "react";
-import { useForm } from "@mantine/form";
-export class LetterpaperSection implements TemplateTab{
-    //@inspectableBool()
+export class LetterpaperSection extends TemplateTab{
     bold?: boolean;
-    //@inspectableString()
     watermark?: string;
     test?: number;
-    drawUI(): JSX.Element {
-
+    testText?: string;
+    
+    DrawUI(template: Template): JSX.Element {
         return <div>
             <FileInput
                 label="Briefpapier hochladen"
             />
+            <TextInput label="dummy text" defaultValue={this.testText} onChange={(v) => {this.testText = v.target.value; template.Redraw();}}/>
         </div>
     }
-    displayName() : string{
+    DisplayName() : string{
         return "Briefpapier";
     }
 }
-export class HeaderSection implements TemplateTab{
+export class HeaderSection extends TemplateTab{
     boldX?: boolean;
     watermarkX?: string;
     testX? : number;
-
-    drawUI(): JSX.Element {
+    DrawUI(template: Template): JSX.Element {
         return <div>
             
         </div>
     }
-    displayName() : string{
+    DisplayName() : string{
         return "Anrede";
     }
 }
-export class TestTemplate implements Template{
+export class TestTemplate extends Template{
     letterpaper?: LetterpaperSection;
     header?: HeaderSection;
-    draw(): JSX.Element {
+    DrawPaper(): JSX.Element {
         return <div>
-            
+          <Text>Hello Paper</Text>  
+          <Text>This is dynamic {this.letterpaper?.testText}</Text>
         </div>
     }
 }
