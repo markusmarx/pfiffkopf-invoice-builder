@@ -1,6 +1,7 @@
 import { FileInput, Text, TextInput } from "@mantine/core";
 import { Template, TemplateTab } from "./editor/types";
 import React, { JSX } from "react";
+import { MovableBox } from "./movableBox";
 export class LetterpaperSection extends TemplateTab{
     bold?: boolean;
     watermark?: string;
@@ -39,6 +40,9 @@ export class TestTemplate extends Template{
         return <div>
           <Text>Hello Paper</Text>  
           <Text>This is dynamic {this.letterpaper?.testText}</Text>
+          <MovableBox>
+                <Text>This is moving text</Text>
+          </MovableBox>
         </div>
     }
 }

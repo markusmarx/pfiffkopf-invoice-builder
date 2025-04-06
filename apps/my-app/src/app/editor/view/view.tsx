@@ -40,11 +40,14 @@ export function DefaultView(properties: ViewProperties)
                     EditorUtil.overEditor = true;
                 }
             }
-            document.onmousedown = () => {
-                EditorUtil.middleMousePress = true;
+            document.onmousedown = (event) => {
+                console.log(event.button);
+                EditorUtil.middleMousePress = event.button === 1|| EditorUtil.middleMousePress;
             };
-            document.onmouseup = () => {
-                EditorUtil.middleMousePress = false;
+            document.onmouseup = (event) => {
+                if(event.button === 1){
+                    EditorUtil.middleMousePress = false;
+                }
             }
             document.onwheel = (event) => {
                 if(EditorUtil.overEditor && paperElement.current != null){
