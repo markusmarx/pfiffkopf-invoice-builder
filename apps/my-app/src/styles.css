@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+.moveable-hidden .moveable-control-box {
+    visibility: hidden !important;
+  }
+  
+  .moveable-hidden .moveable-line {
+    visibility: hidden !important;
+  }
+  
+  .moveable-hidden .moveable-control {
+    visibility: hidden !important;
+  }

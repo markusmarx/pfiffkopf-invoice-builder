@@ -8,14 +8,18 @@ import {
   Title,
 } from "@mantine/core";
 import { Template, TemplateTab } from "../types";
+import { useState } from "react";
 
 export interface PropertysProperty {
   template: Template;
+  onTabChanges?: (tabName: string | null) => void;
 }
 
 export function Propertys(properties: PropertysProperty) {
   const tabs = Object.keys(properties.template);
   const values = Object.values(properties.template);
+  const firstTab = findFirstTab();
+  const [currentTab, setCurrentTab] = useState(firstTab);
 
   function findFirstTab() : string{
     for(let i = 0; i < tabs.length; i++){
@@ -27,7 +31,7 @@ export function Propertys(properties: PropertysProperty) {
     return "undefined";
   }
   return (
-    <Tabs orientation="vertical" defaultValue={findFirstTab()}>
+    <Tabs orientation="vertical" defaultValue={firstTab} onChange={(name) => {if(properties.onTabChanges) {setCurrentTab(name !== null ? name : ""); properties.onTabChanges(name);}} }>
       <Tabs.List>
         {tabs.map((name, idx) => {
           if (typeof values[idx] !== "object" || values[idx] === null) {
@@ -44,15 +48,22 @@ export function Propertys(properties: PropertysProperty) {
         if (typeof values[idx] !== "object" || values[idx] === null) {
           return "";
         }
+        const tabData = (values[idx] as TemplateTab);
         return (
           <Tabs.Panel value={id}>
             <Center>
-              <Title>{(values[idx] as TemplateTab).DisplayName()}</Title>
+              <Title>{tabData.DisplayName()}</Title>
             </Center>
             <Space h="xs" />
             <Divider/>
             <ScrollArea scrollbars="y">
-                {(values[idx] as TemplateTab).DrawUI(properties.template)}
+              {
+                (tabData.drawUI) ? tabData.drawUI({
+                  template: properties.template,
+                  currentTab: currentTab,
+                  edited: false
+                }) : ""
+              }
             </ScrollArea>
           </Tabs.Panel>
         );

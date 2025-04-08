@@ -1,10 +1,10 @@
 import { Editor } from './editor/editor';
-import { HeaderSection, LetterpaperSection, TestTemplate } from './testTemplate';
+import { AdressSection, LetterpaperSection, TestTemplate } from './testTemplate';
 
 export function App() {
   const template = new TestTemplate();
   template.letterpaper = new LetterpaperSection();
-  template.header = new HeaderSection();
+  template.adress = new AdressSection();
   return (
     <Editor template={template}/>
   );

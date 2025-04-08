@@ -1,4 +1,3 @@
-import { Text } from "@mantine/core";
 import { ViewProperties} from "../types";
 import { useEffect, useReducer, useRef } from "react";
 class EditorUtil{
@@ -13,6 +12,11 @@ export function DefaultView(properties: ViewProperties)
     const editorWindow = useRef<HTMLDivElement | null>(null);
     const paperElement = useRef<HTMLDivElement | null>(null);
     const [, forceUpdate] = useReducer(x => x + 1, 0);
+    let currentSelectedPropertiesTab : string | undefined = undefined;
+    if(properties.currentSelectedPropertiesTab !== null){
+        currentSelectedPropertiesTab = properties.currentSelectedPropertiesTab;
+    }
+
     useEffect(() => {
         if(properties.template != null){
             properties.template.SetData(forceUpdate);
@@ -41,8 +45,7 @@ export function DefaultView(properties: ViewProperties)
                 }
             }
             document.onmousedown = (event) => {
-                console.log(event.button);
-                EditorUtil.middleMousePress = event.button === 1|| EditorUtil.middleMousePress;
+                EditorUtil.middleMousePress = event.button === 1 || EditorUtil.middleMousePress;
             };
             document.onmouseup = (event) => {
                 if(event.button === 1){
@@ -50,6 +53,8 @@ export function DefaultView(properties: ViewProperties)
                 }
             }
             document.onwheel = (event) => {
+                return; //disabled for now
+                // eslint-disable-next-line no-unreachable
                 if(EditorUtil.overEditor && paperElement.current != null){
                     if(event.deltaY > 0){
                         //scroll out
@@ -59,8 +64,8 @@ export function DefaultView(properties: ViewProperties)
                         EditorUtil.zoomFactor += 0.1;
                     }
                     EditorUtil.zoomFactor = Math.max(0.1, EditorUtil.zoomFactor);
-                    paperElement.current.style.width = `calc(21cm * ${EditorUtil.zoomFactor})`;
-                    paperElement.current.style.height =  `calc(27cm * ${EditorUtil.zoomFactor})`;
+                    //paperElement.current.style.width = `calc(21cm * ${EditorUtil.zoomFactor})`;
+                    //paperElement.current.style.height =  `calc(27cm * ${EditorUtil.zoomFactor})`;
                 }
             }
         }
@@ -70,7 +75,17 @@ export function DefaultView(properties: ViewProperties)
     return(
         <div ref={editorWindow} style={{backgroundColor: "gray", width: "100%", height: "calc(100vh - var(--app-shell-header-height, 0px) - var(--app-shell-footer-height, 0px))"}}>
             <div ref={paperElement} id="paper" style={{boxShadow: "2p 2px 4px #000000", backgroundColor: "white", width: `calc(21cm * ${EditorUtil.zoomFactor})`, height: `calc(27cm * ${EditorUtil.zoomFactor})`, position: "fixed", top: offsetY, left: offsetX}}>
-                {properties.template.DrawPaper()}
+                {properties.template.DrawPaper({
+                    currentTab: currentSelectedPropertiesTab !== undefined ? currentSelectedPropertiesTab : "undefined",
+                    templateValuesChanged: () => 
+                    {
+                        //
+                        if(properties.onValueChanged){
+                            properties.onValueChanged();
+                        }
+                    }
+                }
+                )}
             </div>
         </div>
         
