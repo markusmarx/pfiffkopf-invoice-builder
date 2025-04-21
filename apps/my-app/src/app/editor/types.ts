@@ -12,21 +12,41 @@ export interface TemplateTabDrawProperties{
 export abstract class Template
 {
     private refreshUI?: () => void;
+    private refreshView?: () => void;
     public abstract DrawPaper(properties: TemplateDrawProperties) : JSX.Element;
-    public Redraw() {
+    public RedrawProperties() {
         if(this.refreshUI){
             this.refreshUI();
         }
     }
-    public SetData(refreshUI: () => void){
+    public SetDataProperties(refreshUI: () => void){
         this.refreshUI = refreshUI;
+    }
+
+    public RedrawView() {
+        if(this.refreshView){
+            this.refreshView();
+        }
+    }
+    public SetDataView(refreshView: () => void){
+        this.refreshView = refreshView;
     }
 }
 
 export abstract class TemplateTab
 {
     public drawUI? : (properties: TemplateTabDrawProperties) => JSX.Element;
-    public abstract DisplayName() : string;    
+    public abstract DisplayName() : string;
+    
+    private refreshUI?: () => void;
+    public RedrawProperties() {
+        if(this.refreshUI){
+            this.refreshUI();
+        }
+    }
+    public SetDataProperties(refreshUI: () => void){
+        this.refreshUI = refreshUI;
+    }
 }
 
 export interface ViewProperties

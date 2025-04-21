@@ -19,7 +19,7 @@ export function DefaultView(properties: ViewProperties)
 
     useEffect(() => {
         if(properties.template != null){
-            properties.template.SetData(forceUpdate);
+            properties.template.SetDataView(forceUpdate);
         }
 
         if(editorWindow.current != null && paperElement.current != null){
@@ -79,7 +79,6 @@ export function DefaultView(properties: ViewProperties)
                     currentTab: currentSelectedPropertiesTab !== undefined ? currentSelectedPropertiesTab : "undefined",
                     templateValuesChanged: () => 
                     {
-                        //
                         if(properties.onValueChanged){
                             properties.onValueChanged();
                         }

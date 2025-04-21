@@ -8,11 +8,23 @@ import {
   Title,
 } from "@mantine/core";
 import { Template, TemplateTab } from "../types";
-import { useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 export interface PropertysProperty {
   template: Template;
   onTabChanges?: (tabName: string | null) => void;
+}
+function PropertiesTab(props: {tab: TemplateTab, currentTab: string, template: Template}){
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
+  useEffect(() => {
+    props.tab.SetDataProperties(forceUpdate);
+  });
+
+  return  props.tab.drawUI ? props.tab.drawUI({
+    template: props.template,
+    currentTab: props.currentTab,
+    edited: false,
+  }) : "";
 }
 
 export function Propertys(properties: PropertysProperty) {
@@ -20,18 +32,30 @@ export function Propertys(properties: PropertysProperty) {
   const values = Object.values(properties.template);
   const firstTab = findFirstTab();
   const [currentTab, setCurrentTab] = useState(firstTab);
-
-  function findFirstTab() : string{
-    for(let i = 0; i < tabs.length; i++){
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  useEffect(() => {
+    properties.template.SetDataProperties(forceUpdate);
+  }, [properties.template]);
+  function findFirstTab(): string {
+    for (let i = 0; i < tabs.length; i++) {
       if (typeof values[i] === "object" && values[i] !== null) {
         return tabs[i];
       }
     }
-    
+
     return "undefined";
   }
   return (
-    <Tabs orientation="vertical" defaultValue={firstTab} onChange={(name) => {if(properties.onTabChanges) {setCurrentTab(name !== null ? name : ""); properties.onTabChanges(name);}} }>
+    <Tabs
+      orientation="vertical"
+      defaultValue={firstTab}
+      onChange={(name) => {
+        if (properties.onTabChanges) {
+          setCurrentTab(name !== null ? name : "");
+          properties.onTabChanges(name);
+        }
+      }}
+    >
       <Tabs.List>
         {tabs.map((name, idx) => {
           if (typeof values[idx] !== "object" || values[idx] === null) {
@@ -48,22 +72,16 @@ export function Propertys(properties: PropertysProperty) {
         if (typeof values[idx] !== "object" || values[idx] === null) {
           return "";
         }
-        const tabData = (values[idx] as TemplateTab);
+        const tabData = values[idx] as TemplateTab;
         return (
           <Tabs.Panel value={id}>
             <Center>
               <Title>{tabData.DisplayName()}</Title>
             </Center>
             <Space h="xs" />
-            <Divider/>
+            <Divider />
             <ScrollArea scrollbars="y">
-              {
-                (tabData.drawUI) ? tabData.drawUI({
-                  template: properties.template,
-                  currentTab: currentTab,
-                  edited: false
-                }) : ""
-              }
+              <PropertiesTab template={properties.template} tab={tabData} currentTab={currentTab}></PropertiesTab>
             </ScrollArea>
           </Tabs.Panel>
         );

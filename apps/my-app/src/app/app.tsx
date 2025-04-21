@@ -5,6 +5,7 @@ export function App() {
   const template = new TestTemplate();
   template.letterpaper = new LetterpaperSection();
   template.adress = new AdressSection();
+  template.adress.recipentPositionX = 100;
   return (
     <Editor template={template}/>
   );
