@@ -48,10 +48,10 @@ function AdressSectionDraw(properties: {
         const target = document.getElementById("adress");
 
         if(target){
-            console.log(target);
-          //target.style.transform = `translate(${properties.self.recipentPositionX}px, ${properties.self.recipentPositionY}px)`;
+            console.log(`translate(${properties.self.recipentPositionX}px, ${properties.self.recipentPositionY}px)`);
+            target.style.transform = `translate(${properties.self.recipentPositionX}px, ${properties.self.recipentPositionY}px)`;
             //target.style.left = `${properties.self.recipentPositionX}px`;
-            target.style.cssText += `left: ${properties.self.recipentPositionX}px;top: ${properties.self.recipentPositionY}px`;
+            //target.style.cssText += `left: ${properties.self.recipentPositionX}px;top: ${properties.self.recipentPositionY}px`;
         }
     }
   const form = useForm({
@@ -113,10 +113,10 @@ function AdressSectionDraw(properties: {
         defaultChecked={true}
         suffix=" px"
         label="X-Position"
-        step={0.1}
+        //step={0.1}
         key={form.key("posX")}
         value={properties.self.recipentPositionX}
-        onChange={(v) => properties.self.recipentPositionX = v as number}
+        onChange={(v) => {properties.self.recipentPositionX = v as number; updateVis(); }}
         //{...form.getInputProps("posX")}
       />
       <NumberInput
@@ -124,7 +124,7 @@ function AdressSectionDraw(properties: {
         defaultChecked={true}
         suffix=" px"
         label="Y-Position"
-        step={0.1}
+        //step={0.1}
         key={form.key("posY")}
         value={properties.self.recipentPositionY}
         onChange={(v) => {properties.self.recipentPositionY = v as number; updateVis(); }}
