@@ -1,6 +1,6 @@
-import { ReactNode, useRef } from "react";
-import Moveable from "react-moveable";
+import { ReactNode } from "react";
 import "./movableBox.module.css"
+import { Rnd } from "react-rnd";
 export interface MovableBoxParams{
     children?: ReactNode;
     enabled?: boolean;
@@ -10,27 +10,22 @@ export interface MovableBoxParams{
     onDrag?: (xPos: number, yPos: number) => void;
 }
 export function MovableBox(properties: MovableBoxParams){
-    const targetRef = useRef<HTMLDivElement>(null);
-    return(
-        <>
-            <div id={properties.id || "movable"} ref={targetRef} style={{transform: `translate(${properties.xPos}px, ${properties.yPos}px)`}}>{properties?.children}</div>
-                <Moveable
-                    target={targetRef}
-                    draggable={properties.enabled !== undefined ? properties.enabled : true}
-                    className={properties.enabled !== undefined && properties.enabled ? "" : "moveable-hidden"}
-                    throttleDrag={1}
-                    useResizeObserver={true}
-                    useMutationObserver={true}
-                    edgeDraggable={false}
-                    startDragRotate={0}
-                    throttleDragRotate={0}
-                    onDrag={e => {
-                        e.target.style.transform = e.transform;
-                        if(properties.onDrag){
-                            properties.onDrag(e.left, e.top);
-                        }                        
-                    }}
-                />
-        </>
-    );
+   return (
+    <Rnd className={properties.id}
+        size={{width: "400px", height: "100 px"}}
+        position={{x: properties.xPos || 0, y: properties.yPos || 0}}
+        disableDragging={!properties.enabled}
+        enableResizing={false}
+        onDragStop={(e,d) => {
+            if(properties.onDrag)
+                properties.onDrag(d.x, d.y);
+        }}
+        onDrag={(e, d) => {
+            if(properties.onDrag)
+                properties.onDrag(d.x, d.y);
+        }}
+    >
+        {properties.children}
+    </Rnd>
+   );
 }

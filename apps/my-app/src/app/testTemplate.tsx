@@ -43,68 +43,7 @@ function AdressSectionDraw(properties: {
   self: AdressSection;
   props: TemplateTabDrawProperties;
 }) {
-    function updateVis(){
-        console.log("update");
-        const target = document.getElementById("adress");
-
-        if(target){
-            console.log(`translate(${properties.self.recipentPositionX}px, ${properties.self.recipentPositionY}px)`);
-            target.style.transform = `translate(${properties.self.recipentPositionX}px, ${properties.self.recipentPositionY}px)`;
-            //target.style.left = `${properties.self.recipentPositionX}px`;
-            //target.style.cssText += `left: ${properties.self.recipentPositionX}px;top: ${properties.self.recipentPositionY}px`;
-        }
-    }
-  const form = useForm({
-    mode: "uncontrolled",
-    initialValues: {
-      posX: properties.self.recipentPositionX,
-      posY: properties.self.recipentPositionY,
-    },
-
-    onValuesChange: () => {
-
-      //properties.self.recipentPositionX = form.values.posX;
-      //properties.self.recipentPositionY = form.values.posY;
-      
-      /*if (
-        properties.self.recipentPositionX !== form.values.posX ||
-        properties.self.recipentPositionY !== form.values.posY
-      ) {
-        properties.self.recipentPositionX = form.values.posX;
-        properties.self.recipentPositionY = form.values.posY;
-        //properties.props.template.RedrawView();
-      }*/
-    },
-  });
-  
-  function getInputProps(name: string) {
-    const value = form.getInputProps(name);
-    const onChange = value.onChange;
-    value.onChange = (v: any) => {
-      TemplateUtil.changeInUI = true;
-      onChange(v);
-    };
-    return value;
-  }
-  useEffect(() => {
-    /*if (
-        form.values.posX !== properties.self.recipentPositionX  ||
-        form.values.posY !== properties.self.recipentPositionY
-    ) {
-      TemplateUtil.changeInUI = false;
-      form.setValues({
-        posX: properties.self.recipentPositionX,
-        posY: properties.self.recipentPositionY,
-      });
-      console.log( properties.self.recipentPositionX);
-      console.log(form.values.posX);
-    }*/
-      
-  }, [
-    properties.self.recipentPositionX,
-    properties.self.recipentPositionY,
-    form,
-  ]);
+     
 
   return (
     <div>
@@ -113,28 +52,25 @@ function AdressSectionDraw(properties: {
         defaultChecked={true}
         suffix=" px"
         label="X-Position"
-        //step={0.1}
-        key={form.key("posX")}
-        value={properties.self.recipentPositionX}
-        onChange={(v) => {properties.self.recipentPositionX = v as number; updateVis(); }}
-        //{...form.getInputProps("posX")}
+        value={properties.self.recipentPositionXInitial + properties.self.recipentPositionXDrag}
+        onChange={(v) => {properties.self.recipentPositionXInitial = (v as number); properties.props.template.RedrawView(); }}
       />
       <NumberInput
         decimalSeparator=","
         defaultChecked={true}
         suffix=" px"
         label="Y-Position"
-        //step={0.1}
-        key={form.key("posY")}
-        value={properties.self.recipentPositionY}
-        onChange={(v) => {properties.self.recipentPositionY = v as number; updateVis(); }}
+        value={properties.self.recipentPositionYInitial}
+        onChange={(v) => {properties.self.recipentPositionYInitial = (v as number); properties.props.template.RedrawView(); }}
       />
     </div>
   );
 }
 export class AdressSection extends TemplateTab {
-  public recipentPositionX = 0;
-  public recipentPositionY = 0;
+  public recipentPositionXInitial = 0;
+  public recipentPositionYInitial = 0;
+  public recipentPositionXDrag = 0;
+  public recipentPositionYDrag = 0;
   public constructor() {
     super();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
@@ -154,14 +90,15 @@ export class TestTemplate extends Template {
         <Text>Hello Paper</Text>
         <Text>This is dynamic {this.letterpaper?.testText}</Text>
         <MovableBox
-          xPos={this.adress?.recipentPositionX}
-          yPos={this.adress?.recipentPositionY}
+          xPos={this.adress?.recipentPositionXInitial}
+          yPos={this.adress?.recipentPositionYInitial}
           id="adress"
           enabled={prop.currentTab === "adress"}
           onDrag={(left: number, top: number) => {
             if (this.adress) {
-              this.adress.recipentPositionX = left;
-              this.adress.recipentPositionY = top;
+              this.adress.recipentPositionXInitial = left;
+              this.adress.recipentPositionYInitial = top;
+              this.RedrawView();
               this.adress.RedrawProperties();
             }
           }}
