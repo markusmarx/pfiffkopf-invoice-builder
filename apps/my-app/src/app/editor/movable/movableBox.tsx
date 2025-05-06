@@ -8,6 +8,8 @@ export interface MovableBoxParams{
     className?: string;
     template?: Template;
     templateTab?: TemplateTab;
+    width?: number;
+    heigth?: number;
     x?: number;
     y?: number;
     onDrag?: (xPos: number, yPos: number, tab?: TemplateTab ) => void;
@@ -16,7 +18,7 @@ export interface MovableBoxParams{
 export function MovableBox(properties: MovableBoxParams){
    return (
     <Rnd className={properties.className + ((properties.enabled) ? " moving-box" : "")}
-        size={{width: "400px", height: "1000 px"}}
+        size={{width: `${properties.width !== undefined ? properties.width : 100}px`, height: `${properties.heigth !== undefined ? properties.heigth : 100}px`}}
         position={{x: properties.x || 0, y: properties.y || 0}}
         disableDragging={!properties.enabled}
         enableResizing={false}

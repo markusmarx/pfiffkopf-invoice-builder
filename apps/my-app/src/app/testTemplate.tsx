@@ -91,6 +91,8 @@ export class TestTemplate extends Template {
           template={this}
           templateTab={this.adress}
           { ...this.adress?.pos.DragPos() }
+          width={300}
+          heigth={200}
         >
           <Text>Max Musterman</Text>
           <Text>Musterstraße 16</Text>
