@@ -55,3 +55,47 @@ export interface ViewProperties
     currentSelectedPropertiesTab?: string | null;
     onValueChanged?: () => void;
 }
+export class DragVector{
+    public x = 0;
+    public y = 0;
+    constructor(x: number, y: number){
+        this.x = x;
+        this.y = y;
+    }
+    
+    public DragPos(){
+        return{
+            onDrag: (x: number, y: number, tab?: TemplateTab) =>{
+                this.x = x;
+                this.y = y;
+                tab?.RedrawProperties();
+            },
+            onEndDrag: (x: number, y: number, template?: Template, tab?: TemplateTab) => {
+                this.x = x;
+                this.y = y;
+                tab?.RedrawProperties();
+                template?.RedrawView();
+            },
+            x: this.x,
+            y: this.y
+        }
+    }
+    public getInputPropsX(template?: Template){
+        return {
+            value: this.x,
+            onChange: (v: string | number) => {
+                this.x = v as number;
+                template?.RedrawView();
+            }
+        };
+    }
+    public getInputPropsY(template?: Template){
+        return {
+            value: this.y,
+            onChange: (v: string | number) => {
+                this.y = v as number;
+                template?.RedrawView();
+            }
+        };
+    }
+}

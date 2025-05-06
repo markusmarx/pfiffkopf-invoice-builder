@@ -10,3 +10,6 @@
   .moveable-hidden .moveable-control {
     visibility: hidden !important;
   }
+  .moving-box{
+    border: solid blue;
+  }
