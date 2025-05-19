@@ -1,4 +1,4 @@
-import { JSX } from "react";
+import { JSX, ReactNode } from "react";
 
 export interface TemplateDrawProperties{
     currentTab: string,
@@ -13,7 +13,7 @@ export abstract class Template
 {
     private refreshUI?: () => void;
     private refreshView?: () => void;
-    public abstract DrawPaper(properties: TemplateDrawProperties) : JSX.Element;
+    public abstract DrawPaper(prop: TemplateDrawProperties) : JSX.Element | Array<JSX.Element>;
     public RedrawProperties() {
         if(this.refreshUI){
             this.refreshUI();

@@ -1,5 +1,5 @@
 import { ViewProperties} from "../types";
-import { useEffect, useReducer, useRef } from "react";
+import { useEffect, useReducer, useRef, JSX } from "react";
 class EditorUtil{
     public static xPos: number;
     public static yPos: number;
@@ -72,19 +72,26 @@ export function DefaultView(properties: ViewProperties)
     }, [editorWindow, paperElement, properties.template]);
     const offsetY = `calc(var(--app-shell-header-height, 0px) + ${EditorUtil.yPos}px)`;
     const offsetX = `calc(var(--app-shell-navbar-width) + ${EditorUtil.xPos}px)`;
+    
+    const pages = properties.template.DrawPaper({
+        currentTab: currentSelectedPropertiesTab !== undefined ? currentSelectedPropertiesTab : "undefined",
+        templateValuesChanged: () => 
+        {
+            if(properties.onValueChanged){
+                properties.onValueChanged();
+            }
+        }
+    });
+    const page = pages instanceof Array ? pages[0] : pages;
+    
     return(
         <div ref={editorWindow} style={{backgroundColor: "gray", width: "100%", height: "calc(100vh - var(--app-shell-header-height, 0px) - var(--app-shell-footer-height, 0px))"}}>
-            <div ref={paperElement} id="paper" style={{boxShadow: "2p 2px 4px #000000", backgroundColor: "white", width: `calc(21cm * ${EditorUtil.zoomFactor})`, height: `calc(27cm * ${EditorUtil.zoomFactor})`, position: "fixed", top: offsetY, left: offsetX}}>
-                {properties.template.DrawPaper({
-                    currentTab: currentSelectedPropertiesTab !== undefined ? currentSelectedPropertiesTab : "undefined",
-                    templateValuesChanged: () => 
-                    {
-                        if(properties.onValueChanged){
-                            properties.onValueChanged();
-                        }
-                    }
-                }
-                )}
+            <div ref={paperElement} id="paper" style={
+                {
+                //boxShadow: "2p 2px 4px #000000", backgroundColor: "white", width: `calc(21cm * ${EditorUtil.zoomFactor})`, height: `calc(27cm * ${EditorUtil.zoomFactor})`, 
+                boxShadow: "20p 20px 4pxrgb(19, 19, 19)",
+                position: "fixed", top: offsetY, left: offsetX}}>
+                {page}
             </div>
         </div>
         

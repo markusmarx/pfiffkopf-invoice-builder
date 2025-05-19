@@ -9,6 +9,7 @@ import {
 import React, { JSX, useEffect } from "react";
 import { MovableBox } from "./editor/movable/movableBox";
 import { useForm } from "@mantine/form";
+import { Page, PageFormat } from "./editor/page/page";
 
 export class LetterpaperSection extends TemplateTab {
   bold?: boolean;
@@ -80,9 +81,9 @@ export class AdressSection extends TemplateTab {
 export class TestTemplate extends Template {
   letterpaper?: LetterpaperSection;
   adress?: AdressSection;
-  DrawPaper(prop: TemplateDrawProperties): JSX.Element {
-    return (
-      <div>
+  DrawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
+    return Array<JSX.Element> (
+      <Page format={PageFormat.A4}>
         <Text>Hello Paper</Text>
         <Text>This is dynamic {this.letterpaper?.testText}</Text>
         <MovableBox
@@ -98,7 +99,10 @@ export class TestTemplate extends Template {
           <Text>Musterstraße 16</Text>
           <Text>01234 Musterhausen</Text>
         </MovableBox>
-      </div>
+      </Page>,
+      <Page format={PageFormat.A6}>
+        <Text>Secret Page</Text>
+      </Page>
     );
   }
 }
