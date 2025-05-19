@@ -47,6 +47,7 @@
     "@mantine/form": "^7.17.2",
     "@mantine/hooks": "^7.17.2",
     "@open-xchange/vite-plugin-es-decorators": "^1.0.3",
+    "@tabler/icons-react": "^3.33.0",
     "react": "19.0.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

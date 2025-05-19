@@ -2,7 +2,8 @@ import { ReactElement, useReducer, useState } from "react";
 import { Propertys } from "./properties/property";
 import { ViewProperties, Template } from "./types";
 import { DefaultView } from "./view/view";
-import { AppShell, Group } from "@mantine/core";
+import { AppShell, Button, Flex, Group, Input, NumberInput, Space, Text } from "@mantine/core";
+import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight } from "@tabler/icons-react";
 export interface EditorPropertys {
   view?: ReactElement<ViewProperties>;
   template: Template;
@@ -11,11 +12,44 @@ export interface EditorPropertys {
 export function Editor(properties: EditorPropertys) {
     const [currentPropertiesTab, setCurrentPropertiesTab] = useState<string|null>("");
     const [, forceUpdate] = useReducer(x => x + 1, 0);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const pages = properties.template.DrawPaper({currentTab: ""});
+    const maxPages = pages instanceof Array ? pages.length : 1;
+
     return (
         <AppShell header={{ height: 60 }} navbar={{ width: 300, breakpoint: "sm" }}>
         <AppShell.Header>
             <Group h="100%" px="md">
-            Template Editor
+                <Text>
+                    Template Editor
+                </Text>
+                <Space></Space>
+                {maxPages !== 1 &&
+                    <Flex>
+                        <Button.Group>
+                            <Button variant="outline" onClick={() => setCurrentPage(1)}><IconChevronsLeft/></Button>
+                            <Button variant="outline" onClick={() => setCurrentPage(currentPage-1 > 0 ? currentPage-1 : 1)}><IconChevronLeft/></Button>
+                            <Button.GroupSection variant="default" bg="var(--mantine-color-body)" styles={{groupSection: {width: "15%"}}}>
+                                <NumberInput
+                                    styles={{input: { textAlign: "center" }}} 
+                                    variant="unstyled"
+                                    clampBehavior="strict"
+                                    min={1}
+                                    max={maxPages}
+                                    decimalScale={0}
+                                    hideControls
+                                    value={currentPage}
+                                    onValueChange={(v) => setCurrentPage(v.floatValue ? v.floatValue : 1)} 
+                                    
+                                />
+                            </Button.GroupSection>
+                            <Button variant="outline" onClick={() => setCurrentPage(currentPage+1 < maxPages ? currentPage+1 : maxPages)}><IconChevronRight/></Button>
+                            <Button variant="outline" onClick={() => setCurrentPage(maxPages)}><IconChevronsRight/></Button>
+                        </Button.Group>
+                    </Flex>
+                }
+                
             </Group>
         </AppShell.Header>
         <AppShell.Navbar>
@@ -32,6 +66,7 @@ export function Editor(properties: EditorPropertys) {
                 template={properties.template} 
                 currentSelectedPropertiesTab={currentPropertiesTab}
                 onValueChanged={forceUpdate}
+                currentPage={currentPage}
             />
             )}
         </AppShell.Main>

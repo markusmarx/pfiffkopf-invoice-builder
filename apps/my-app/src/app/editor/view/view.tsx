@@ -82,7 +82,7 @@ export function DefaultView(properties: ViewProperties)
             }
         }
     });
-    const page = pages instanceof Array ? pages[0] : pages;
+    const page = pages instanceof Array ? pages[properties.currentPage-1] : pages;
     
     return(
         <div ref={editorWindow} style={{backgroundColor: "gray", width: "100%", height: "calc(100vh - var(--app-shell-header-height, 0px) - var(--app-shell-footer-height, 0px))"}}>

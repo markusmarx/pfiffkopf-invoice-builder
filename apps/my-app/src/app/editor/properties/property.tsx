@@ -55,8 +55,15 @@ export function Propertys(properties: PropertysProperty) {
           properties.onTabChanges(name);
         }
       }}
+      styles={{panel: {
+        height: "100vh", minHeight: "100vh"
+      }}}
     >
       <Tabs.List>
+        <Space h="xl" />
+        <Space h="xs" />
+        <Space h="xs" />
+        <Space h="xs" />
         {tabs.map((name, idx) => {
           if (typeof values[idx] !== "object" || values[idx] === null) {
             return "";

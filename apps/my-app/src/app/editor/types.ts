@@ -52,6 +52,7 @@ export abstract class TemplateTab
 export interface ViewProperties
 {
     template : Template;
+    currentPage: number;
     currentSelectedPropertiesTab?: string | null;
     onValueChanged?: () => void;
 }

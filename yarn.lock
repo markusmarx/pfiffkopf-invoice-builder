@@ -3533,6 +3533,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tabler/icons-react@npm:^3.33.0":
+  version: 3.33.0
+  resolution: "@tabler/icons-react@npm:3.33.0"
+  dependencies:
+    "@tabler/icons": "npm:3.33.0"
+  peerDependencies:
+    react: ">= 16"
+  checksum: 10c0/1b3eac2a5029ed1509f521c17eb35ce7c0b125a76b7eb58a50d123ae6a888e0538a179f192ae38ed9988fc1b775334482bfb4722976e2208d97ae8bbb689ddf7
+  languageName: node
+  linkType: hard
+
+"@tabler/icons@npm:3.33.0":
+  version: 3.33.0
+  resolution: "@tabler/icons@npm:3.33.0"
+  checksum: 10c0/c31a1eb5a018b81b540715635a556bf7324fe71c2ec2c09dd4f2e9655e2339060865eb2672deb9c05ee1898b79a21116a76194b6c6156df7bf54682323b613ac
+  languageName: node
+  linkType: hard
+
 "@testing-library/dom@npm:10.4.0":
   version: 10.4.0
   resolution: "@testing-library/dom@npm:10.4.0"
@@ -10126,6 +10144,7 @@ __metadata:
     "@swc/cli": "npm:~0.3.12"
     "@swc/core": "npm:~1.5.7"
     "@swc/helpers": "npm:~0.5.11"
+    "@tabler/icons-react": "npm:^3.33.0"
     "@testing-library/dom": "npm:10.4.0"
     "@testing-library/react": "npm:16.1.0"
     "@types/node": "npm:^20.0.0"
