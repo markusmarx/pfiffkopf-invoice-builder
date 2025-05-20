@@ -37,6 +37,9 @@ export class LetterpaperSection extends TemplateTab {
   DisplayName(): string {
     return "Briefpapier";
   }
+  public PageNumbers(): number[] {
+      return [0, 1];
+  }
 }
 class TemplateUtil{
     public static changeInUI  = false;
@@ -76,6 +79,9 @@ export class AdressSection extends TemplateTab {
   }
   DisplayName(): string {
     return "Adressen";
+  }
+  public PageNumbers(): number {
+      return 0;
   }
 }
 export class TestTemplate extends Template {

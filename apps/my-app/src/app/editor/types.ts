@@ -1,4 +1,4 @@
-import { JSX, ReactNode } from "react";
+import { JSX } from "react";
 
 export interface TemplateDrawProperties{
     currentTab: string,
@@ -37,7 +37,7 @@ export abstract class TemplateTab
 {
     public drawUI? : (properties: TemplateTabDrawProperties) => JSX.Element;
     public abstract DisplayName() : string;
-    
+    public abstract PageNumbers() : number | number[];
     private refreshUI?: () => void;
     public RedrawProperties() {
         if(this.refreshUI){
