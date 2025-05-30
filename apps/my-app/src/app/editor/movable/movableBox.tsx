@@ -31,6 +31,7 @@ export function MovableBox(properties: MovableBoxParams){
                 properties.onDrag(d.x, d.y, properties.templateTab);
             }
         }}
+        bounds={"parent"}
     >
         {properties.children}
     </Rnd>

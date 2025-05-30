@@ -89,7 +89,7 @@ export class TestTemplate extends Template {
   adress?: AdressSection;
   DrawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
     return Array<JSX.Element> (
-      <Page format={PageFormat.A4}>
+      <Page format={PageFormat.A4} borderTop={1} borderBottom={1} borderLeft={1} borderRight={1}>
         <Text>Hello Paper</Text>
         <Text>This is dynamic {this.letterpaper?.testText}</Text>
         <MovableBox
