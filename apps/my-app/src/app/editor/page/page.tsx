@@ -1,4 +1,5 @@
-import { ReactElement, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ReactElement, useLayoutEffect, useRef, useState } from "react";
+import { MovableBoxParams } from "../movable/movableBox";
 
 export enum PageFormat {
     Custom = 0,
@@ -12,31 +13,19 @@ export enum PageFormat {
 
 interface PageProperties{
     autoExpand?: boolean,
+    alwaysBreakToNewPage?: boolean,
     format: PageFormat,
     landscape?: boolean,
     customWidthInCm?: number;
     customHeigthInCm?: number
-    children?: ReactNode | ReactNode[],
+    children?: ReactElement | ReactElement[],
     render?: boolean,
     borderLeft?: number,
     borderRight?: number,
     borderTop?: number,
     borderBottom?: number,
 }
-function px2cm(px : number) : number {
-  //const n = 3; // use 3 digits after decimal point (1mm resolution)
-  const cpi = 2.54; // centimeters per inch
-  const dpi = 96; // dots per inch
-  const ppd = window.devicePixelRatio; // pixels per dot
-  return (px * cpi / (dpi * ppd));
-}
-function cm2px(px : number) : number {
-  //const n = 3; // use 3 digits after decimal point (1mm resolution)
-  const cpi = 2.54; // centimeters per inch
-  const dpi = 96; // dots per inch
-  const ppd = window.devicePixelRatio; // pixels per dot
-  return (ppd / cpi);
-}
+
 function getCmInPixels(): number {
   const div = document.createElement("div");
   div.style.width = "1cm";
@@ -55,8 +44,8 @@ export function Page(properties: PageProperties){
     const widths = [properties.customWidthInCm, 59.5, 42, 29.7, 21, 14.8, 10.5];
     const heights = [properties.customHeigthInCm, 84.1, 59.4, 42, 29.7, 21, 14.8 ];
 
-    const width = properties.landscape ? heights[properties.format] : widths[properties.format];
-    const height = properties.landscape ? widths[properties.format] : heights[properties.format];
+    const width = (properties.landscape ? heights[properties.format] : widths[properties.format])|| 1;
+    const height = (properties.landscape ? widths[properties.format] : heights[properties.format])|| 1;
 
     const [pagesExpandCount, setPageExpandCount] = useState<number>(1);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -65,34 +54,54 @@ export function Page(properties: PageProperties){
 
     useLayoutEffect(() => {
         if(!containerRef.current) return;
-        const childNodes = Array.from(containerRef.current.children);
         //first, reposition and split content 
-
-        //count the required pages and expand it
-        if(properties.autoExpand){
+        //if a element is inside the bottom border zone, move it down
+        if(properties.children instanceof Array){
+            
+            properties.children.forEach(element => {
+                const movableBox = element.props as MovableBoxParams;
+                if(movableBox){
+                    const top = movableBox.posVector?.y || movableBox.y;
+                    const elementHeight = movableBox.heigth || 0;
+                    if(top){
+                        const currentPage = Math.ceil(top / (height*cmToPixels));
+                        const threshold = ((currentPage)*(height)-(properties.borderTop || 0)-(properties.borderBottom||0))*cmToPixels;
+                        if(top > threshold || top + elementHeight > threshold){
+                            if(movableBox.posVector && movableBox.onEndDrag){
+                                const newPos = !properties.alwaysBreakToNewPage && (currentPage * height - (properties.borderTop || 0)) * cmToPixels > top + elementHeight ? 
+                                (currentPage * height - (properties.borderTop || 0)- (properties.borderBottom || 0)) * cmToPixels - elementHeight - 1 //break up 
+                                : currentPage * height * cmToPixels; //break down
+                                movableBox.onEndDrag(movableBox.posVector.x, Math.ceil(newPos), movableBox.template, movableBox.templateTab);
+                            }
+                        }
+                    }
+                }
+            }, [properties.children, setPageExpandCount, pagesExpandCount]);
+        }
+        
+        if(properties.autoExpand && properties.children instanceof Array){
             let pagesRequired = 1;
-            for(let  i = 0; i < childNodes.length; i++){
-                const style = getComputedStyle(childNodes[i]);
-                const transformMatrix = style.transform.substring(7, style.transform.length - 1).split(',');
-                if(transformMatrix.length > 1){
-                    const top = parseFloat(transformMatrix[5]);
-                    const elementHeight = parseFloat(style.getPropertyValue('height'));
-                    pagesRequired = Math.max((top + elementHeight) / (cmToPixels *(height ? height : Number.EPSILON)), pagesRequired);       
-                }   
-            }
+            properties.children.forEach(element => {
+                const movableBox = element.props as MovableBoxParams;
+                if(movableBox){
+                    const top = movableBox.posVector?.y ||movableBox.y || 0;
+                    const elementHeight = movableBox.heigth || 0;
+                    pagesRequired = Math.max((top + elementHeight) / (cmToPixels *(height ? height : Number.EPSILON)), pagesRequired);
+                }
+            });
             pagesRequired = Math.ceil(pagesRequired);
             if(pagesRequired !== pagesExpandCount){
                 setPageExpandCount(pagesRequired);
             }
         }
-        //if a element is inside the bottom border zone, move it down
+       
     });
 
     if(properties.render !== undefined && !properties.render){
         return("");
     }
     
-    const maxWorplaceHeight = (properties.autoExpand) ? "200" : "100";
+    const maxWorplaceHeight = (properties.autoExpand) ? ((pagesExpandCount+1)*(height)-(properties.borderTop || 0)-(properties.borderBottom||0)).toString()+"cm" : "100%";
 
     return(<>   
         <div style={{minHeight: `${height}cm`, maxHeight: `${width}cm`,  height: `${height}cm`, width: `${width}cm`, backgroundColor: "white", 
@@ -102,7 +111,7 @@ export function Page(properties: PageProperties){
             paddingRight: `${properties.borderRight}cm`,
         }}
         >
-            <div id="paper-container" ref={containerRef} style={{width: "100%", height: `${maxWorplaceHeight}%`, minHeight: `${maxWorplaceHeight}%`, minWidth: "100%"}}>
+            <div id="paper-container" ref={containerRef} style={{width: "100%", height: `${maxWorplaceHeight}`, minHeight: `${maxWorplaceHeight}%`, minWidth: "100%"}}>
                 {properties.children}
             </div>
         </div>

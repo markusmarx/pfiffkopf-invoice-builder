@@ -6,9 +6,8 @@ import {
   TemplateTab,
   TemplateTabDrawProperties,
 } from "./editor/types";
-import React, { JSX, useEffect } from "react";
+import React, { JSX } from "react";
 import { MovableBox } from "./editor/movable/movableBox";
-import { useForm } from "@mantine/form";
 import { Page, PageFormat } from "./editor/page/page";
 
 export class LetterpaperSection extends TemplateTab {
@@ -41,9 +40,7 @@ export class LetterpaperSection extends TemplateTab {
       return [0, 1];
   }
 }
-class TemplateUtil{
-    public static changeInUI  = false;
-}
+
 function AdressSectionDraw(properties: {
   self: AdressSection;
   props: TemplateTabDrawProperties;
@@ -89,7 +86,7 @@ export class TestTemplate extends Template {
   adress?: AdressSection;
   DrawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
     return Array<JSX.Element> (
-      <Page format={PageFormat.A4} borderTop={1} borderBottom={1} borderLeft={1} borderRight={1}>
+      <Page format={PageFormat.A4} borderTop={1} borderBottom={1} borderLeft={1} borderRight={1} autoExpand={true} alwaysBreakToNewPage={false}>
         <Text>Hello Paper</Text>
         <Text>This is dynamic {this.letterpaper?.testText}</Text>
         <MovableBox
@@ -99,7 +96,7 @@ export class TestTemplate extends Template {
           templateTab={this.adress}
           { ...this.adress?.pos.DragPos() }
           width={300}
-          heigth={200}
+          heigth={80}
         >
           <Text>Max Musterman</Text>
           <Text>Musterstraße 16</Text>

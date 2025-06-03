@@ -77,8 +77,7 @@ export class DragVector{
                 tab?.RedrawProperties();
                 template?.RedrawView();
             },
-            x: this.x,
-            y: this.y
+            posVector: this,
         }
     }
     public getInputPropsX(template?: Template){
