@@ -1,5 +1,6 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from "react";
 import { MovableBoxParams } from "../movable/movableBox";
+import { RenderableBlockParams } from "../types";
 
 export enum PageFormat {
     Custom = 0,
@@ -59,7 +60,7 @@ export function Page(properties: PageProperties){
         if(properties.children instanceof Array){
             
             properties.children.forEach(element => {
-                const movableBox = element.props as MovableBoxParams;
+                const movableBox = element.props as RenderableBlockParams;
                 if(movableBox){
                     const top = movableBox.posVector?.y || movableBox.y;
                     const elementHeight = movableBox.heigth || 0;
@@ -67,11 +68,11 @@ export function Page(properties: PageProperties){
                         const currentPage = Math.ceil(top / (height*cmToPixels));
                         const threshold = ((currentPage)*(height)-(properties.borderTop || 0)-(properties.borderBottom||0))*cmToPixels;
                         if(top > threshold || top + elementHeight > threshold){
-                            if(movableBox.posVector && movableBox.onEndDrag){
+                            if(movableBox.posVector && movableBox.onSubmitPositionChange){
                                 const newPos = !properties.alwaysBreakToNewPage && (currentPage * height - (properties.borderTop || 0)) * cmToPixels > top + elementHeight ? 
                                 (currentPage * height - (properties.borderTop || 0)- (properties.borderBottom || 0)) * cmToPixels - elementHeight - 1 //break up 
                                 : currentPage * height * cmToPixels; //break down
-                                movableBox.onEndDrag(movableBox.posVector.x, Math.ceil(newPos), movableBox.template, movableBox.templateTab);
+                                movableBox.onSubmitPositionChange(movableBox.posVector.x, Math.ceil(newPos), movableBox.template, movableBox.templateTab);
                             }
                         }
                     }
@@ -82,7 +83,7 @@ export function Page(properties: PageProperties){
         if(properties.autoExpand && properties.children instanceof Array){
             let pagesRequired = 1;
             properties.children.forEach(element => {
-                const movableBox = element.props as MovableBoxParams;
+                const movableBox = element.props as RenderableBlockParams;
                 if(movableBox){
                     const top = movableBox.posVector?.y ||movableBox.y || 0;
                     const elementHeight = movableBox.heigth || 0;
@@ -95,7 +96,7 @@ export function Page(properties: PageProperties){
             }
         }
        
-    });
+    }, [properties.children, cmToPixels, height, pagesExpandCount, properties.alwaysBreakToNewPage, properties.autoExpand, properties.borderBottom, properties.borderTop]);
 
     if(properties.render !== undefined && !properties.render){
         return("");

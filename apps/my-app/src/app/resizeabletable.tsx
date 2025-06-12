@@ -32,7 +32,7 @@ const ResizableTable = ({ columns, data }) => {
                     </tr>
                     </thead>
                     <tbody>
-                    {data.map((row, rowIndex) => (
+                    {data.map((row : any, rowIndex : number) => (
                         <tr key={rowIndex}>
                             {columns.map((col) => (
                                 <td

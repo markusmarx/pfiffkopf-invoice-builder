@@ -9,6 +9,7 @@ import {
 import React, { JSX } from "react";
 import { MovableBox } from "./editor/movable/movableBox";
 import { Page, PageFormat } from "./editor/page/page";
+import { MovableTable } from "./editor/movableTable/movableTable";
 
 export class LetterpaperSection extends TemplateTab {
   bold?: boolean;
@@ -40,38 +41,27 @@ export class LetterpaperSection extends TemplateTab {
       return [0, 1];
   }
 }
-
-function AdressSectionDraw(properties: {
-  self: AdressSection;
-  props: TemplateTabDrawProperties;
-}) {
-     
-
-  return (
-    <div>
-      <NumberInput
-        decimalSeparator=","
-        defaultChecked={true}
-        suffix=" px"
-        label="X-Position"
-        {...properties.self.pos.getInputPropsX(properties.props.template)}
-      />
-      <NumberInput
-        decimalSeparator=","
-        defaultChecked={true}
-        suffix=" px"
-        label="Y-Position"
-        {...properties.self.pos.getInputPropsY(properties.props.template)}
-      />
-    </div>
-  );
-}
 export class AdressSection extends TemplateTab {
   public pos = new DragVector(100, 100);
   public constructor() {
     super();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
-      return <AdressSectionDraw self={this} props={properties} />;
+        return <>
+        <NumberInput
+          decimalSeparator=","
+          defaultChecked={true}
+          suffix=" px"
+          label="X-Position"
+          {...this.pos.getInputPropsX(properties.template)}
+        />
+        <NumberInput
+          decimalSeparator=","
+          defaultChecked={true}
+          suffix=" px"
+          label="Y-Position"
+          {...this.pos.getInputPropsY(properties.template)}
+        />
+      </>;
     };
   }
   DisplayName(): string {
@@ -81,9 +71,42 @@ export class AdressSection extends TemplateTab {
       return 0;
   }
 }
+
+export class PositionsSection extends TemplateTab {
+  public pos = new DragVector(100, 100);
+  public constructor() {
+    super();
+    this.drawUI = (properties: TemplateTabDrawProperties) => {
+        return <>
+        <NumberInput
+          decimalSeparator=","
+          defaultChecked={true}
+          suffix=" px"
+          label="X-Position"
+          {...this.pos.getInputPropsX(properties.template)}
+        />
+        <NumberInput
+          decimalSeparator=","
+          defaultChecked={true}
+          suffix=" px"
+          label="Y-Position"
+          {...this.pos.getInputPropsY(properties.template)}
+        />
+      </>;
+    };
+  }
+  DisplayName(): string {
+    return "Positionen";
+  }
+  public PageNumbers(): number {
+      return 0;
+  }
+}
+
 export class TestTemplate extends Template {
   letterpaper?: LetterpaperSection;
   adress?: AdressSection;
+  positions?: PositionsSection;
   DrawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
     return Array<JSX.Element> (
       <Page format={PageFormat.A4} borderTop={1} borderBottom={1} borderLeft={1} borderRight={1} autoExpand={true} alwaysBreakToNewPage={false}>
@@ -102,6 +125,18 @@ export class TestTemplate extends Template {
           <Text>Musterstraße 16</Text>
           <Text>01234 Musterhausen</Text>
         </MovableBox>
+        <MovableTable
+          className="positions"
+          enabled={prop.currentTab === "positions"}
+          template={this}
+          templateTab={this.positions}
+          { ...this.positions?.pos.DragPos() }
+          width={300}
+          heigth={80}
+          collums={["Pos.", "Beschreibung", "Menge", "Einzelpreis", "Gesamtpreis"]}
+        >
+
+        </MovableTable>
       </Page>,
       <Page format={PageFormat.A6}>
         <Text>Secret Page</Text>

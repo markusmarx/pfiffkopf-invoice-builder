@@ -1,14 +1,12 @@
-import { ReactNode } from "react";
-import "./movableBox.module.css";
 import { Rnd } from "react-rnd";
 import { RenderableBlockParams, TemplateTab } from "../types";
-export interface MovableBoxParams extends RenderableBlockParams {
-  children?: ReactNode;
+export interface MovableTableParams extends RenderableBlockParams {
   enabled?: boolean;
   className?: string;
   onDrag?: (xPos: number, yPos: number, tab?: TemplateTab) => void;
+  collums: string[]; 
 }
-export function MovableBox(properties: MovableBoxParams) {
+export function MovableTable(properties: MovableTableParams) {
   return (
     <Rnd
       className={
@@ -39,7 +37,11 @@ export function MovableBox(properties: MovableBoxParams) {
       }}
       bounds={"parent"}
     >
-      {properties.children}
+        {properties.collums.map((collum: string, id: number) => {
+            return(
+                collum
+            );
+        })}
     </Rnd>
   );
 }

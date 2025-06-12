@@ -71,7 +71,7 @@ export class DragVector{
                 this.y = y;
                 tab?.RedrawProperties();
             },
-            onEndDrag: (x: number, y: number, template?: Template, tab?: TemplateTab) => {
+            onSubmitPositionChange: (x: number, y: number, template?: Template, tab?: TemplateTab) => {
                 this.x = x;
                 this.y = y;
                 tab?.RedrawProperties();
@@ -98,4 +98,20 @@ export class DragVector{
             }
         };
     }
+}
+export interface RenderableBlockParams{
+    template?: Template;
+    templateTab?: TemplateTab;
+    width?: number;
+    heigth?: number;
+    x?: number;
+    y?: number;
+    posVector?: DragVector;
+    onSubmitPositionChange?: (
+        xPos: number,
+        yPos: number,
+        template?: Template,
+        tab?: TemplateTab
+    ) => void;
+
 }
