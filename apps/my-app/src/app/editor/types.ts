@@ -113,5 +113,5 @@ export interface RenderableBlockParams{
         template?: Template,
         tab?: TemplateTab
     ) => void;
-
+    id: string;
 }

@@ -1,5 +1,6 @@
 import { Rnd } from "react-rnd";
 import { RenderableBlockParams, TemplateTab } from "../types";
+import { Text } from "@mantine/core";
 export interface MovableTableParams extends RenderableBlockParams {
   enabled?: boolean;
   className?: string;
@@ -37,11 +38,17 @@ export function MovableTable(properties: MovableTableParams) {
       }}
       bounds={"parent"}
     >
-        {properties.collums.map((collum: string, id: number) => {
-            return(
-                collum
-            );
-        })}
+      <div id={properties.id} style={{width: "100%", height: "100%", minHeight: "100%", maxHeight: "100%"}}>
+        <div>
+          {properties.collums.map((collum: string, id: number) => {
+              return(
+                  <div><Text>{collum}</Text></div>
+              );
+          })}
+        </div>
+      </div>
+      
+        
     </Rnd>
   );
 }

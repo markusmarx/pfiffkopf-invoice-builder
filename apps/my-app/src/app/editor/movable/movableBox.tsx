@@ -39,7 +39,9 @@ export function MovableBox(properties: MovableBoxParams) {
       }}
       bounds={"parent"}
     >
-      {properties.children}
+      <div id={properties.id} style={{width: "100%", height: "100%", minHeight: "100%", maxHeight: "100%"}}>
+        {properties.children}
+      </div>
     </Rnd>
   );
 }

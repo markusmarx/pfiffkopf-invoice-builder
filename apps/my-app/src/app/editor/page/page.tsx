@@ -62,8 +62,15 @@ export function Page(properties: PageProperties){
             properties.children.forEach(element => {
                 const movableBox = element.props as RenderableBlockParams;
                 if(movableBox){
+
                     const top = movableBox.posVector?.y || movableBox.y;
-                    const elementHeight = movableBox.heigth || 0;
+                    let elementHeight = movableBox.heigth || 0;
+
+                    const elementReference = document.getElementById(movableBox.id);
+                    if(elementReference){
+                        const computedStyle = getComputedStyle(elementReference);
+                        elementHeight = Number(computedStyle.height.slice(0, computedStyle.height.length - 2));
+                    }
                     if(top){
                         const currentPage = Math.ceil(top / (height*cmToPixels));
                         const threshold = ((currentPage)*(height)-(properties.borderTop || 0)-(properties.borderBottom||0))*cmToPixels;

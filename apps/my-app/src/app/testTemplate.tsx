@@ -120,6 +120,7 @@ export class TestTemplate extends Template {
           { ...this.adress?.pos.DragPos() }
           width={300}
           heigth={80}
+          id="adress"
         >
           <Text>Max Musterman</Text>
           <Text>Musterstraße 16</Text>
@@ -134,6 +135,7 @@ export class TestTemplate extends Template {
           width={300}
           heigth={80}
           collums={["Pos.", "Beschreibung", "Menge", "Einzelpreis", "Gesamtpreis"]}
+          id="positions"
         >
 
         </MovableTable>
