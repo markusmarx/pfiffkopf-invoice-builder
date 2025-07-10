@@ -1,4 +1,4 @@
-import { JSX } from "react";
+import { JSX, ReactNode } from "react";
 
 export interface TemplateDrawProperties{
     currentTab: string,
@@ -98,20 +98,57 @@ export class DragVector{
             }
         };
     }
+
+    public DragSize(){
+        return{
+            onResize: (x: number, y: number, tab?: TemplateTab) =>{
+                this.x = x;
+                this.y = y;
+                tab?.RedrawProperties();
+            },
+            onSubmitSizeChange: (x: number, y: number, template?: Template, tab?: TemplateTab) => {
+                this.x = x;
+                this.y = y;
+                tab?.RedrawProperties();
+                template?.RedrawView();
+            },
+            sizeVector: this,
+        }
+    }
+
 }
 export interface RenderableBlockParams{
     template?: Template;
     templateTab?: TemplateTab;
+    id: string;
+    enabled?: boolean;
+    className?: string;
+    children?: ReactNode;
+    //size
     width?: number;
     heigth?: number;
+    sizeVector?: DragVector;
+    enableResizing?: boolean;
+    autoBreakOverMultiplePages?: boolean;
+    onResize?: (xSize: number, ySize: number, tab?: TemplateTab) => void;
+    onSubmitSizeChange?: (
+        ySize: number,
+        xSize: number,
+        template?: Template,
+        tab?: TemplateTab
+    ) => void;
+    //position
     x?: number;
     y?: number;
     posVector?: DragVector;
+    disableMovement?: boolean;
+    onDrag?: (xPos: number, yPos: number, tab?: TemplateTab) => void;
     onSubmitPositionChange?: (
         xPos: number,
         yPos: number,
         template?: Template,
         tab?: TemplateTab
     ) => void;
-    id: string;
+
+
 }

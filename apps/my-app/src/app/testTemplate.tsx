@@ -73,7 +73,8 @@ export class AdressSection extends TemplateTab {
 }
 
 export class PositionsSection extends TemplateTab {
-  public pos = new DragVector(100, 100);
+  public pos = new DragVector(100, 400);
+  public size = new DragVector(300, 100);
   public constructor() {
     super();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
@@ -91,6 +92,21 @@ export class PositionsSection extends TemplateTab {
           suffix=" px"
           label="Y-Position"
           {...this.pos.getInputPropsY(properties.template)}
+        />
+
+        <NumberInput
+          decimalSeparator=","
+          defaultChecked={true}
+          suffix=" px"
+          label="Weite"
+          {...this.size.getInputPropsX(properties.template)}
+        />
+        <NumberInput
+          decimalSeparator=","
+          defaultChecked={true}
+          suffix=" px"
+          label="Höhe"
+          {...this.size.getInputPropsY(properties.template)}
         />
       </>;
     };
@@ -132,13 +148,11 @@ export class TestTemplate extends Template {
           template={this}
           templateTab={this.positions}
           { ...this.positions?.pos.DragPos() }
-          width={300}
-          heigth={80}
+          {... this.positions?.size.DragSize()}
           collums={["Pos.", "Beschreibung", "Menge", "Einzelpreis", "Gesamtpreis"]}
           id="positions"
-        >
-
-        </MovableTable>
+          enableResizing={true}
+        />
       </Page>,
       <Page format={PageFormat.A6}>
         <Text>Secret Page</Text>
