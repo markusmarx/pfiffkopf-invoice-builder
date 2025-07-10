@@ -64,7 +64,7 @@ export function Page(properties: PageProperties){
             properties.children.forEach(element => {
                 const movableBox = element.props as RenderableBlockParams;
                 if(movableBox){
-                    const top = movableBox.posVector?.y || movableBox.y;
+                    const positionY = movableBox.posVector?.y || movableBox.y;
                     let elementHeight = movableBox.heigth || 0;
                     
                     const elementReference = document.getElementById(movableBox.id);
@@ -72,19 +72,19 @@ export function Page(properties: PageProperties){
                         const computedStyle = getComputedStyle(elementReference);
                         elementHeight = Number(computedStyle.height.slice(0, computedStyle.height.length - 2));
                     }
-                    if(top){
-                        const currentPage = Math.ceil(top / (height*cmToPixels));
+                    if(positionY){
+                        const currentPage = Math.ceil(positionY / (height*cmToPixels));
                         const threshold = ((currentPage)*(height)-(properties.borderTop || 0)-(properties.borderBottom||0))*cmToPixels;
-                        if(top > threshold || (top + elementHeight > threshold && !movableBox.autoBreakOverMultiplePages)){
+                        if(positionY > threshold || (positionY + elementHeight > threshold && !movableBox.autoBreakOverMultiplePages)){
                             if(movableBox.posVector && movableBox.onSubmitPositionChange){
-                                const newPos = !properties.alwaysBreakToNewPage && (currentPage * height - (properties.borderTop || 0)) * cmToPixels > top + elementHeight ? 
+                                const newPos = !properties.alwaysBreakToNewPage && (currentPage * height - (properties.borderTop || 0)) * cmToPixels > positionY + elementHeight ? 
                                 (currentPage * height - (properties.borderTop || 0)- (properties.borderBottom || 0)) * cmToPixels - elementHeight - 1 //break up 
                                 : currentPage * height * cmToPixels; //break down
                                 movableBox.onSubmitPositionChange(movableBox.posVector.x, Math.ceil(newPos), movableBox.template, movableBox.templateTab);
                             }
-                        }else if (movableBox.autoBreakOverMultiplePages && top + elementHeight > threshold){
+                        }else if (movableBox.autoBreakOverMultiplePages && positionY + elementHeight > threshold){
                             console.log("Break over multiple pages");
-                            const remainingHeight = elementHeight -  (threshold - top);
+                            const remainingHeight = elementHeight -  (threshold - positionY);
                              
                         }
                     }

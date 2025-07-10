@@ -149,7 +149,7 @@ export class TestTemplate extends Template {
           templateTab={this.positions}
           { ...this.positions?.pos.DragPos() }
           {... this.positions?.size.DragSize()}
-          collums={["Pos.", "Beschreibung", "Menge", "Einzelpreis", "Gesamtpreis"]}
+          collums={[{accessor: "t1", label: "Test 1"}, {accessor: "t2", label: "Test 2"}]}
           id="positions"
           enableResizing={true}
         />

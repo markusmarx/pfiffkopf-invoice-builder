@@ -6,7 +6,6 @@ export function App() {
   template.letterpaper = new LetterpaperSection();
   template.adress = new AdressSection();
   template.positions = new PositionsSection();
-  //template.adress.recipentPositionXInitial = 100;
   return (
     <Editor template={template}/>
   );

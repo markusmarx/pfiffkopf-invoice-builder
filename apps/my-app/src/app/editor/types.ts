@@ -127,6 +127,7 @@ export interface RenderableBlockParams{
     //size
     width?: number;
     heigth?: number;
+    renderingBlocks?: Array<number>;
     sizeVector?: DragVector;
     enableResizing?: boolean;
     autoBreakOverMultiplePages?: boolean;
