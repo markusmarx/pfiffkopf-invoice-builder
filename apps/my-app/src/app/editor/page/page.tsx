@@ -1,5 +1,4 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from "react";
-import { MovableBoxParams } from "../movable/movableBox";
 import { RenderableBlockParams } from "../types";
 
 export enum PageFormat {

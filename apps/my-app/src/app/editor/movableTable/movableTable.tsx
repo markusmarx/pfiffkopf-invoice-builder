@@ -122,9 +122,6 @@ function Cell(props: ResizableCellProps) {
 }
 
 export function MovableTable(properties: MovableTableParams) {
-  const boxWidth = properties.sizeVector
-    ? properties.sizeVector.x
-    : properties.width || 1;
   const [colWidths, setColWidths] = useState<{ [Key: string]: number }>(
     properties.collums.reduce(
       (acc, col) => ({
@@ -184,7 +181,7 @@ export function MovableTable(properties: MovableTableParams) {
                         col={value}
                         onResize={handleResize}
                         style={properties.headerStyle}
-                        dragging={idx !== properties.collums.length}
+                        dragging={idx !== properties.collums.length && properties.enabled ? properties.enabled : true}
                       />
                     );
                   })}
