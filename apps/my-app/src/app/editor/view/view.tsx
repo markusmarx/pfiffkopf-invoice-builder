@@ -1,5 +1,7 @@
 import { ViewProperties} from "../types";
 import { useEffect, useReducer, useRef, JSX } from "react";
+import styles from "./view.module.css";
+
 class EditorUtil{
     public static xPos: number;
     public static yPos: number;
@@ -85,7 +87,7 @@ export function DefaultView(properties: ViewProperties)
     const page = pages instanceof Array ? pages[properties.currentPage-1] : pages;
     
     return(
-        <div ref={editorWindow} style={{backgroundColor: "gray", width: "100%", height: "calc(100vh - var(--app-shell-header-height, 0px) - var(--app-shell-footer-height, 0px))"}}>
+        <div ref={editorWindow} className={styles["view"]} style={{backgroundColor: "gray", width: "100%", height: "calc(100vh - var(--app-shell-header-height, 0px) - var(--app-shell-footer-height, 0px))"}}>
             <div ref={paperElement} id="paper" style={
                 {
                 //boxShadow: "2p 2px 4px #000000", backgroundColor: "white", width: `calc(21cm * ${EditorUtil.zoomFactor})`, height: `calc(27cm * ${EditorUtil.zoomFactor})`, 

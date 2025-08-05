@@ -6,34 +6,46 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 export interface MovableTableParams extends RenderableBlockParams {
   collums: Collumn[];
+  rows: Cell[][];
+  headerStyle?: React.CSSProperties;
+  cellStyle?: React.CSSProperties;
 }
-
 
 interface ResizableColumnHeaderProps {
   col: Collumn;
   width: number;
   onResize: (accesor: string, delta: number) => void;
+  style?: React.CSSProperties;
+  dragging: boolean;
 }
-interface ResizableCellProps extends ResizableColumnHeaderProps{
+interface ResizableCellProps extends ResizableColumnHeaderProps {
   value: string;
 }
 
 export interface Collumn {
   accessor: string;
   label: string;
+  style?: React.CSSProperties;
+}
+export interface Cell {
+  label: string;
+  style?: React.CSSProperties;
 }
 
-function handleResize(e: React.MouseEvent<HTMLDivElement, MouseEvent>, accessor: string, onResize: (accesor: string, delta: number) => void){
+function handleResize(
+  e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+  accessor: string,
+  onResize: (accesor: string, delta: number) => void
+) {
   let startX = e.clientX;
-  const handleMouseMove = (event : MouseEvent) => {
-      const delta = event.clientX - startX;
-      startX = event.clientX;
-      onResize(accessor, delta);
-      
+  const handleMouseMove = (event: MouseEvent) => {
+    const delta = event.clientX - startX;
+    startX = event.clientX;
+    onResize(accessor, delta);
   };
   const handleMouseUp = () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
   };
   document.addEventListener("mousemove", handleMouseMove);
   document.addEventListener("mouseup", handleMouseUp);
@@ -42,39 +54,66 @@ function handleResize(e: React.MouseEvent<HTMLDivElement, MouseEvent>, accessor:
 function ResizableColumnHeader(props: ResizableColumnHeaderProps) {
   return (
     <th
-      style={{
-        width: `${props.width}px`,
-        position: "relative",
-        border: "3px solid",
-
-      }}
+      style={Object.assign(
+        {
+          width: `${props.width}px`,
+          position: "relative",
+        },
+        props.style,
+        props.col.style
+      )}
     >
       {props.col.label}
-      <div
-        className="child_drag"
-        style={{
-            position: "absolute", right: 0, top: 0, height: "100%", width: "5px", cursor: "ew-resize"
-        }}
-        onMouseDown={(e) => handleResize(e, props.col.accessor, props.onResize)}
-      />
+      {props.dragging && (
+        <div
+          className="child_drag"
+          style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            height: "100%",
+            width: "5px",
+            cursor: "ew-resize",
+          }}
+          onMouseDown={(e) =>
+            handleResize(e, props.col.accessor, props.onResize)
+          }
+        />
+      )}
+      {!props.dragging && (
+        <div
+          className="child_drag"
+          style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            height: "100%",
+            width: "5px",
+          }}
+        />
+      )}
     </th>
   );
 }
-function ResizableCell(props: ResizableCellProps) {
+function Cell(props: ResizableCellProps) {
   return (
     <td
       style={{
         width: `${props.width}px`,
         position: "relative",
         border: "3px solid",
-
       }}
     >
       {props.value}
       <div
         className="child_drag"
         style={{
-            position: "absolute", right: 0, top: 0, height: "100%", width: "5px", cursor: "ew-resize"
+          position: "absolute",
+          right: 0,
+          top: 0,
+          height: "100%",
+          width: "5px",
+          cursor: "ew-resize",
         }}
         onMouseDown={(e) => handleResize(e, props.col.accessor, props.onResize)}
       />
@@ -90,17 +129,17 @@ export function MovableTable(properties: MovableTableParams) {
     properties.collums.reduce(
       (acc, col) => ({
         ...acc,
-        [col.accessor]: boxWidth / properties.collums.length / boxWidth,
+        [col.accessor]: 150,
       }),
       {}
     )
   );
-  function handleResize (col: string, delta: number){
+  function handleResize(col: string, delta: number) {
     setColWidths((prev) => ({
       ...prev,
       [col]: Math.max(prev[col] + delta, 50),
     }));
-  };
+  }
 
   return (
     <BaseMovableBox
@@ -132,25 +171,51 @@ export function MovableTable(properties: MovableTableParams) {
           maxHeight: "100%",
         }}
       >
-        <div>
-          <Table>
-            <thead>
-              <tr>
-                {properties.collums.map((value) => {
+        <DndProvider backend={HTML5Backend}>
+          <div>
+            <Table>
+              <thead>
+                <tr>
+                  {properties.collums.map((value, idx) => {
+                    return (
+                      <ResizableColumnHeader
+                        key={value.accessor}
+                        width={colWidths[value.accessor]}
+                        col={value}
+                        onResize={handleResize}
+                        style={properties.headerStyle}
+                        dragging={idx !== properties.collums.length}
+                      />
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {properties.rows.map((row) => {
                   return (
-                    <ResizableColumnHeader
-                      key={value.accessor}
-                      width={colWidths[value.accessor]}
-                      col={{ accessor: value.accessor, label: value.label }}
-                      onResize={handleResize}
-                    />
+                    <tr>
+                      {row.map((cell) => {
+                        return (
+                          <td
+                            style={Object.assign(
+                              {
+                                position: "relative",
+                              },
+                              properties.cellStyle,
+                              cell.style
+                            )}
+                          >
+                            {cell.label}
+                          </td>
+                        );
+                      })}
+                    </tr>
                   );
                 })}
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </Table>
-        </div>
+              </tbody>
+            </Table>
+          </div>
+        </DndProvider>
       </div>
     </BaseMovableBox>
   );

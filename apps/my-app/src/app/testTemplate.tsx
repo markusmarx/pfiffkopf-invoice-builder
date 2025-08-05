@@ -10,6 +10,7 @@ import React, { JSX } from "react";
 import { MovableBox } from "./editor/movable/movableBox";
 import { Page, PageFormat } from "./editor/page/page";
 import { MovableTable } from "./editor/movableTable/movableTable";
+import DragVectorInput, { DragVectorDisplayType } from "./editor/dragVectorInput/dragVectorInput";
 
 export class LetterpaperSection extends TemplateTab {
   bold?: boolean;
@@ -46,22 +47,13 @@ export class AdressSection extends TemplateTab {
   public constructor() {
     super();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
-        return <>
-        <NumberInput
-          decimalSeparator=","
-          defaultChecked={true}
-          suffix=" px"
-          label="X-Position"
-          {...this.pos.getInputPropsX(properties.template)}
-        />
-        <NumberInput
-          decimalSeparator=","
-          defaultChecked={true}
-          suffix=" px"
-          label="Y-Position"
-          {...this.pos.getInputPropsY(properties.template)}
-        />
-      </>;
+        return (
+          <DragVectorInput
+                    template={properties.template}
+                    dragVector={this.pos}
+                    displayType={DragVectorDisplayType.Position}
+          />
+        );
     };
   }
   DisplayName(): string {
@@ -79,34 +71,15 @@ export class PositionsSection extends TemplateTab {
     super();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
         return <>
-        <NumberInput
-          decimalSeparator=","
-          defaultChecked={true}
-          suffix=" px"
-          label="X-Position"
-          {...this.pos.getInputPropsX(properties.template)}
+        <DragVectorInput
+          template={properties.template}
+          dragVector={this.pos}
+          displayType={DragVectorDisplayType.Position}
         />
-        <NumberInput
-          decimalSeparator=","
-          defaultChecked={true}
-          suffix=" px"
-          label="Y-Position"
-          {...this.pos.getInputPropsY(properties.template)}
-        />
-
-        <NumberInput
-          decimalSeparator=","
-          defaultChecked={true}
-          suffix=" px"
-          label="Weite"
-          {...this.size.getInputPropsX(properties.template)}
-        />
-        <NumberInput
-          decimalSeparator=","
-          defaultChecked={true}
-          suffix=" px"
-          label="Höhe"
-          {...this.size.getInputPropsY(properties.template)}
+        <DragVectorInput
+          template={properties.template}
+          dragVector={this.size}
+          displayType={DragVectorDisplayType.Size}
         />
       </>;
     };
@@ -149,9 +122,12 @@ export class TestTemplate extends Template {
           templateTab={this.positions}
           { ...this.positions?.pos.DragPos() }
           {... this.positions?.size.DragSize()}
-          collums={[{accessor: "t1", label: "Test 1"}, {accessor: "t2", label: "Test 2"}]}
           id="positions"
           enableResizing={true}
+          cellStyle={{border: "3px solid"}}
+          headerStyle={{border: "3px solid"}}
+          collums={[{accessor: "t1", label: "Test 1"}, {accessor: "t2", label: "Test 2", style: {color: "red"}}]}
+          rows={[[{label: "1."}, {label: "2.", style: {color: "blue"} } ]]}
         />
       </Page>,
       <Page format={PageFormat.A6}>

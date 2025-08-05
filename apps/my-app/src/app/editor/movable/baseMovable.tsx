@@ -3,7 +3,6 @@ import { Rnd } from "react-rnd";
 import { RenderableBlockParams} from "../types";
 import { useRef } from "react";
 export function BaseMovableBox(properties: RenderableBlockParams) {
-  console.log(properties.enabled);
   const rnd = useRef<Rnd>(null);
   return (
     
