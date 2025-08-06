@@ -4,6 +4,7 @@ import { ViewProperties, Template } from "./types";
 import { DefaultView } from "./view/view";
 import { AppShell, Button, Flex, Group, Input, NumberInput, Space, Text } from "@mantine/core";
 import { IconChevronLeft, IconChevronRight, IconChevronsLeft, IconChevronsRight } from "@tabler/icons-react";
+import { RenderToPDF } from "./pdf_renderer/renderer";
 export interface EditorPropertys {
   view?: ReactElement<ViewProperties>;
   template: Template;
@@ -47,6 +48,7 @@ export function Editor(properties: EditorPropertys) {
                             <Button variant="outline" onClick={() => setCurrentPage(currentPage+1 < maxPages ? currentPage+1 : maxPages)}><IconChevronRight/></Button>
                             <Button variant="outline" onClick={() => setCurrentPage(maxPages)}><IconChevronsRight/></Button>
                         </Button.Group>
+                        <Button onClick={() =>RenderToPDF(properties.template)}>Render to pdf</Button>
                     </Flex>
                 }
                 

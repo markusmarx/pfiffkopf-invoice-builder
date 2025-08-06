@@ -9,6 +9,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "bundler",
+    "typeRoots": ["./node_modules/@types", "./src/types"]
     //"module": "NodeNext",
   },
   "files": [],

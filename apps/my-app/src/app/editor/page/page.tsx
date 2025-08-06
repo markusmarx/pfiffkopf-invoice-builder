@@ -116,7 +116,7 @@ export function Page(properties: PageProperties){
     const maxWorplaceHeight = (properties.autoExpand) ? ((pagesExpandCount+1)*(height)-(properties.borderTop || 0)-(properties.borderBottom||0)).toString()+"cm" : "100%";
 
     return(<>   
-        <div style={{minHeight: `${height}cm`, maxHeight: `${width}cm`,  height: `${height}cm`, width: `${width}cm`, backgroundColor: "white", 
+        <div id="real_paper" style={{minHeight: `${height}cm`, maxHeight: `${width}cm`,  height: `${height}cm`, width: `${width}cm`, backgroundColor: "white", 
             paddingBottom: (properties.autoExpand) ? "0cm" : `${properties.borderBottom}cm`,
             paddingTop: `${properties.borderTop}cm`,
             paddingLeft: `${properties.borderLeft}cm`,
@@ -131,7 +131,7 @@ export function Page(properties: PageProperties){
             [...Array(pagesExpandCount-1)].map(() => {
                 return(
                     <div
-                        style={{minHeight: `${height}cm`, maxHeight: `${width}cm`,  height: `${height}cm`, width: `${width}cm`, backgroundColor: "white", borderTop: "dashed black"}}
+                        id="paper-container-expand" style={{minHeight: `${height}cm`, maxHeight: `${width}cm`,  height: `${height}cm`, width: `${width}cm`, backgroundColor: "white", borderTop: "dashed black"}}
                     ></div>
                 );
             })
