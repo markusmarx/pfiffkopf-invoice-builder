@@ -112,18 +112,18 @@ export function Page(properties: PageProperties){
     if(properties.render !== undefined && !properties.render){
         return("");
     }
-    
-    const maxWorplaceHeight = (properties.autoExpand) ? ((pagesExpandCount+1)*(height)-(properties.borderTop || 0)-(properties.borderBottom||0)).toString()+"cm" : "100%";
+    const maxWorplaceHeight = (properties.autoExpand) ? ((pagesExpandCount+1)*(height)-(properties.borderTop || 0)-(properties.borderBottom||0)).toString()+"cm" :
+                                                        `${pagesExpandCount*height-(properties.borderTop||0)-(properties.borderBottom||0)}cm`;
 
     return(<>   
         <div id="real_paper" style={{minHeight: `${height}cm`, maxHeight: `${width}cm`,  height: `${height}cm`, width: `${width}cm`, backgroundColor: "white", 
-            paddingBottom: (properties.autoExpand) ? "0cm" : `${properties.borderBottom}cm`,
-            paddingTop: `${properties.borderTop}cm`,
-            paddingLeft: `${properties.borderLeft}cm`,
-            paddingRight: `${properties.borderRight}cm`,
+            paddingBottom: (properties.autoExpand) ? "0cm" : `${properties.borderBottom || 0}cm`,
+            paddingTop: `${properties.borderTop || 0}cm`,
+            paddingLeft: `${properties.borderLeft || 0}cm`,
+            paddingRight: `${properties.borderRight || 0}cm`,
         }}
         >
-            <div id="paper-container" ref={containerRef} style={{width: "100%", height: `${maxWorplaceHeight}`, minHeight: `${maxWorplaceHeight}%`, minWidth: "100%"}}>
+            <div id="paper-container" ref={containerRef} style={{width: "100%", height: `${maxWorplaceHeight}`, minHeight: `100%`, minWidth: "100%"}}>
                 {properties.children}
             </div>
         </div>

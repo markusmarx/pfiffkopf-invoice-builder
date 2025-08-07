@@ -130,7 +130,7 @@ export class TestTemplate extends Template {
           rows={[[{label: "1."}, {label: "2.", style: {color: "blue"} } ]]}
         />
       </Page>,
-      <Page format={PageFormat.A6}>
+      <Page format={PageFormat.A6} borderBottom={1}>
         <Text>Secret Page</Text>
       </Page>
     );
