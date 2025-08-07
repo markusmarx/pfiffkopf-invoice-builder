@@ -48,10 +48,10 @@ export function Editor(properties: EditorPropertys) {
                             <Button variant="outline" onClick={() => setCurrentPage(currentPage+1 < maxPages ? currentPage+1 : maxPages)}><IconChevronRight/></Button>
                             <Button variant="outline" onClick={() => setCurrentPage(maxPages)}><IconChevronsRight/></Button>
                         </Button.Group>
-                        <Button onClick={() =>RenderToPDF(properties.template)}>Render to pdf</Button>
+                        
                     </Flex>
                 }
-                
+                <Button onClick={() =>RenderToPDF(properties.template)}>Render to pdf</Button>
             </Group>
         </AppShell.Header>
         <AppShell.Navbar>
