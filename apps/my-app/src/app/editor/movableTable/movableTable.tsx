@@ -1,14 +1,15 @@
-import { RenderableBlockParams } from "../types";
+import { RenderableBlockParams, Template, TemplateTab } from "../types";
 import { Text, Table } from "@mantine/core";
 import { BaseMovableBox } from "../movable/baseMovable";
 import { useEffect, useRef, useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 export interface MovableTableParams extends RenderableBlockParams {
-  collums: Collumn[];
-  rows: Cell[][];
+  header: (Collumn | null)[];
+  rows: TableRow[];
   headerStyle?: React.CSSProperties;
   cellStyle?: React.CSSProperties;
+  onTableResize?: (delta : number, accesor: string, template?: Template, tab?: TemplateTab) => void;
 }
 
 interface ResizableColumnHeaderProps {
@@ -26,9 +27,15 @@ export interface Collumn {
   accessor: string;
   label: string;
   style?: React.CSSProperties;
+  width?: number;
+}
+export interface TableRow{
+  accesorControlled: boolean;
+  elements: Cell[];
 }
 export interface Cell {
   label: string;
+  accesor?: string;
   style?: React.CSSProperties;
 }
 
@@ -123,19 +130,32 @@ function Cell(props: ResizableCellProps) {
 
 export function MovableTable(properties: MovableTableParams) {
   const [colWidths, setColWidths] = useState<{ [Key: string]: number }>(
-    properties.collums.reduce(
-      (acc, col) => ({
+    properties.header.reduce(
+      (acc, col, index) => (
+        {
         ...acc,
-        [col.accessor]: 150,
+        [col?.accessor || index]: col?.width || 150,
       }),
       {}
     )
   );
   function handleResize(col: string, delta: number) {
-    setColWidths((prev) => ({
-      ...prev,
-      [col]: Math.max(prev[col] + delta, 50),
-    }));
+    if(properties.onTableResize){
+      properties.onTableResize(delta, col, properties.template, properties.templateTab);
+    }else{
+      setColWidths((prev) => ({
+        ...prev,
+        [col]: Math.max(prev[col] + delta, 50),
+      }));
+    }
+
+  }
+  function findAccesorControlledEntry(accesor: string, row: TableRow){
+    for(let i = 0; i < row.elements.length; i++){
+      if(row.elements[i].accesor === accesor){
+        return row.elements[i];
+      }
+    }
   }
 
   return (
@@ -173,15 +193,18 @@ export function MovableTable(properties: MovableTableParams) {
             <Table>
               <thead>
                 <tr>
-                  {properties.collums.map((value, idx) => {
+                  {properties.header.map((value, idx) => {
+                    if(value === null){
+                      return "";
+                    }
                     return (
                       <ResizableColumnHeader
                         key={value.accessor}
-                        width={colWidths[value.accessor]}
+                        width={value.width || colWidths[value.accessor]}
                         col={value}
                         onResize={handleResize}
                         style={properties.headerStyle}
-                        dragging={idx !== properties.collums.length && properties.enabled ? properties.enabled : true}
+                        dragging={idx !== properties.header.length && properties.enabled ? properties.enabled : true}
                       />
                     );
                   })}
@@ -189,25 +212,57 @@ export function MovableTable(properties: MovableTableParams) {
               </thead>
               <tbody>
                 {properties.rows.map((row) => {
-                  return (
-                    <tr>
-                      {row.map((cell) => {
-                        return (
-                          <td
-                            style={Object.assign(
-                              {
-                                position: "relative",
-                              },
-                              properties.cellStyle,
-                              cell.style
-                            )}
-                          >
-                            {cell.label}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
+                  if(!row.accesorControlled){
+                    return (
+                      <tr>
+                        {row.elements.map((cell) => {
+                          return (
+                            <td
+                              style={Object.assign(
+                                {
+                                  position: "relative",
+                                },
+                                properties.cellStyle,
+                                cell.style
+                              )}
+                            >
+                              {cell.label}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  }else{
+                    return(
+                      <tr>
+                        {
+                          properties.header.map((element, idx) => {
+                            if(element === null){
+                              return "";
+                            }
+                            const cell = findAccesorControlledEntry(element?.accessor, row);
+                            if(!cell){
+                              return <td></td>;
+                            }
+                            return(
+                              <td
+                              style={Object.assign(
+                                {
+                                  position: "relative",
+                                },
+                                properties.cellStyle,
+                                cell.style
+                              )}
+                            >
+                              {cell.label}
+                            </td>
+                            );
+                          })
+                        }
+                      </tr>
+                    )
+                  }
+                  
                 })}
               </tbody>
             </Table>

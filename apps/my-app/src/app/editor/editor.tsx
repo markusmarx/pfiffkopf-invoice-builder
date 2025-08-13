@@ -54,7 +54,7 @@ export function Editor(properties: EditorPropertys) {
                 <Button onClick={() =>RenderToPDF(properties.template)}>Render to pdf</Button>
             </Group>
         </AppShell.Header>
-        <AppShell.Navbar>
+        <AppShell.Navbar w={500}>
             <Propertys
             template={properties.template}
             pageIndex={currentPage}

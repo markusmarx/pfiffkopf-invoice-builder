@@ -161,6 +161,8 @@ export function RenderToPDF(template: Template){
         //nodes who start a pdf command
         if(node instanceof HTMLParagraphElement){
             //insert text
+            const paragraph = node as HTMLParagraphElement;
+            console.log(paragraph.textContent);
         }else if (node instanceof HTMLAnchorElement){
             //insert link
         }else if(node instanceof HTMLDivElement){

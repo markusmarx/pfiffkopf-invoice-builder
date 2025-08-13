@@ -56,6 +56,47 @@ export interface ViewProperties
     currentSelectedPropertiesTab?: string | null;
     onValueChanged?: () => void;
 }
+interface TableEntry{
+    accessor: string;
+    label: string;
+    enabled?: boolean,
+    width?: number
+}
+export class TableData{
+    public tableEntries : TableEntry[];
+    constructor(data:TableEntry[], width: number){
+        this.tableEntries = data;
+        this.tableEntries.forEach((element) => {
+            element.enabled = true;
+            element.width = width / this.tableEntries.length;
+        });
+    }
+    public DynamicTable(){
+        return {
+            header: this.tableEntries.map((v) => {
+                if(v.enabled){
+                    return v;
+                }
+                return null;
+            }) || [],
+            onTableResize: (delta : number, accesor: string, template?: Template, tab?: TemplateTab) => {
+                this.tableEntries.forEach(element => {
+                    if(element.accessor === accesor){
+                        if(element.width){
+                            console.log(element.width);
+                            element.width += delta;
+                        }else{
+                            element.width = 100;
+                        }
+                    }
+                });
+                template?.RedrawView();
+                tab?.RedrawProperties();
+            }
+        }
+    }
+
+}
 export class DragVector{
     public x = 0;
     public y = 0;
