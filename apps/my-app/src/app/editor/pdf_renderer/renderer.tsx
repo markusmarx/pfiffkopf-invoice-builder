@@ -158,15 +158,19 @@ export function RenderToPDF(template: Template){
     }
     function RenderPDFPageRecursive(pdf: any, page: HTMLElement, node: HTMLElement, command: DrawCommand) : DrawCommand{
         //render current element
-        //nodes who start a pdf command
+        //nodes that start a pdf command
         if(node instanceof HTMLParagraphElement){
             //insert text
             const paragraph = node as HTMLParagraphElement;
-            console.log(paragraph.textContent);
+            console.log("Start a paragraph");
         }else if (node instanceof HTMLAnchorElement){
             //insert link
+            console.log("Start a anchor");
         }else if(node instanceof HTMLDivElement){
             //change drawing rect
+            console.log("Start a div");
+            //x-offset,y-offset,width,heigth
+            pdf.rect(cssScaleToPostScriptPoint(node.style.left),cssScaleToPostScriptPoint(node.style.top),cssScaleToPostScriptPoint(node.style.width), cssScaleToPostScriptPoint(node.style.height)).stroke();
         }else if (node instanceof HTMLTableElement){
             //start drawing table
         }

@@ -23,11 +23,10 @@ export function TableDataInput(props: TableDataInputProps) {
         <Table.Td>
             {props.labelEditing && (
               <TextInput
-                value={propserties.item.label}
+                defaultValue={propserties.item.label}
                 onChange={(event) => {
                   propserties.item.label = event.target.value;
                   props.template.RedrawView();
-                  forceUpdate();
                 }}
               />
             )}
@@ -35,23 +34,21 @@ export function TableDataInput(props: TableDataInputProps) {
         </Table.Td>
         <Table.Td>
           <Checkbox
-            checked={propserties.item.enabled}
+            defaultChecked={propserties.item.enabled}
             disabled={!props.enableEditing}
             onChange={(event) => {
               propserties.item.enabled = event.currentTarget.checked;
               props.template.RedrawView();
-              forceUpdate();
             }}
           />
         </Table.Td>
         <Table.Td>
           {props.widthEditing && (
             <NumberInput
-              value={propserties.item.width}
+              defaultValue={propserties.item.width}
               onChange={(event) => {
                 propserties.item.width = Number(event);
                 props.template.RedrawView();
-                forceUpdate();
               }}
             />
           )}
