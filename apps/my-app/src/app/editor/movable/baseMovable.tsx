@@ -17,7 +17,7 @@ export function BaseMovableBox(properties: RenderableBlockParams) {
         }}
         position={{ x:  properties.posVector ? properties.posVector.x : properties.x || 0, y: properties.posVector ? properties.posVector.y : properties.y || 0 }}
         disableDragging={!properties.enabled && !properties.disableMovement}
-        enableResizing={properties.enabled && properties.enableResizing}
+        enableResizing={(properties.enabled && properties.enableResizing) || false}
         onDragStop={(e, d) => {
           if (properties.onSubmitPositionChange)
             properties.onSubmitPositionChange(
