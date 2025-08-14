@@ -102,7 +102,7 @@ function ResizableColumnHeader(props: ResizableColumnHeaderProps) {
     </th>
   );
 }
-function Cell(props: ResizableCellProps) {
+function CellBox(props: ResizableCellProps) {
   return (
     <td
       style={{
@@ -145,7 +145,7 @@ export function MovableTable(properties: MovableTableParams) {
     }else{
       setColWidths((prev) => ({
         ...prev,
-        [col]: Math.max(prev[col] + delta, 50),
+        [col]: prev[col] + delta,
       }));
     }
 

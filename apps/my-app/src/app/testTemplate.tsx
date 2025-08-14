@@ -88,8 +88,9 @@ export class PositionsSection extends TemplateTab {
           template={properties.template}
           tableData={this.table}
           labelEditing={true}
-          enableDisable={true}
+          enableEditing={true}
           widthEditing={true}
+          reorderEditing={true}
         />
       </>;
     };
@@ -137,7 +138,6 @@ export class TestTemplate extends Template {
           cellStyle={{border: "3px solid"}}
           headerStyle={{border: "3px solid"}}
           {...this.positions?.table.DynamicTable() || {header: []}}
-          //collums={[{accessor: "t1", label: "Test 1"}, {accessor: "t2", label: "Test 2", style: {color: "red"}}]}
           rows={
             [
               {elements: [{label: "Text 1", accesor: "t1"}, {label: "Text 2", accesor: "t2"}, {label: "Text 3", accesor: "t3"}], accesorControlled: true},

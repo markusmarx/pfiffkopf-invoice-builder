@@ -56,7 +56,7 @@ export interface ViewProperties
     currentSelectedPropertiesTab?: string | null;
     onValueChanged?: () => void;
 }
-interface TableEntry{
+export interface TableEntry{
     accessor: string;
     label: string;
     enabled?: boolean,
@@ -83,7 +83,6 @@ export class TableData{
                 this.tableEntries.forEach(element => {
                     if(element.accessor === accesor){
                         if(element.width){
-                            console.log(element.width);
                             element.width += delta;
                         }else{
                             element.width = 100;
