@@ -8,7 +8,9 @@ interface DrawingAreaContext{
     left: number,
     top: number,
     width: number,
-    heigth: number
+    heigth: number,
+    paddingTop: number,
+    paddingLeft: number
 }
 interface DrawCommand{
     area: DrawingAreaContext,
@@ -21,12 +23,39 @@ interface DrawTextCommand extends DrawCommand{
 interface DrawEmptyCommand extends DrawCommand{
     marker: DrawingAreaContext;
 }
+function getCmInPixels(): number {
+  const div = document.createElement("div");
+  div.style.width = "1cm";
+  div.style.position = "absolute";
+  div.style.visibility = "hidden";
+  document.body.appendChild(div);
+
+  const pixels = div.getBoundingClientRect().width;
+  document.body.removeChild(div);
+
+  return pixels;
+}
+
+const cmToPixels = getCmInPixels();
 
 
-
-function cssScaleToPostScriptPoint(value: string) : number{
+function cssScaleToPostScriptPoint(value: string, self?: HTMLElement | null, name?: string) : number{
+    function percentRecursive(node: HTMLElement, read: string){
+        const percent = Number(read.substring(0, read.length - 1)) / 100;
+        console.log(read + " " + percent);
+         if(!node || !name || !node.parentElement)
+            return 0;
+        return percent * cssScaleToPostScriptPointWithCallback(node.parentElement.style.getPropertyValue(name), node.parentElement, percentRecursive);
+    }
+    
+    return cssScaleToPostScriptPointWithCallback(value, self, percentRecursive);
+}
+function cssScaleToPostScriptPointWithCallback(value: string, self?: HTMLElement | null, getParrentSize?: (node: HTMLElement, read: string) => number) : number{
     const without_unit = value.substring(0, value.length - 2);
-    if(value.endsWith("cm")){
+    if (!value){
+        return 0;
+    }
+    else if(value.endsWith("cm")){
         const cmNumber = Number(without_unit);
         // eslint-disable-next-line no-loss-of-precision
         return Number((cmNumber * 5.6692857142857142857142857142857 * 5).toFixed(2));
@@ -46,6 +75,20 @@ function cssScaleToPostScriptPoint(value: string) : number{
         const pcNumber = Number(without_unit);  
         // eslint-disable-next-line no-loss-of-precision
         return Number((pcNumber * 143.99984905143705330020367170284 * 5 / 6).toFixed(2));
+    }else if (value.endsWith("px")){
+        const pxNumber = Number(without_unit);
+        return cssScaleToPostScriptPoint((pxNumber / cmToPixels).toFixed(2) + "cm")
+    }else if(value.endsWith("%")){
+        if(self && getParrentSize)
+            return getParrentSize(self, value);
+        else 
+            return 0;
+
+        /*const percent = Number(without_unit) / 100;
+        if(!self || !name || !self.parentElement)
+            return 0;
+        return percent * cssScaleToPostScriptPoint(self.parentElement.style.getPropertyValue(name), self.parentElement, name);*/
+
     }
     console.log(`Can't convert ${value} to PostScript Point`);
     return NaN;
@@ -65,7 +108,7 @@ export function RenderToPDF(template: Template){
         //setup writing to buffer
         doc.on('data', (chunk: Uint8Array<ArrayBufferLike>) => chunks.push(chunk));
         doc.on('end', () => {
-            const blob = new Blob(chunks, { type: 'application/pdf' });
+            const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' });
             saveAs(blob, 'example.pdf');
         });
 
@@ -128,6 +171,7 @@ export function RenderToPDF(template: Template){
                         const drawAreaHeight = cssScaleToPostScriptPoint((basePage.children[0] as HTMLElement).style.height); 
                         const add = drawAreaHeight + pageDescriptor.margin_top <= drawAreaPagesCover * pageDescriptor.height ? 0 : 1
                         pageDescriptor.margin_bottom = pageDescriptor.height*(drawAreaPagesCover+add)-pageDescriptor.margin_top-drawAreaHeight;
+
                         console.log(`Changing page format to width: ${basePage.style.width} height: ${basePage.style.height}`);
                     }else if (element.id !== "paper-container-expand"){
                         i++;
@@ -135,8 +179,9 @@ export function RenderToPDF(template: Template){
                     }
                     pdfDoc.addPage({size: [pageDescriptor.width, pageDescriptor.height], margins: {top: pageDescriptor.margin_top, bottom: pageDescriptor.margin_bottom, left: pageDescriptor.margin_left, right: pageDescriptor.margin_right}});
                     for(let i = 0; i < basePage.children[0].children.length; i++){
-                        RenderPDFPageRecursive(pdfDoc, basePage, basePage.children[0].children[i] as HTMLElement, {childCommands: new Array<DrawCommand>(), area: {left: 0, top: 0, width: 1, heigth: 1 } });
+                        RenderHTMLNodeRecursive(pdfDoc, basePage, basePage.children[0].children[i] as HTMLElement, {childCommands: new Array<DrawCommand>(), area: {left: 0, top: 0, paddingLeft: pageDescriptor.margin_left, paddingTop: pageDescriptor.margin_top,  width: pageDescriptor.width - pageDescriptor.margin_left - pageDescriptor.margin_right, heigth: pageDescriptor.height - pageDescriptor.margin_bottom - pageDescriptor.margin_top } });
                     }
+                    return [pdfDoc, true];
                     console.log("Finish Rendering a page");
                     
                 }else{
@@ -156,7 +201,7 @@ export function RenderToPDF(template: Template){
        
         return [pdfDoc, false];
     }
-    function RenderPDFPageRecursive(pdf: any, page: HTMLElement, node: HTMLElement, command: DrawCommand) : DrawCommand{
+    function RenderHTMLNodeRecursive(pdf: any, page: HTMLElement, node: HTMLElement, command: DrawCommand) : DrawCommand{
         //render current element
         //nodes that start a pdf command
         if(node instanceof HTMLParagraphElement){
@@ -170,7 +215,7 @@ export function RenderToPDF(template: Template){
             //change drawing rect
             console.log("Start a div");
             //x-offset,y-offset,width,heigth
-            pdf.rect(cssScaleToPostScriptPoint(node.style.left),cssScaleToPostScriptPoint(node.style.top),cssScaleToPostScriptPoint(node.style.width), cssScaleToPostScriptPoint(node.style.height)).stroke();
+            
         }else if (node instanceof HTMLTableElement){
             //start drawing table
         }
@@ -178,10 +223,55 @@ export function RenderToPDF(template: Template){
         else if (node instanceof HTMLBRElement){
             //start a new line
         }
+        
+        let xPos = cssScaleToPostScriptPoint(node.style.left, node, "left") + command.area.left + command.area.paddingLeft;
+        let yPos = cssScaleToPostScriptPoint(node.style.top, node, "top") + command.area.top + command.area.paddingTop;
+        const width = cssScaleToPostScriptPoint(node.style.width, node, "width");
+        const height = cssScaleToPostScriptPoint(node.style.height, node, "height");
+        //calculate transform
+        const transform = convertCSSTransformToPostScriptTransform(node);
+        if(transform.left && transform.top){
+            xPos += transform.left - command.area.paddingLeft;
+            yPos += transform.top - command.area.paddingTop;
+        }
+        console.log(`Resizing drawing area to x: ${xPos} y: ${yPos} width: ${width} height: ${height}`);
+        pdf.rect(xPos, yPos, width, height).stroke();
         //iterate over all children and render them
         for(let i = 0; i < node.children.length; i++){
-            command = RenderPDFPageRecursive(pdf, page, node.children[i] as HTMLElement, command);
+            const area = command.area;
+            area.left = xPos;
+            area.top = yPos;
+            area.width = width;
+            area.heigth = height;
+            command = RenderHTMLNodeRecursive(pdf, page, node.children[i] as HTMLElement, command);
         }
         return command;
     }
 }
+interface PostScriptTransform{
+    left?: number,
+    top?: number,
+}
+function readTransformValue(transform: string, transformOp: string) : string | null{
+    const operationIndex = transform.indexOf(transformOp);
+    if(operationIndex === -1){
+        return null;
+    }
+    return transform.substring(operationIndex + transformOp.length + 1, transform.indexOf(")", operationIndex));
+}
+
+function convertCSSTransformToPostScriptTransform(node: HTMLElement) : PostScriptTransform {
+    const ret : PostScriptTransform = {};
+   
+    const translate = readTransformValue(node.style.transform, "translate");
+    if(translate){
+        const splitTransform = translate.split(",");
+        const left = cssScaleToPostScriptPoint(splitTransform[0]);
+        const top = cssScaleToPostScriptPoint(splitTransform[1]);
+
+        ret.left = left;
+        ret.top = top;
+    }
+    return ret;
+}
+
