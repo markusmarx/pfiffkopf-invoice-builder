@@ -1,78 +1,68 @@
-import { Card, Container, createTheme, Paper, rem, Select } from "@mantine/core";
-import type { MantineThemeOverride } from "@mantine/core";
 
-const CONTAINER_SIZES: Record<string, string> = {
-  xxs: rem("200px"),
-  xs: rem("300px"),
-  sm: rem("400px"),
-  md: rem("500px"),
-  lg: rem("600px"),
-  xl: rem("1400px"),
-  xxl: rem("1600px"),
-};
+import { createTheme, rem, colorsTuple, MantineColorsTuple } from "@mantine/core";
 
-export const mantineTheme: MantineThemeOverride = createTheme({
-  /** Put your mantine theme override here */
-  fontSizes: {
-    xs: rem("12px"),
-    sm: rem("14px"),
-    md: rem("16px"),
-    lg: rem("18px"),
-    xl: rem("20px"),
-    "2xl": rem("24px"),
-    "3xl": rem("30px"),
-    "4xl": rem("36px"),
-    "5xl": rem("48px"),
+// Moderne Farbpalette
+const primaryColor: MantineColorsTuple = colorsTuple('#2563eb'); // Modernes Blau
+const accentColor: MantineColorsTuple = colorsTuple('#f59e0b'); // Warmes Amber
+
+export const mantineTheme = createTheme({
+  primaryColor: 'primary',
+  colors: {
+    primary: primaryColor,
+    accent: accentColor,
   },
-  spacing: {
-    "3xs": rem("4px"),
-    "2xs": rem("8px"),
-    xs: rem("10px"),
-    sm: rem("12px"),
-    md: rem("16px"),
-    lg: rem("20px"),
-    xl: rem("24px"),
-    "2xl": rem("28px"),
-    "3xl": rem("32px"),
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  fontFamilyMonospace: '"SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace',
+  headings: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontWeight: '600',
+    sizes: {
+      h1: { fontSize: rem(34), lineHeight: '1.3' },
+      h2: { fontSize: rem(26), lineHeight: '1.35' },
+      h3: { fontSize: rem(22), lineHeight: '1.4' },
+    },
   },
-  primaryColor: "green",
+  shadows: {
+    xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    sm: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+    md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+  },
+  radius: {
+    xs: rem(4),
+    sm: rem(6),
+    md: rem(8),
+    lg: rem(12),
+    xl: rem(16),
+  },
   components: {
-    /** Put your mantine component override here */
-    Container: Container.extend({
-      vars: (_, { size, fluid }) => ({
-        root: {
-          "--container-size": fluid
-            ? "100%"
-            : size !== undefined && size in CONTAINER_SIZES
-              ? CONTAINER_SIZES[size]
-              : rem(size),
+    AppShell: {
+      styles: {
+        header: {
+          borderBottom: '1px solid var(--mantine-color-gray-2)',
+          backgroundColor: 'var(--mantine-color-white)',
+          boxShadow: 'var(--mantine-shadow-sm)',
         },
-      }),
-    }),
-    Paper: Paper.extend({
-      defaultProps: {
-        p: "md",
-        shadow: "xl",
-        radius: "md",
-        withBorder: true,
+        navbar: {
+          borderRight: '1px solid var(--mantine-color-gray-2)',
+          backgroundColor: 'var(--mantine-color-gray-0)',
+        },
       },
-    }),
-
-    Card: Card.extend({
-      defaultProps: {
-        p: "xl",
-        shadow: "xl",
-        radius: "var(--mantine-radius-default)",
-        withBorder: true,
+    },
+    Button: {
+      styles: {
+        root: {
+          borderRadius: 'var(--mantine-radius-md)',
+          fontWeight: 500,
+        },
       },
-    }),
-    Select: Select.extend({
+    },
+    Paper: {
       defaultProps: {
-        checkIconPosition: "right",
+        shadow: 'sm',
+        radius: 'md',
       },
-    }),
-  },
-  other: {
-    style: "mantine",
+    },
   },
 });

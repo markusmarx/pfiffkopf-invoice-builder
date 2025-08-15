@@ -30,12 +30,12 @@ export interface Collumn {
   width?: number;
 }
 export interface TableRow{
-  accesorControlled: boolean;
+  accessorControlled: boolean;
   elements: Cell[];
 }
 export interface Cell {
   label: string;
-  accesor?: string;
+  accessor?: string;
   style?: React.CSSProperties;
 }
 
@@ -152,7 +152,7 @@ export function MovableTable(properties: MovableTableParams) {
   }
   function findAccesorControlledEntry(accesor: string, row: TableRow){
     for(let i = 0; i < row.elements.length; i++){
-      if(row.elements[i].accesor === accesor){
+      if(row.elements[i].accessor === accesor){
         return row.elements[i];
       }
     }
@@ -212,7 +212,7 @@ export function MovableTable(properties: MovableTableParams) {
               </thead>
               <tbody>
                 {properties.rows.map((row) => {
-                  if(!row.accesorControlled){
+                  if(!row.accessorControlled){
                     return (
                       <tr>
                         {row.elements.map((cell) => {

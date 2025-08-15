@@ -1,4 +1,4 @@
-import { FileInput, Text, TextInput } from "@mantine/core";
+import {FileInput, Group, Stack, Text, TextInput, Title} from "@mantine/core";
 import {
   DragVector,
   TableData,
@@ -46,7 +46,8 @@ export class LetterpaperSection extends TemplateTab {
     return [0, 1];
   }
 }
-export class AdressSection extends TemplateTab {
+
+export class AddressSection extends TemplateTab {
   public pos = new DragVector(100, 100);
   public constructor() {
     super();
@@ -61,7 +62,29 @@ export class AdressSection extends TemplateTab {
     };
   }
   DisplayName(): string {
-    return "Adressen";
+    return "Rechnungsadresse";
+  }
+  public PageNumbers(): number {
+    return 0;
+  }
+}
+
+export class InvoiceParamSection extends TemplateTab {
+  public pos = new DragVector(100, 100);
+  public constructor() {
+    super();
+    this.drawUI = (properties: TemplateTabDrawProperties) => {
+      return (
+        <DragVectorInput
+          template={properties.template}
+          dragVector={this.pos}
+          displayType={DragVectorDisplayType.Position}
+        />
+      );
+    };
+  }
+  DisplayName(): string {
+    return "Rechnungsdaten";
   }
   public PageNumbers(): number {
     return 0;
@@ -73,9 +96,12 @@ export class PositionsSection extends TemplateTab {
   public size = new DragVector(300, 100);
   public table = new TableData(
     [
-      { accessor: "t1", label: "Table 1" },
-      { accessor: "t2", label: "Table 2" },
-      { accessor: "t3", label: "Table 3" },
+      { accessor: "t1", label: "Pos" },
+      { accessor: "t2", label: "Beschreibung" },
+      { accessor: "t3", label: "Dauer" },
+      { accessor: "t4", label: "Einzel" },
+      { accessor: "t5", label: "Ust. %" },
+      { accessor: "t6", label: "Gesamt" },
     ],
     300
   );
@@ -114,10 +140,11 @@ export class PositionsSection extends TemplateTab {
   }
 }
 
-export class TestTemplate extends Template {
+export class PfkInvoiceTemplate extends Template {
   letterpaper?: LetterpaperSection;
-  adress?: AdressSection;
+  address?: AddressSection;
   positions?: PositionsSection;
+  invoiceParam?: InvoiceParamSection;
   DrawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
     return Array<JSX.Element>(
       <Page
@@ -129,65 +156,100 @@ export class TestTemplate extends Template {
         autoExpand={true}
         alwaysBreakToNewPage={false}
       >
-        <Text>Hello Paper</Text>
-        <Text>This is dynamic {this.letterpaper?.testText}</Text>
         <MovableBox
           className="adress"
-          enabled={prop.currentTab === "adress"}
+          enabled={prop.currentTab === "address"}
           template={this}
-          templateTab={this.adress}
-          {...this.adress?.pos.DragPos()}
+          templateTab={this.address}
+          {...this.address?.pos.DragPos()}
           width={300}
-          heigth={80}
-          id="adress"
+          heigth={150}
+          id="address"
         >
           <Text>
-            <b>Max Musterman</b>
+            <b>Musterfirma</b>
           </Text>
           <Text>
-            <b>
-              <i>Musterstraße </i>16
-            </b>
+            <b>Etage 0815</b>
           </Text>
           <Text>
-            <i>01234 Musterhausen</i>
-            <Text> - Weiter Text</Text>
+            Maxime Muster
           </Text>
+          <Text>
+            Musterstraße 16
+          </Text>
+          <Text> - Zusatz - </Text>
+          <Text>
+            01234 Musterhausen
+          </Text>
+        </MovableBox>
+        <MovableBox
+          className="adress"
+          enabled={prop.currentTab === "invoiceParam"}
+          template={this}
+          templateTab={this.invoiceParam}
+          {...this.invoiceParam?.pos.DragPos()}
+          width={300}
+          heigth={150}
+          id="invoiceParam"
+        >
+          <Stack align={"flex-end"} gap={0}>
+            <Title order={3}>
+              Rechnung
+            </Title>
+            <Group justify={"space-between"}>
+              <Stack align={"flex-end"} gap={0}>
+                <Text>Rechnungnr.:</Text>
+                <Text>Datum:</Text>
+                <Text>Leistungszeitraum:</Text>
+                <Text>&nbsp;</Text>
+              </Stack>
+              <Stack align={"flex-end"} gap={0}>
+                <Text>R2025-0001</Text>
+                <Text>31.01.2025</Text>
+                <Text>01.01.2025</Text>
+                <Text>bis 31.01.2025</Text>
+              </Stack>
+            </Group>
+          </Stack>
+        </MovableBox>
+        <MovableBox id={"salutation"} posVector={{x: 0, y: 300}} sizeVector={{x: 700, y: 100}}>
+          <Text fw={700}>Hallo Maxim Mustermann,</Text>
+          <Text>ich erlaube mir eine Rechnung für folgende Leistungen zu stellen.</Text>
         </MovableBox>
         <MovableTable
           className="positions"
           enabled={prop.currentTab === "positions"}
           template={this}
+          disableMovement={true}
           templateTab={this.positions}
-          {...this.positions?.pos.DragPos()}
-          {...this.positions?.size.DragSize()}
+          x={this.positions?.pos.x}
+          y={this.positions?.pos.y}
+          width={this.positions?.size.x}
+          heigth={this.positions?.size.y}
           id="positions"
-          enableResizing={true}
+          enableResizing={false}
           cellStyle={{ border: "3px solid" }}
           headerStyle={{ border: "3px solid" }}
           {...(this.positions?.table.DynamicTable() || { header: [] })}
           rows={[
             {
               elements: [
-                { label: "Text 1", accesor: "t1" },
-                { label: "Text 2", accesor: "t2" },
-                { label: "Text 3", accesor: "t3" },
+                { label: "1", accessor: "t1" },
+                { label: "Termin Beschreibung", accessor: "t2" },
+                { label: "2 x 45 min", accessor: "t3" },
+                { label: "50,00€", accessor: "t4" },
+                { label: "0,00%", accessor: "t5" },
+                { label: "100,00€", accessor: "t6" },
               ],
-              accesorControlled: true,
+              accessorControlled: true,
             },
-            {
-              elements: [
-                { label: "Undynamisch Text 1" },
-                { label: "Undynamisch Text 2" },
-                { label: "Undynamisch Text 3" },
-              ],
-              accesorControlled: false,
-            },
+
           ]}
         />
-      </Page>,
-      <Page format={PageFormat.A6} borderBottom={1}>
-        <Text>Secret Page</Text>
+        <MovableBox id={"salutation"} posVector={{x: 0, y: 600}} sizeVector={{x: 700, y: 100}}>
+          <Text>Vielen Dank für die gute Zusammenarbeit!</Text>
+        </MovableBox>
       </Page>
     );
   }
