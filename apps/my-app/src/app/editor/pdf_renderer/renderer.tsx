@@ -10,10 +10,10 @@ interface DrawingAreaContext{
     width: number,
     heigth: number,
     paddingTop: number,
-    paddingLeft: number
+    paddingLeft: number,
+    position: string
 }
 interface DrawCommand{
-    area: DrawingAreaContext,
     childCommands: Array<DrawCommand>
 }
 interface DrawTextCommand extends DrawCommand{
@@ -39,21 +39,26 @@ function getCmInPixels(): number {
 const cmToPixels = getCmInPixels();
 
 
-function cssScaleToPostScriptPoint(value: string, self?: HTMLElement | null, name?: string) : number{
+function cssScaleToPostScriptPoint(value: string, self?: HTMLElement | null, name?: string) : number| null{
     function percentRecursive(node: HTMLElement, read: string){
         const percent = Number(read.substring(0, read.length - 1)) / 100;
-        console.log(read + " " + percent);
+        //console.log(read + " " + percent);
          if(!node || !name || !node.parentElement)
             return 0;
-        return percent * cssScaleToPostScriptPointWithCallback(node.parentElement.style.getPropertyValue(name), node.parentElement, percentRecursive);
+        return percent * (cssScaleToPostScriptPointWithCallback(node.parentElement.style.getPropertyValue(name), node.parentElement, percentRecursive) || 1);
     }
     
     return cssScaleToPostScriptPointWithCallback(value, self, percentRecursive);
 }
-function cssScaleToPostScriptPointWithCallback(value: string, self?: HTMLElement | null, getParrentSize?: (node: HTMLElement, read: string) => number) : number{
+function cssPixelToPostScriptPoint(value: number) : number{
+    // eslint-disable-next-line no-loss-of-precision
+    return Number(((value / cmToPixels) * 5.6692857142857142857142857142857 * 5).toFixed(2));
+}
+
+function cssScaleToPostScriptPointWithCallback(value: string, self?: HTMLElement | null, getParrentSize?: (node: HTMLElement, read: string) => number) : number | null{
     const without_unit = value.substring(0, value.length - 2);
     if (!value){
-        return 0;
+        return null;
     }
     else if(value.endsWith("cm")){
         const cmNumber = Number(without_unit);
@@ -82,16 +87,10 @@ function cssScaleToPostScriptPointWithCallback(value: string, self?: HTMLElement
         if(self && getParrentSize)
             return getParrentSize(self, value);
         else 
-            return 0;
-
-        /*const percent = Number(without_unit) / 100;
-        if(!self || !name || !self.parentElement)
-            return 0;
-        return percent * cssScaleToPostScriptPoint(self.parentElement.style.getPropertyValue(name), self.parentElement, name);*/
-
+            return null;
     }
     console.log(`Can't convert ${value} to PostScript Point`);
-    return NaN;
+    return null;
 }
 
 export function RenderToPDF(template: Template){
@@ -152,11 +151,11 @@ export function RenderToPDF(template: Template){
                  if(element){
                     if(element.id === "real_paper"){
                         basePage = parrent?.children[i] as HTMLElement;
-                        pageDescriptor.width = cssScaleToPostScriptPoint(basePage.style.width);
-                        pageDescriptor.height = cssScaleToPostScriptPoint(basePage.style.height);
-                        pageDescriptor.margin_left = cssScaleToPostScriptPoint(basePage.style.paddingLeft);
-                        pageDescriptor.margin_right = cssScaleToPostScriptPoint(basePage.style.paddingRight);
-                        pageDescriptor.margin_top = cssScaleToPostScriptPoint(basePage.style.paddingTop);
+                        pageDescriptor.width = cssScaleToPostScriptPoint(basePage.style.width) || 0;
+                        pageDescriptor.height = cssScaleToPostScriptPoint(basePage.style.height) || 0;
+                        pageDescriptor.margin_left = cssScaleToPostScriptPoint(basePage.style.paddingLeft) || 0;
+                        pageDescriptor.margin_right = cssScaleToPostScriptPoint(basePage.style.paddingRight) || 0;
+                        pageDescriptor.margin_top = cssScaleToPostScriptPoint(basePage.style.paddingTop) || 0;
                         //TODO: Reconstruct margin bottom
                         let counter = i+1;
                         while (counter < (parrent?.children.length || 0))
@@ -168,7 +167,7 @@ export function RenderToPDF(template: Template){
                             counter++;
                         }
                         const drawAreaPagesCover = counter - i;
-                        const drawAreaHeight = cssScaleToPostScriptPoint((basePage.children[0] as HTMLElement).style.height); 
+                        const drawAreaHeight = cssScaleToPostScriptPoint((basePage.children[0] as HTMLElement).style.height) || 0; 
                         const add = drawAreaHeight + pageDescriptor.margin_top <= drawAreaPagesCover * pageDescriptor.height ? 0 : 1
                         pageDescriptor.margin_bottom = pageDescriptor.height*(drawAreaPagesCover+add)-pageDescriptor.margin_top-drawAreaHeight;
 
@@ -179,7 +178,7 @@ export function RenderToPDF(template: Template){
                     }
                     pdfDoc.addPage({size: [pageDescriptor.width, pageDescriptor.height], margins: {top: pageDescriptor.margin_top, bottom: pageDescriptor.margin_bottom, left: pageDescriptor.margin_left, right: pageDescriptor.margin_right}});
                     for(let i = 0; i < basePage.children[0].children.length; i++){
-                        RenderHTMLNodeRecursive(pdfDoc, basePage, basePage.children[0].children[i] as HTMLElement, {childCommands: new Array<DrawCommand>(), area: {left: 0, top: 0, paddingLeft: pageDescriptor.margin_left, paddingTop: pageDescriptor.margin_top,  width: pageDescriptor.width - pageDescriptor.margin_left - pageDescriptor.margin_right, heigth: pageDescriptor.height - pageDescriptor.margin_bottom - pageDescriptor.margin_top } });
+                        RenderHTMLNodeRecursive(pdfDoc, basePage, basePage.children[0].children[i] as HTMLElement, {childCommands: new Array<DrawCommand>()}, 0,0, pageDescriptor.margin_left, pageDescriptor.margin_top);
                     }
                     return [pdfDoc, true];
                     console.log("Finish Rendering a page");
@@ -201,7 +200,7 @@ export function RenderToPDF(template: Template){
        
         return [pdfDoc, false];
     }
-    function RenderHTMLNodeRecursive(pdf: any, page: HTMLElement, node: HTMLElement, command: DrawCommand) : DrawCommand{
+    function RenderHTMLNodeRecursive(pdf: any, page: HTMLElement, node: HTMLElement, command: DrawCommand, xOffset: number, yOffset: number, paddingLeft: number, paddingTop: number) : DrawCommand{
         //render current element
         //nodes that start a pdf command
         if(node instanceof HTMLParagraphElement){
@@ -212,9 +211,8 @@ export function RenderToPDF(template: Template){
             //insert link
             console.log("Start a anchor");
         }else if(node instanceof HTMLDivElement){
-            //change drawing rect
+            //draw if required a box
             console.log("Start a div");
-            //x-offset,y-offset,width,heigth
             
         }else if (node instanceof HTMLTableElement){
             //start drawing table
@@ -223,27 +221,45 @@ export function RenderToPDF(template: Template){
         else if (node instanceof HTMLBRElement){
             //start a new line
         }
-        
-        let xPos = cssScaleToPostScriptPoint(node.style.left, node, "left") + command.area.left + command.area.paddingLeft;
-        let yPos = cssScaleToPostScriptPoint(node.style.top, node, "top") + command.area.top + command.area.paddingTop;
-        const width = cssScaleToPostScriptPoint(node.style.width, node, "width");
-        const height = cssScaleToPostScriptPoint(node.style.height, node, "height");
-        //calculate transform
+        const computedStyle = getComputedStyle(node);
+
+        let xPos = cssPixelToPostScriptPoint(node.offsetLeft) + xOffset; 
+        let yPos = cssPixelToPostScriptPoint(node.offsetTop) +  yOffset; 
+
         const transform = convertCSSTransformToPostScriptTransform(node);
-        if(transform.left && transform.top){
-            xPos += transform.left - command.area.paddingLeft;
-            yPos += transform.top - command.area.paddingTop;
+        
+
+        const positionCss = computedStyle.getPropertyValue("position");
+        switch(positionCss){
+            case "static":
+                break;
+            case "absolute":
+                xPos = cssScaleToPostScriptPoint(node.style.left, node, "left") || 0 + xOffset + paddingLeft;
+                yPos = cssScaleToPostScriptPoint(node.style.top, node, "top") || 0 + yOffset + paddingTop;
+                if(transform.left && transform.top){
+                    xPos += transform.left - paddingLeft;
+                    yPos += transform.top - paddingTop;
+                }
+                xOffset = xPos;
+                yOffset = yPos;
+                break;
+            case "relative":
+                xPos += cssScaleToPostScriptPoint(computedStyle.left, node, "left") || 0 + (transform.left || 0);
+                yPos += cssScaleToPostScriptPoint(computedStyle.top, node, "top") || 0 + (transform.left || 0);
+                break;
+            default:
+                console.log(`Unsuported position ${positionCss}`);
+                break;
         }
-        console.log(`Resizing drawing area to x: ${xPos} y: ${yPos} width: ${width} height: ${height}`);
+
+        const width = cssPixelToPostScriptPoint(node.offsetWidth);
+        const height = cssPixelToPostScriptPoint(node.offsetHeight);
+
         pdf.rect(xPos, yPos, width, height).stroke();
         //iterate over all children and render them
         for(let i = 0; i < node.children.length; i++){
-            const area = command.area;
-            area.left = xPos;
-            area.top = yPos;
-            area.width = width;
-            area.heigth = height;
-            command = RenderHTMLNodeRecursive(pdf, page, node.children[i] as HTMLElement, command);
+
+            command = RenderHTMLNodeRecursive(pdf, page, node.children[i] as HTMLElement, command, xOffset, yOffset, 0, 0);
         }
         return command;
     }
@@ -269,8 +285,8 @@ function convertCSSTransformToPostScriptTransform(node: HTMLElement) : PostScrip
         const left = cssScaleToPostScriptPoint(splitTransform[0]);
         const top = cssScaleToPostScriptPoint(splitTransform[1]);
 
-        ret.left = left;
-        ret.top = top;
+        ret.left = left || 0;
+        ret.top = top || 0;
     }
     return ret;
 }
