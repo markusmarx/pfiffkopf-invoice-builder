@@ -3,6 +3,7 @@ import { Template } from "../types";
 import { MantineProvider } from "@mantine/core";
 import PDFDocument from 'pdfkit/js/pdfkit.standalone.js';
 import { saveAs } from 'file-saver';
+import { stroke, underline } from "pdfkit";
 
 interface DrawingAreaContext{
     left: number,
@@ -14,14 +15,87 @@ interface DrawingAreaContext{
     position: string
 }
 interface DrawCommand{
-    childCommands: Array<DrawCommand>
+    childs : DrawCommand[];
+    Draw(pdf:any, group: DrawStartCommand | null) : void;
 }
-interface DrawTextCommand extends DrawCommand{
-    bold: boolean,
-    underline: boolean
+interface DrawStartCommand{
+    width: number;
+    heigth: number;
+    x: number;
+    y: number;
+    subCommandCalls: number;
 }
-interface DrawEmptyCommand extends DrawCommand{
-    marker: DrawingAreaContext;
+class SplitCommand implements DrawCommand{
+    childs : DrawCommand[];
+    typeIdentifierSplitCommand  = true;
+    constructor() {
+        this.childs = new Array<DrawTextCommand>(0);
+    }
+    Draw(pdf: any, group: DrawStartCommand | null): void {
+        if(group){
+            group.subCommandCalls--;
+        }
+        this.childs.forEach(element => {
+            element.Draw(pdf, group);
+        });
+    }
+}
+class DrawTextCommand implements DrawCommand{
+    childs : DrawCommand[];    
+
+    //family and size
+    fontSize = 11;
+    font = "Arial";
+    //align
+    textAllign = "left";
+    //decoration
+    color = "black";
+    text: string;
+    bold = false; //TODO: We need to change the font for that
+    underline = false;
+    strike = false;
+    constructor(text: string){
+        this.childs = new Array<DrawTextCommand>(0);
+        this.text = text;
+    }
+    Draw(pdf: any, group: DrawStartCommand | null): void {
+        if(group){
+            group.subCommandCalls--;
+        }
+
+        if(group instanceof StartDrawTextCommand){
+            const area = group as StartDrawTextCommand;
+            pdf.fontSize(this.fontSize);
+            //pdf.font()
+            pdf.text(this.text, area.x, area.y, {width: area.width, height: area.heigth, continued: area.subCommandCalls !== 0, stroke: this.bold, underline: this.underline, strike: this.strike});
+        }
+        //
+        this.childs.forEach(element => {
+            element.Draw(pdf, group);
+        });
+    }
+}
+class StartDrawTextCommand implements DrawCommand, DrawStartCommand{
+    childs : DrawCommand[];
+    typeIdentifierStartDrawTextCommand  = true;
+    width: number;
+    heigth: number;
+    x: number;
+    y: number;
+    subCommandCalls = 0;
+    constructor(x: number, y: number, width: number, heigth: number) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.heigth = heigth;
+        this.childs = new Array<DrawTextCommand>(0);
+    }
+    Draw(pdf: any, group: DrawStartCommand | null): void {
+        //
+        this.childs.forEach(element => {
+            element.Draw(pdf, this);
+        });
+    }
 }
 function getCmInPixels(): number {
   const div = document.createElement("div");
@@ -42,7 +116,6 @@ const cmToPixels = getCmInPixels();
 function cssScaleToPostScriptPoint(value: string, self?: HTMLElement | null, name?: string) : number| null{
     function percentRecursive(node: HTMLElement, read: string){
         const percent = Number(read.substring(0, read.length - 1)) / 100;
-        //console.log(read + " " + percent);
          if(!node || !name || !node.parentElement)
             return 0;
         return percent * (cssScaleToPostScriptPointWithCallback(node.parentElement.style.getPropertyValue(name), node.parentElement, percentRecursive) || 1);
@@ -128,7 +201,8 @@ export function RenderToPDF(template: Template){
     const root = createRoot(container);
     root.render(<MantineProvider>
             {template.DrawPaper({
-                currentTab: "RENDER_ENGINE"
+                currentTab: "RENDER_ENGINE",
+                pdfRenderer: true
             })}
         </MantineProvider>);
 
@@ -151,12 +225,12 @@ export function RenderToPDF(template: Template){
                  if(element){
                     if(element.id === "real_paper"){
                         basePage = parrent?.children[i] as HTMLElement;
-                        pageDescriptor.width = cssScaleToPostScriptPoint(basePage.style.width) || 0;
-                        pageDescriptor.height = cssScaleToPostScriptPoint(basePage.style.height) || 0;
+                        pageDescriptor.width = cssScaleToPostScriptPoint(basePage.style.width) || 1;
+                        pageDescriptor.height = cssScaleToPostScriptPoint(basePage.style.height) || 1;
                         pageDescriptor.margin_left = cssScaleToPostScriptPoint(basePage.style.paddingLeft) || 0;
                         pageDescriptor.margin_right = cssScaleToPostScriptPoint(basePage.style.paddingRight) || 0;
                         pageDescriptor.margin_top = cssScaleToPostScriptPoint(basePage.style.paddingTop) || 0;
-                        //TODO: Reconstruct margin bottom
+                        //Reconstruct margin bottom
                         let counter = i+1;
                         while (counter < (parrent?.children.length || 0))
                         {
@@ -177,10 +251,23 @@ export function RenderToPDF(template: Template){
                         continue;
                     }
                     pdfDoc.addPage({size: [pageDescriptor.width, pageDescriptor.height], margins: {top: pageDescriptor.margin_top, bottom: pageDescriptor.margin_bottom, left: pageDescriptor.margin_left, right: pageDescriptor.margin_right}});
-                    for(let i = 0; i < basePage.children[0].children.length; i++){
-                        RenderHTMLNodeRecursive(pdfDoc, basePage, basePage.children[0].children[i] as HTMLElement, {childCommands: new Array<DrawCommand>()}, 0,0, pageDescriptor.margin_left, pageDescriptor.margin_top);
+                    let elementCounter = 0;
+                    const containerElement = basePage.children[0];
+                    const command = new SplitCommand();
+                    for(let i = 0; i < containerElement.childNodes.length; i++){
+                        const childNode = containerElement.childNodes.item(i);
+                        let childElement = undefined;
+                        if(childNode.nodeName === "#text"){
+                            //just render text as child
+                        }else{
+                            //get a html element
+                            childElement = containerElement.children[elementCounter];
+                            elementCounter++;
+                        }
+                        command.childs.push(RenderHTMLNodeRecursive(pdfDoc, basePage, 0,0, pageDescriptor.margin_left, pageDescriptor.margin_top, childNode, containerElement.children[i] as HTMLElement, childElement as HTMLElement));
                     }
-                    return [pdfDoc, true];
+                    console.log(command);
+                    command.Draw(pdfDoc, null);
                     console.log("Finish Rendering a page");
                     
                 }else{
@@ -200,66 +287,115 @@ export function RenderToPDF(template: Template){
        
         return [pdfDoc, false];
     }
-    function RenderHTMLNodeRecursive(pdf: any, page: HTMLElement, node: HTMLElement, command: DrawCommand, xOffset: number, yOffset: number, paddingLeft: number, paddingTop: number) : DrawCommand{
-        //render current element
-        //nodes that start a pdf command
-        if(node instanceof HTMLParagraphElement){
-            //insert text
-            const paragraph = node as HTMLParagraphElement;
-            console.log("Start a paragraph");
-        }else if (node instanceof HTMLAnchorElement){
-            //insert link
-            console.log("Start a anchor");
-        }else if(node instanceof HTMLDivElement){
-            //draw if required a box
-            console.log("Start a div");
+    function GenerateTextCommandFromCSS(style: CSSStyleDeclaration, text: string | null) : DrawTextCommand{
+        console.log(`Draw Text ${text}`);
+        console.log(style.fontSize);
+        const command = new DrawTextCommand(text || "Error");
+        command.fontSize = Number(style.fontSize.substring(0, style.fontSize.length - 2));
+        command.color = style.color;
+        command.underline = style.textDecoration.includes("underline");
+        command.strike = style.textDecoration.includes("line-through");
+        command.bold = style.fontWeight === "bold" || Number(style.fontWeight) >= 700;
+        return command;
+    }
+    function RenderHTMLNodeRecursive(pdf: any, page: HTMLElement, xOffset: number, yOffset: number, paddingLeft: number, paddingTop: number, node:ChildNode, parrent: HTMLElement, element?: HTMLElement) : DrawCommand{
+        //read/calculate position and size from html dom
+        let command : DrawCommand = new SplitCommand();
+
+        if(element){
+            const computedStyle = getComputedStyle(element);
+
+            let xPos = cssPixelToPostScriptPoint(element.offsetLeft) + xOffset; 
+            let yPos = cssPixelToPostScriptPoint(element.offsetTop) +  yOffset; 
+
+            const transform = convertCSSTransformToPostScriptTransform(element);
             
-        }else if (node instanceof HTMLTableElement){
-            //start drawing table
-        }
-        //nodes who alter a pdf command
-        else if (node instanceof HTMLBRElement){
-            //start a new line
-        }
-        const computedStyle = getComputedStyle(node);
 
-        let xPos = cssPixelToPostScriptPoint(node.offsetLeft) + xOffset; 
-        let yPos = cssPixelToPostScriptPoint(node.offsetTop) +  yOffset; 
+            const positionCss = computedStyle.getPropertyValue("position");
+            switch(positionCss){
+                case "static":
+                    break;
+                case "absolute":
+                    xPos = cssScaleToPostScriptPoint(element.style.left, element, "left") || 0 + xOffset + paddingLeft;
+                    yPos = cssScaleToPostScriptPoint(element.style.top, element, "top") || 0 + yOffset + paddingTop;
+                    if(transform.left && transform.top){
+                        xPos += transform.left - paddingLeft;
+                        yPos += transform.top - paddingTop;
+                    }
+                    xOffset = xPos;
+                    yOffset = yPos;
+                    break;
+                case "relative":
+                    xPos += cssScaleToPostScriptPoint(computedStyle.left, element, "left") || 0 + (transform.left || 0);
+                    yPos += cssScaleToPostScriptPoint(computedStyle.top, element, "top") || 0 + (transform.left || 0);
+                    break;
+                default:
+                    console.log(`Unsuported position ${positionCss}`);
+                    break;
+            }
 
-        const transform = convertCSSTransformToPostScriptTransform(node);
-        
+            const width = cssPixelToPostScriptPoint(element.offsetWidth);
+            const height = cssPixelToPostScriptPoint(element.offsetHeight);
+            
+            //pdf.rect(xPos, yPos, width, height).stroke();
+            //interpret html node type to define what to render:
+            //nodes that start a pdf command
+            if(element instanceof HTMLParagraphElement){
+                //insert text
+                command = new StartDrawTextCommand(xPos, yPos, width, height);
+            }else if(element instanceof HTMLHeadingElement){
+                command = new StartDrawTextCommand(xPos, yPos, width, height);
+            }
+            else if (element instanceof HTMLAnchorElement){
+                const anchor = element as HTMLAnchorElement;
+                command = new StartDrawTextCommand(xPos, yPos, width, height);
+            }else if(element instanceof HTMLDivElement){
+                //draw if required a box
+                
+            }else if (element instanceof HTMLTableElement){
+                //start drawing table
+            }
+            //nodes who alter a pdf command
+            else if (element instanceof HTMLBRElement){
+                //start a new line
+            }
 
-        const positionCss = computedStyle.getPropertyValue("position");
-        switch(positionCss){
-            case "static":
-                break;
-            case "absolute":
-                xPos = cssScaleToPostScriptPoint(node.style.left, node, "left") || 0 + xOffset + paddingLeft;
-                yPos = cssScaleToPostScriptPoint(node.style.top, node, "top") || 0 + yOffset + paddingTop;
-                if(transform.left && transform.top){
-                    xPos += transform.left - paddingLeft;
-                    yPos += transform.top - paddingTop;
+            //iterate over all childs recursive
+            let elementCounter = 0;
+            //iterate over all children and render them
+            for(let i = 0; i < element.childNodes.length; i++){
+                const childNode = element.childNodes.item(i);
+                let childElement = undefined;
+                if(childNode.nodeName === "#text"){
+                    //just render text as child
+                }else{
+                    //get a html element
+                    childElement = element.children[elementCounter];
+                    elementCounter++;
                 }
-                xOffset = xPos;
-                yOffset = yPos;
-                break;
-            case "relative":
-                xPos += cssScaleToPostScriptPoint(computedStyle.left, node, "left") || 0 + (transform.left || 0);
-                yPos += cssScaleToPostScriptPoint(computedStyle.top, node, "top") || 0 + (transform.left || 0);
-                break;
-            default:
-                console.log(`Unsuported position ${positionCss}`);
-                break;
+                const childCommand = RenderHTMLNodeRecursive(pdf, page, xOffset, yOffset, 0, 0, childNode, element, childElement as HTMLElement);
+                if(command){
+                    command.childs.push(childCommand);
+                }
+            }
+        }else{
+            if(node.nodeName === "#text"){
+                //draw a text
+                return GenerateTextCommandFromCSS(getComputedStyle(parrent), node.textContent);
+            }else{
+                console.log(`Unsupported node ${node}`);
+            }
         }
-
-        const width = cssPixelToPostScriptPoint(node.offsetWidth);
-        const height = cssPixelToPostScriptPoint(node.offsetHeight);
-
-        pdf.rect(xPos, yPos, width, height).stroke();
-        //iterate over all children and render them
-        for(let i = 0; i < node.children.length; i++){
-
-            command = RenderHTMLNodeRecursive(pdf, page, node.children[i] as HTMLElement, command, xOffset, yOffset, 0, 0);
+        if(command instanceof StartDrawTextCommand){
+            let childCount = 0;
+            function recursiveCountChildren(command: DrawCommand){
+                command.childs.forEach((com) => {
+                    childCount++;
+                    recursiveCountChildren(com);
+                });
+            }
+            recursiveCountChildren(command);
+            command.subCommandCalls = childCount;
         }
         return command;
     }

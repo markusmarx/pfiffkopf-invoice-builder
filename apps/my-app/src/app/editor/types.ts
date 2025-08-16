@@ -2,6 +2,7 @@ import {JSX, ReactNode} from "react";
 
 export interface TemplateDrawProperties {
   currentTab: string,
+  pdfRenderer: boolean,
   templateValuesChanged?: () => void
 }
 

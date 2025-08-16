@@ -77,6 +77,7 @@ export function DefaultView(properties: ViewProperties)
     
     const pages = properties.template.DrawPaper({
         currentTab: currentSelectedPropertiesTab !== undefined ? currentSelectedPropertiesTab : "undefined",
+        pdfRenderer: true,
         templateValuesChanged: () => 
         {
             if(properties.onValueChanged){

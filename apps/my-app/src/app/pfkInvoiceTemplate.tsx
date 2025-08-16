@@ -153,7 +153,7 @@ export class PfkInvoiceTemplate extends Template {
         borderBottom={1}
         borderLeft={1}
         borderRight={1}
-        autoExpand={true}
+        autoExpand={prop.pdfRenderer}
         alwaysBreakToNewPage={false}
       >
         <MovableBox
@@ -180,7 +180,7 @@ export class PfkInvoiceTemplate extends Template {
           </Text>
           <Text> - Zusatz - </Text>
           <Text>
-            01234 Musterhausen
+            012<b>34</b> Musterhausen
           </Text>
         </MovableBox>
         <MovableBox
