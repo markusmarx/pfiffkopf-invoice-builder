@@ -1,6 +1,7 @@
 {
   "name": "pfiffkopf-invoice-builder",
   "packageManager": "yarn@4.9.2",
+  "type": "module",
   "scripts": {
     "dev": "nx run my-app:serve"
   },
