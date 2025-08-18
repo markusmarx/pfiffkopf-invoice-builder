@@ -169,7 +169,7 @@ export class PfkInvoiceTemplate extends Template {
         borderRight={1}
         autoExpand={prop.pdfRenderer}
         alwaysBreakToNewPage={false}
-        style={{fontFamily: this.letterpaper?.font.Get()}}
+        style={{fontFamily: this.letterpaper?.font.Family()}}
       >
         <MovableBox
           className="adress"

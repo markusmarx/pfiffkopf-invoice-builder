@@ -1,4 +1,4 @@
-import { Select, Group } from "@mantine/core";
+import { Select, Group, Text, Button } from "@mantine/core";
 import { FontSelector, Template } from "../types";
 import { IconCheck } from "@tabler/icons-react";
 import { useReducer, useRef } from "react";
@@ -36,7 +36,7 @@ export function FontSelectorUI(properties: FontSelectorUIProps){
             label="Schriftart auswählen"
             data={properties.allowCustomFontUpload ? [...properties.fontSelector.GetList(), {value: "new", label: "Neue Importieren"}] : properties.fontSelector.GetList()}
             searchable
-            value={properties.fontSelector.Get()}
+            value={properties.fontSelector.Family()}
             onChange={(value) => {
                 if(value !== "new"){
                     properties.fontSelector.Set(value || "Arial");
@@ -49,11 +49,16 @@ export function FontSelectorUI(properties: FontSelectorUIProps){
                 }
             }}
             renderOption={({option, checked}) => (
-                <Group style={{fontFamily: option.value}} flex="1" gap="xs">
-                    {option.label}
-                    {checked && <IconCheck style={{ marginInlineStart: 'auto' }} />}
-                </Group>
-        )}
+                <>
+                    <Group justify="flex-start" flex="1" gap="xs">
+                        <Text  style={{fontFamily: option.value}}>{option.label}</Text>
+                    </Group>
+                    <Group>
+                        <Button variant="subtle">...</Button>
+                    </Group>
+                </>
+            )}
+            styles={{input: {fontFamily: properties.fontSelector.Family()}}}
         />
     </>);
 }

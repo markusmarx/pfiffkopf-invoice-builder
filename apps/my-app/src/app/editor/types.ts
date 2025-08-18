@@ -212,7 +212,7 @@ export class FontSelector {
     this.storage = storage;
     this.fontFace = storage.GetDefault();
   }
-  public Get(): string {
+  public Family(): string {
     return this.fontFace;
   }
   public Set(font: string) {
@@ -264,7 +264,7 @@ export class FontStorage {
     if(this.fonts.find(x => x.value === id)){
       return Promise.reject("Font already upploaded");
     }
-    
+
     const fontFace = new FontFace(displayName, `url(${fontURL})`);
     console.log(fontFace);
     try {
