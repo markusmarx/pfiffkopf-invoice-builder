@@ -4,6 +4,7 @@ import { MantineProvider } from "@mantine/core";
 import PDFDocument from 'pdfkit/js/pdfkit.standalone.js';
 import { saveAs } from 'file-saver';
 import { stroke, underline } from "pdfkit";
+import { URL } from "url";
 
 interface DrawingAreaContext{
     left: number,
@@ -66,7 +67,7 @@ class DrawTextCommand implements DrawCommand{
         if(group instanceof StartDrawTextCommand){
             const area = group as StartDrawTextCommand;
             pdf.fontSize(this.fontSize);
-            //pdf.font()
+            //pdf.font(this.font);
             pdf.text(this.text, area.x, area.y, {width: area.width, height: area.heigth, continued: area.subCommandCalls !== 0, underline: this.underline, strike: this.strike});
         }
         //
@@ -183,7 +184,12 @@ export function RenderToPDF(template: Template){
             const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' });
             saveAs(blob, 'example.pdf');
         });
-
+        //register fonts
+        const fonts = template.GetFontStorage().List();
+        for(let i = 0; i < fonts.length; i++){
+         //   doc.registerFont(fonts[i].label, fonts[i].url);
+        }
+        //render html to pdf
         for(let i = 0; i < container.children.length; i++){
            const ret = recursiveFindRotAndCreatePages(container.children.item(i), container, i, doc);
            doc = ret[0];
@@ -257,19 +263,16 @@ export function RenderToPDF(template: Template){
                     for(let i = 0; i < containerElement.childNodes.length; i++){
                         const childNode = containerElement.childNodes.item(i);
                         let childElement = undefined;
-                        if(childNode.nodeName === "#text"){
-                            //just render text as child
-                        }else{
-                            //get a html element
+                        if(childNode.nodeName !== "#text"){
                             childElement = containerElement.children[elementCounter];
                             elementCounter++;
+                            //just render text as child
                         }
                         command.childs.push(RenderHTMLNodeRecursive(pdfDoc, basePage, 0,0, pageDescriptor.margin_left, pageDescriptor.margin_top, childNode, containerElement.children[i] as HTMLElement, childElement as HTMLElement));
                     }
                     console.log(command);
                     command.Draw(pdfDoc, null);
-                    console.log("Finish Rendering a page");
-                    
+                    console.log("Finished Rendering a page");
                 }else{
                     break;
                 }
@@ -294,6 +297,7 @@ export function RenderToPDF(template: Template){
         command.fontSize = Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96);
         console.log(command.fontSize);
         command.color = style.color;
+        command.font = style.fontFamily;
         command.underline = style.textDecoration.includes("underline");
         command.strike = style.textDecoration.includes("line-through");
         command.bold = style.fontWeight === "bold" || Number(style.fontWeight) >= 700;
@@ -311,7 +315,6 @@ export function RenderToPDF(template: Template){
 
             const transform = convertCSSTransformToPostScriptTransform(element);
             
-
             const positionCss = computedStyle.getPropertyValue("position");
             switch(positionCss){
                 case "static":
@@ -367,10 +370,8 @@ export function RenderToPDF(template: Template){
             for(let i = 0; i < element.childNodes.length; i++){
                 const childNode = element.childNodes.item(i);
                 let childElement = undefined;
-                if(childNode.nodeName === "#text"){
+                if(childNode.nodeName !== "#text"){
                     //just render text as child
-                }else{
-                    //get a html element
                     childElement = element.children[elementCounter];
                     elementCounter++;
                 }
@@ -412,7 +413,6 @@ function readTransformValue(transform: string, transformOp: string) : string | n
     }
     return transform.substring(operationIndex + transformOp.length + 1, transform.indexOf(")", operationIndex));
 }
-
 function convertCSSTransformToPostScriptTransform(node: HTMLElement) : PostScriptTransform {
     const ret : PostScriptTransform = {};
    
@@ -427,4 +427,3 @@ function convertCSSTransformToPostScriptTransform(node: HTMLElement) : PostScrip
     }
     return ret;
 }
-

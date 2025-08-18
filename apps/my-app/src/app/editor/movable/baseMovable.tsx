@@ -16,7 +16,7 @@ export function BaseMovableBox(properties: RenderableBlockParams) {
           height: `${properties.sizeVector ? properties.sizeVector.y : properties.heigth || 100}px`,
         }}
         position={{ x:  properties.posVector ? properties.posVector.x : properties.x || 0, y: properties.posVector ? properties.posVector.y : properties.y || 0 }}
-        disableDragging={(properties.enabled && properties.disableMovement)}
+        disableDragging={!properties.enabled || (properties.disableMovement && !properties.enabled)}//(!properties.enabled && properties.disableMovement) || properties.disableMovement}
         enableResizing={(properties.enabled && properties.enableResizing) || false}
         onDragStop={(e, d) => {
           if (properties.onSubmitPositionChange)

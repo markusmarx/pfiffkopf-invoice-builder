@@ -1,6 +1,5 @@
 import { Select, Group, Text, Button } from "@mantine/core";
 import { FontSelector, Template } from "../types";
-import { IconCheck } from "@tabler/icons-react";
 import { useReducer, useRef } from "react";
 import FontName from 'fontname';
 

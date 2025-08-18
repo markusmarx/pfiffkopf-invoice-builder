@@ -204,7 +204,7 @@ export function MovableTable(properties: MovableTableParams) {
                         col={value}
                         onResize={handleResize}
                         style={properties.headerStyle}
-                        dragging={idx !== properties.header.length && properties.enabled ? properties.enabled : true}
+                        dragging={idx !== properties.header.length && (properties.enabled !== undefined ? properties.enabled : true)}
                       />
                     );
                   })}

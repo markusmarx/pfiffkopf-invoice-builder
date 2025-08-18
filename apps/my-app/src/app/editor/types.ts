@@ -203,7 +203,7 @@ export class DragVector {
 export interface FontStorageEntry {
   value: string;
   label: string;
-  customUpload?: FontFace;
+  url: string;
 }
 export class FontSelector {
   private fontFace: string;
@@ -251,6 +251,7 @@ export class FontStorage {
     this.fonts.push({
       value: SYSTEM_FONT,
       label: SYSTEM_FONT,
+      url: "fonts/ARIAL.TTF"
     });
   }
   public GetDefault(): string {
@@ -270,7 +271,7 @@ export class FontStorage {
     try {
       await fontFace.load();
       await (document.fonts as any).add(fontFace);
-      this.fonts.push({ value: id, label: displayName });
+      this.fonts.push({ value: id, label: displayName, url: fontURL });
       return Promise.resolve(id);
     } catch (error) {
       console.error("An error is occured!");
