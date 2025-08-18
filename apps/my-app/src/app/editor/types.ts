@@ -219,8 +219,8 @@ export class FontSelector {
     this.fontFace = font;
   }
   //TODO: Rewrite as promise
-  public TryUpload(file: File, name?: string, onSucces?: (fontName: string) => void, onFail?: (error: Error) => void) {
-    const promise = this.storage.LoadCustomFontFromFile(file, name);
+  public TryUpload(file: File, displayName?: string, id?: string, onSucces?: (fontName: string) => void, onFail?: (error: Error) => void) {
+    const promise = this.storage.LoadCustomFontFromFile(file, displayName, id);
     promise.then(
       (value) => {
         this.fontFace = value;
@@ -260,14 +260,18 @@ export class FontStorage {
   public List() {
     return this.fonts;
   }
-  public async CrawlFromURL(fontURL: string, name: string): Promise<string> {
-    const fontFace = new FontFace(name, `url(${fontURL})`);
+  public async CrawlFromURL(fontURL: string, displayName: string, id: string): Promise<string> {
+    if(this.fonts.find(x => x.value === id)){
+      return Promise.reject("Font already upploaded");
+    }
+    
+    const fontFace = new FontFace(displayName, `url(${fontURL})`);
     console.log(fontFace);
     try {
       await fontFace.load();
       await (document.fonts as any).add(fontFace);
-      this.fonts.push({ value: name, label: name });
-      return Promise.resolve(name);
+      this.fonts.push({ value: id, label: displayName });
+      return Promise.resolve(id);
     } catch (error) {
       console.error("An error is occured!");
       this.fontFace = SYSTEM_FONT;
@@ -281,9 +285,9 @@ export class FontStorage {
     }
   }
 
-  public LoadCustomFontFromFile(file: File, name?: string): Promise<string> {
+  public LoadCustomFontFromFile(file: File, displayName?: string, id?: string): Promise<string> {
     const fontURL = URL.createObjectURL(file);
-    return this.CrawlFromURL(fontURL, name || file.name);
+    return this.CrawlFromURL(fontURL, displayName || file.name, id || file.name);
   }
 }
 

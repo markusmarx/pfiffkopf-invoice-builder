@@ -4674,6 +4674,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/fontname@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@types/fontname@npm:1.0.0"
+  checksum: 10c0/d3f81022299024767710c02589b60c277927ebae51f6552be377184dcff4e0da566df8e65a65186105e77607d61c2a44caa2cb5bdf1e8bb5d4a44e93ed45d6f4
+  languageName: node
+  linkType: hard
+
 "@types/http-cache-semantics@npm:^4.0.2":
   version: 4.0.4
   resolution: "@types/http-cache-semantics@npm:4.0.4"
@@ -11711,6 +11718,7 @@ __metadata:
     "@testing-library/react": "npm:^16.3.0"
     "@types/blob-stream": "npm:^0.1.33"
     "@types/file-saver": "npm:^2.0.7"
+    "@types/fontname": "npm:^1.0.0"
     "@types/node": "npm:^24.3.0"
     "@types/pdfkit": "npm:^0.17.2"
     "@types/react": "npm:^19.1.10"

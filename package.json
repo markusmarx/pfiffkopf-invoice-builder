@@ -55,6 +55,7 @@
     "@tabler/icons-react": "^3.34.1",
     "@types/blob-stream": "^0.1.33",
     "@types/file-saver": "^2.0.7",
+    "@types/fontname": "^1.0.0",
     "@types/pdfkit": "^0.17.2",
     "blob-stream": "^0.1.3",
     "file-saver": "^2.0.5",

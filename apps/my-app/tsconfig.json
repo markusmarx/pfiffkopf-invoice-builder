@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "allowJs": false,
+    "allowJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "declarationMap": true,
     "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
     "strict": true,
@@ -13,7 +17,7 @@
     //"module": "NodeNext",
   },
   "files": [],
-  "include": [],
+  "include": ["src/**/*"],
   "references": [
     {
       "path": "./tsconfig.app.json"
