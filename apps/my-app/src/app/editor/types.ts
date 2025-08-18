@@ -176,6 +176,60 @@ export class DragVector {
   }
 
 }
+const SYSTEM_FONT = "Arial";
+const CUSTOM_FONT = "Custom Font"
+export class FontSelector{
+  private fontFace: string; 
+  private storage: FontStorage;
+  constructor(storage: FontStorage){
+    this.storage = storage;
+    this.fontFace = storage.GetDefault();
+  }
+}
+export class FontStorage{
+  private fontFace: string; 
+  private customFont : null | FontFace;
+  
+  constructor(){
+    this.customFont = null;
+    this.fontFace = SYSTEM_FONT;
+  }
+  public GetDefault() : string{
+    return "Arial";
+  }
+
+  public Get() : string{
+    return this.fontFace;
+  }
+  public SetCSSFont(fontName: string){
+    this.fontFace = fontName;
+    if(this.customFont){
+      (document.fonts as any).delete(this.customFont);
+    }
+  }
+  public async LoadFontFromURL(fontURL: string) : Promise<boolean>{
+    if(this.customFont){
+      (document.fonts as any).delete(this.customFont);
+    }
+
+    const fontFace = new FontFace(CUSTOM_FONT, `url(${fontURL})`);
+    try{
+      await fontFace.load();
+      await (document.fonts as any).add(fontFace);
+      this.fontFace = CUSTOM_FONT;
+      return Promise.resolve(true);   
+    }catch{
+      console.error("An error is occured!");
+      this.fontFace = SYSTEM_FONT;
+      return Promise.resolve(false);
+    }
+  }
+  public LoadCustomFontFromFile(file: File) : Promise<boolean>{
+    const fontURL = URL.createObjectURL(file);
+    return this.LoadFontFromURL(fontURL);
+  }
+
+}
 
 export interface RenderableBlockParams {
   template?: Template;

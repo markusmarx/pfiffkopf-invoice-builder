@@ -1,6 +1,7 @@
 import {FileInput, Group, Stack, Text, TextInput, Title} from "@mantine/core";
 import {
   DragVector,
+  FontStorage,
   TableData,
   Template,
   TemplateDrawProperties,
@@ -15,18 +16,21 @@ import DragVectorInput, {
   DragVectorDisplayType,
 } from "./editor/dragVectorInput/dragVectorInput";
 import { TableDataInput } from "./editor/tableDataInput/tableDataInput";
+import { FontSelector } from "./editor/fontSelector/fontSelector";
 
 export class LetterpaperSection extends TemplateTab {
   bold?: boolean;
   watermark?: string;
   test?: number;
   testText?: string;
+  font: FontStorage;
   public constructor() {
     super();
+    this.font = new FontStorage();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
       return (
         <div>
-          <FileInput label="Briefpapier hochladen" />
+          <FileInput label="Briefpapier hochladen" style={{fontFamily: "Custom Font"}}/>
           <TextInput
             label="dummy text"
             defaultValue={this.testText}
@@ -35,6 +39,13 @@ export class LetterpaperSection extends TemplateTab {
               properties.template.RedrawView();
             }}
           />
+          <FontSelector 
+            fontStorage={this.font}
+            allowCustomFontUpload={true}
+            fonts={["Arial", "Times New Roman"]}
+            template={properties.template}
+
+          />          
         </div>
       );
     };
@@ -146,6 +157,7 @@ export class PfkInvoiceTemplate extends Template {
   positions?: PositionsSection;
   invoiceParam?: InvoiceParamSection;
   DrawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
+    console.log(this.letterpaper?.font);
     return Array<JSX.Element>(
       <Page
         format={PageFormat.A4}
@@ -155,6 +167,7 @@ export class PfkInvoiceTemplate extends Template {
         borderRight={1}
         autoExpand={prop.pdfRenderer}
         alwaysBreakToNewPage={false}
+        style={{fontFamily: this.letterpaper?.font.Get()}}
       >
         <MovableBox
           className="adress"

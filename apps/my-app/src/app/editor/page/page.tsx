@@ -24,6 +24,7 @@ interface PageProperties{
     borderRight?: number,
     borderTop?: number,
     borderBottom?: number,
+    style?: React.CSSProperties
 }
 
 function getCmInPixels(): number {
@@ -116,12 +117,12 @@ export function Page(properties: PageProperties){
                                                         `${pagesExpandCount*height-(properties.borderTop||0)-(properties.borderBottom||0)}cm`;
 
     return(<>   
-        <div id="real_paper" style={{minHeight: `${height}cm`, maxHeight: `${width}cm`,  height: `${height}cm`, width: `${width}cm`, backgroundColor: "white", 
+        <div id="real_paper" style={Object.assign({minHeight: `${height}cm`, maxHeight: `${width}cm`,  height: `${height}cm`, width: `${width}cm`, backgroundColor: "white", 
             paddingBottom: (properties.autoExpand) ? "0cm" : `${properties.borderBottom || 0}cm`,
             paddingTop: `${properties.borderTop || 0}cm`,
             paddingLeft: `${properties.borderLeft || 0}cm`,
             paddingRight: `${properties.borderRight || 0}cm`,
-        }}
+        }, properties.style)}
         >
             <div id="paper-container" ref={containerRef} style={{width: "100%", height: `${maxWorplaceHeight}`, minHeight: `100%`, minWidth: "100%"}}>
                 {properties.children}

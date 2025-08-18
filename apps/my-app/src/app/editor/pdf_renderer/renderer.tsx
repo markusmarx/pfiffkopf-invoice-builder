@@ -67,7 +67,7 @@ class DrawTextCommand implements DrawCommand{
             const area = group as StartDrawTextCommand;
             pdf.fontSize(this.fontSize);
             //pdf.font()
-            pdf.text(this.text, area.x, area.y, {width: area.width, height: area.heigth, continued: area.subCommandCalls !== 0, stroke: this.bold, underline: this.underline, strike: this.strike});
+            pdf.text(this.text, area.x, area.y, {width: area.width, height: area.heigth, continued: area.subCommandCalls !== 0, underline: this.underline, strike: this.strike});
         }
         //
         this.childs.forEach(element => {
@@ -291,7 +291,8 @@ export function RenderToPDF(template: Template){
         console.log(`Draw Text ${text}`);
         console.log(style.fontSize);
         const command = new DrawTextCommand(text || "Error");
-        command.fontSize = Number(style.fontSize.substring(0, style.fontSize.length - 2));
+        command.fontSize = Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96);
+        console.log(command.fontSize);
         command.color = style.color;
         command.underline = style.textDecoration.includes("underline");
         command.strike = style.textDecoration.includes("line-through");
