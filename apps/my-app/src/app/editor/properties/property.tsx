@@ -56,7 +56,7 @@ export function Propertys(properties: PropertysProperty) {
 
   function findFirstTab(): string {
     for (let i = 0; i < tabs.length; i++) {
-      if (typeof values[i] === "object" && values[i] !== null) {
+      if (typeof values[i] === "object" && values[i] !== null && values[i] instanceof TemplateTab) {
         const pages = (values[i] as TemplateTab).PageNumbers();
         if (
           (pages instanceof Array &&
@@ -73,7 +73,7 @@ export function Propertys(properties: PropertysProperty) {
   }
 
   function isTabVisible(idx: number): boolean {
-    if (typeof values[idx] !== "object" || values[idx] === null) {
+    if (typeof values[idx] !== "object" || values[idx] === null|| !(values[idx] instanceof TemplateTab)) {
       return false;
     }
     const pages = (values[idx] as TemplateTab).PageNumbers();

@@ -1,6 +1,7 @@
 import {FileInput, Group, Stack, Text, TextInput, Title} from "@mantine/core";
 import {
   DragVector,
+  FontSelector,
   FontStorage,
   TableData,
   Template,
@@ -16,17 +17,17 @@ import DragVectorInput, {
   DragVectorDisplayType,
 } from "./editor/dragVectorInput/dragVectorInput";
 import { TableDataInput } from "./editor/tableDataInput/tableDataInput";
-import { FontSelector } from "./editor/fontSelector/fontSelector";
+import { FontSelectorUI } from "./editor/fontSelector/fontSelector";
 
 export class LetterpaperSection extends TemplateTab {
   bold?: boolean;
   watermark?: string;
   test?: number;
   testText?: string;
-  font: FontStorage;
-  public constructor() {
+  font: FontSelector;
+  public constructor(template: Template) {
     super();
-    this.font = new FontStorage();
+    this.font = new FontSelector(template.GetFontStorage());
     this.drawUI = (properties: TemplateTabDrawProperties) => {
       return (
         <div>
@@ -39,12 +40,10 @@ export class LetterpaperSection extends TemplateTab {
               properties.template.RedrawView();
             }}
           />
-          <FontSelector 
-            fontStorage={this.font}
+          <FontSelectorUI 
+            fontSelector={this.font}
             allowCustomFontUpload={true}
-            fonts={["Arial", "Times New Roman"]}
             template={properties.template}
-
           />          
         </div>
       );
@@ -156,6 +155,9 @@ export class PfkInvoiceTemplate extends Template {
   address?: AddressSection;
   positions?: PositionsSection;
   invoiceParam?: InvoiceParamSection;
+
+
+
   DrawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
     console.log(this.letterpaper?.font);
     return Array<JSX.Element>(

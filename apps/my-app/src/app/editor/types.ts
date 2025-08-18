@@ -1,22 +1,33 @@
-import {JSX, ReactNode} from "react";
+import { JSX, ReactNode } from "react";
 
 export interface TemplateDrawProperties {
-  currentTab: string,
-  pdfRenderer: boolean,
-  templateValuesChanged?: () => void
+  currentTab: string;
+  pdfRenderer: boolean;
+  templateValuesChanged?: () => void;
 }
 
 export interface TemplateTabDrawProperties {
-  currentTab: string,
-  edited: boolean,
-  template: Template
+  currentTab: string;
+  edited: boolean;
+  template: Template;
 }
 
 export abstract class Template {
+  fontStorage: FontStorage;
+  constructor(){
+    this.fontStorage = new FontStorage();
+  }
+
   private refreshUI?: () => void;
   private refreshView?: () => void;
 
-  public abstract DrawPaper(prop: TemplateDrawProperties): JSX.Element | Array<JSX.Element>;
+  public abstract DrawPaper(
+    prop: TemplateDrawProperties,
+  ): JSX.Element | Array<JSX.Element>;
+
+  public GetFontStorage(){
+    return this.fontStorage;
+  }
 
   public RedrawProperties() {
     if (this.refreshUI) {
@@ -57,7 +68,6 @@ export abstract class TemplateTab {
   public SetDataProperties(refreshUI: () => void) {
     this.refreshUI = refreshUI;
   }
-
 }
 
 export interface ViewProperties {
@@ -70,10 +80,9 @@ export interface ViewProperties {
 export interface TableEntry {
   accessor: string;
   label: string;
-  enabled?: boolean,
-  width?: number
+  enabled?: boolean;
+  width?: number;
 }
-
 
 export class TableData {
   public tableEntries: TableEntry[];
@@ -88,14 +97,20 @@ export class TableData {
 
   public DynamicTable() {
     return {
-      header: this.tableEntries.map((v) => {
-        if (v.enabled) {
-          return v;
-        }
-        return null;
-      }) || [],
-      onTableResize: (delta: number, accesor: string, template?: Template, tab?: TemplateTab) => {
-        this.tableEntries.forEach(element => {
+      header:
+        this.tableEntries.map((v) => {
+          if (v.enabled) {
+            return v;
+          }
+          return null;
+        }) || [],
+      onTableResize: (
+        delta: number,
+        accesor: string,
+        template?: Template,
+        tab?: TemplateTab,
+      ) => {
+        this.tableEntries.forEach((element) => {
           if (element.accessor === accesor) {
             if (element.width) {
               element.width += delta;
@@ -106,10 +121,9 @@ export class TableData {
         });
         template?.RedrawView();
         tab?.RedrawProperties();
-      }
-    }
+      },
+    };
   }
-
 }
 
 export class DragVector {
@@ -128,14 +142,19 @@ export class DragVector {
         this.y = y;
         tab?.RedrawProperties();
       },
-      onSubmitPositionChange: (x: number, y: number, template?: Template, tab?: TemplateTab) => {
+      onSubmitPositionChange: (
+        x: number,
+        y: number,
+        template?: Template,
+        tab?: TemplateTab,
+      ) => {
         this.x = x;
         this.y = y;
         tab?.RedrawProperties();
         template?.RedrawView();
       },
       posVector: this,
-    }
+    };
   }
 
   public getInputPropsX(template?: Template) {
@@ -144,7 +163,7 @@ export class DragVector {
       onChange: (v: string | number) => {
         this.x = v as number;
         template?.RedrawView();
-      }
+      },
     };
   }
 
@@ -154,7 +173,7 @@ export class DragVector {
       onChange: (v: string | number) => {
         this.y = v as number;
         template?.RedrawView();
-      }
+      },
     };
   }
 
@@ -165,70 +184,107 @@ export class DragVector {
         this.y = y;
         tab?.RedrawProperties();
       },
-      onSubmitSizeChange: (x: number, y: number, template?: Template, tab?: TemplateTab) => {
+      onSubmitSizeChange: (
+        x: number,
+        y: number,
+        template?: Template,
+        tab?: TemplateTab,
+      ) => {
         this.x = x;
         this.y = y;
         tab?.RedrawProperties();
         template?.RedrawView();
       },
       sizeVector: this,
-    }
+    };
   }
-
 }
-const SYSTEM_FONT = "Arial";
-const CUSTOM_FONT = "Custom Font"
-export class FontSelector{
-  private fontFace: string; 
+
+export interface FontStorageEntry {
+  value: string;
+  label: string;
+  customUpload?: FontFace;
+}
+export class FontSelector {
+  private fontFace: string;
   private storage: FontStorage;
-  constructor(storage: FontStorage){
+  constructor(storage: FontStorage) {
     this.storage = storage;
     this.fontFace = storage.GetDefault();
   }
-}
-export class FontStorage{
-  private fontFace: string; 
-  private customFont : null | FontFace;
-  
-  constructor(){
-    this.customFont = null;
-    this.fontFace = SYSTEM_FONT;
-  }
-  public GetDefault() : string{
-    return "Arial";
-  }
-
-  public Get() : string{
+  public Get(): string {
     return this.fontFace;
   }
-  public SetCSSFont(fontName: string){
-    this.fontFace = fontName;
-    if(this.customFont){
-      (document.fonts as any).delete(this.customFont);
-    }
+  public Set(font: string) {
+    this.fontFace = font;
   }
-  public async LoadFontFromURL(fontURL: string) : Promise<boolean>{
-    if(this.customFont){
-      (document.fonts as any).delete(this.customFont);
-    }
+  //TODO: Rewrite as promise
+  public TryUpload(file: File, name?: string, onSucces?: (fontName: string) => void, onFail?: (error: Error) => void) {
+    const promise = this.storage.LoadCustomFontFromFile(file, name);
+    promise.then(
+      (value) => {
+        this.fontFace = value;
+        if(onSucces){
+          onSucces(this.fontFace);
+        }
+      },
+      (error) => {
+        if (onFail) {
+          onFail(error);
+        }
+      },
+    );
+  }
+  public GetList() {
+    return this.storage.List();
+  }
+}
+const SYSTEM_FONT = "Arial";
+export class FontStorage {
+  private fontFace: string;
+  private customFont: null | FontFace;
+  private fonts: FontStorageEntry[];
+  constructor() {
+    this.customFont = null;
+    this.fontFace = SYSTEM_FONT;
+    this.fonts = Array<FontStorageEntry>();
+    this.fonts.push({
+      value: SYSTEM_FONT,
+      label: SYSTEM_FONT,
+    });
+  }
+  public GetDefault(): string {
+    return SYSTEM_FONT;
+  }
 
-    const fontFace = new FontFace(CUSTOM_FONT, `url(${fontURL})`);
-    try{
+  public List() {
+    return this.fonts;
+  }
+  public async CrawlFromURL(fontURL: string, name: string): Promise<string> {
+    const fontFace = new FontFace(name, `url(${fontURL})`);
+    console.log(fontFace);
+    try {
       await fontFace.load();
       await (document.fonts as any).add(fontFace);
-      this.fontFace = CUSTOM_FONT;
-      return Promise.resolve(true);   
-    }catch{
+      this.fonts.push({ value: name, label: name });
+      return Promise.resolve(name);
+    } catch (error) {
       console.error("An error is occured!");
       this.fontFace = SYSTEM_FONT;
-      return Promise.resolve(false);
+      return Promise.reject(error);
     }
   }
-  public LoadCustomFontFromFile(file: File) : Promise<boolean>{
-    const fontURL = URL.createObjectURL(file);
-    return this.LoadFontFromURL(fontURL);
+  public SetCSSFont(fontName: string) {
+    this.fontFace = fontName;
+    if (this.customFont) {
+      (document.fonts as any).delete(this.customFont);
+    }
   }
 
+  public LoadCustomFontFromFile(file: File, name?: string): Promise<string> {
+    const fontURL = URL.createObjectURL(file);
+    return this.CrawlFromURL(fontURL, name || file.name);
+  }
 }
 
 export interface RenderableBlockParams {
@@ -250,7 +306,7 @@ export interface RenderableBlockParams {
     ySize: number,
     xSize: number,
     template?: Template,
-    tab?: TemplateTab
+    tab?: TemplateTab,
   ) => void;
   //position
   x?: number;
@@ -262,6 +318,6 @@ export interface RenderableBlockParams {
     xPos: number,
     yPos: number,
     template?: Template,
-    tab?: TemplateTab
+    tab?: TemplateTab,
   ) => void;
 }

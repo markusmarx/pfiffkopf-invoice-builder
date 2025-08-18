@@ -1,23 +1,22 @@
-import { Select, Text, Group } from "@mantine/core";
-import { FontStorage, Template } from "../types";
+import { Select, Group } from "@mantine/core";
+import { FontSelector, Template } from "../types";
 import { IconCheck } from "@tabler/icons-react";
 import { useRef } from "react";
 
-interface FontSelectorProps{
-    fonts: string[];
+interface FontSelectorUIProps{
     allowCustomFontUpload: boolean;
-    fontStorage: FontStorage;
+    fontSelector: FontSelector;
     template: Template;
 }
 
-export function FontSelector(properties: FontSelectorProps){
+export function FontSelectorUI(properties: FontSelectorUIProps){
     const fileUpload = useRef<HTMLInputElement | null>(null);
     return (
         <>
         <input id='fontUpload' type='file' hidden ref={fileUpload} multiple={false} accept=".ttf, .otf, .woff, .woff2" onChange={(ev) => {
             if(ev.target?.files && ev.target.files[0])
               {
-                properties.fontStorage.LoadCustomFontFromFile(ev.target.files[0]).then(() => {
+                properties.fontSelector.TryUpload(ev.target.files[0], "Neue Font", () => {
                     properties.template.RedrawView();
                 });
               }
@@ -25,12 +24,12 @@ export function FontSelector(properties: FontSelectorProps){
         <Select
             allowDeselect={false}
             label="Schriftart auswählen"
-            data={properties.allowCustomFontUpload ? [...properties.fonts, "Eigene Auswählen"] : properties.fonts}
+            data={properties.allowCustomFontUpload ? [...properties.fontSelector.GetList(), {value: "new", label: "Neue Importieren"}] : properties.fontSelector.GetList()}
             searchable
-            defaultValue={properties.fontStorage.Get()}
+            value={properties.fontSelector.Get()}
             onChange={(value) => {
-                if(value !== "Eigene Auswählen"){
-                    properties.fontStorage.SetCSSFont(value || "Arial");
+                if(value !== "new"){
+                    properties.fontSelector.Set(value || "Arial");
                     properties.template.RedrawView();
                 }else{
                     if(fileUpload){

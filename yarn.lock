@@ -8702,6 +8702,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fontname@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "fontname@npm:1.0.1"
+  checksum: 10c0/e870d212250e368ecd38698b790da4632d78d98c96808fc0618030d82bc082543949313a861238a5153acf05d9d5a948f74ba3d2e637f560d31bf5063e9ead82
+  languageName: node
+  linkType: hard
+
 "for-each@npm:^0.3.3, for-each@npm:^0.3.5":
   version: 0.3.5
   resolution: "for-each@npm:0.3.5"
@@ -11721,6 +11728,7 @@ __metadata:
     eslint-plugin-react: "npm:^7.37.5"
     eslint-plugin-react-hooks: "npm:^5.2.0"
     file-saver: "npm:^2.0.5"
+    fontname: "npm:^1.0.1"
     jiti: "npm:^2.5.1"
     jsdom: "npm:^26.1.0"
     nx: "npm:^21.3.11"

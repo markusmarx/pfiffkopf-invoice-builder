@@ -11,7 +11,7 @@ export function App() {
 
   const template = new PfkInvoiceTemplate();
 
-  template.letterpaper = new LetterpaperSection();
+  template.letterpaper = new LetterpaperSection(template);
   template.address = new AddressSection();
   template.address.pos.x = 0;
   template.invoiceParam = new InvoiceParamSection();
