@@ -228,7 +228,7 @@ export class PfkInvoiceTemplate extends Template {
             </Group>
           </Stack>
         </MovableBox>
-        <MovableBox id={"salutation"} posVector={{x: 0, y: 300}} sizeVector={{x: 700, y: 100}}>
+        <MovableBox id={"salutation"} x={0} y={300} width={700} heigth={100}>
           <Text fw={700}>Hallo Maxim Mustermann,</Text>
           <Text>ich erlaube mir eine Rechnung für folgende Leistungen zu stellen.</Text>
         </MovableBox>
@@ -236,7 +236,6 @@ export class PfkInvoiceTemplate extends Template {
           className="positions"
           enabled={prop.currentTab === "positions"}
           template={this}
-          disableMovement={true}
           templateTab={this.positions}
           x={this.positions?.pos.x}
           y={this.positions?.pos.y}
@@ -246,6 +245,7 @@ export class PfkInvoiceTemplate extends Template {
           enableResizing={false}
           cellStyle={{ border: "3px solid" }}
           headerStyle={{ border: "3px solid" }}
+          disableMovement={true}
           {...(this.positions?.table.DynamicTable() || { header: [] })}
           rows={[
             {
@@ -262,7 +262,7 @@ export class PfkInvoiceTemplate extends Template {
 
           ]}
         />
-        <MovableBox id={"salutation"} posVector={{x: 0, y: 600}} sizeVector={{x: 700, y: 100}}>
+        <MovableBox id={"salutation"} x={0} y={600} width={700} heigth={100}>
           <Text>Vielen Dank für die gute Zusammenarbeit!</Text>
         </MovableBox>
       </Page>
