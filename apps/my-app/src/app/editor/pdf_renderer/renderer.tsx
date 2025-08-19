@@ -3,47 +3,39 @@ import { Template } from "../types";
 import { MantineProvider } from "@mantine/core";
 import PDFDocument from 'pdfkit/js/pdfkit.standalone.js';
 import { saveAs } from 'file-saver';
-import { stroke, underline } from "pdfkit";
-import { URL } from "url";
 
-interface DrawingAreaContext{
-    left: number,
-    top: number,
-    width: number,
-    heigth: number,
-    paddingTop: number,
-    paddingLeft: number,
-    position: string
-}
-interface DrawCommand{
+abstract class DrawCommand {
     childs : DrawCommand[];
-    Draw(pdf:any, group: DrawStartCommand | null) : void;
+    constructor() {
+        this.childs = new Array<DrawCommand>();
+    }
 }
-interface DrawStartCommand{
+//this tells the drawing system to execute the draw command in all children
+abstract class GroupCommand extends DrawCommand {
     width: number;
     heigth: number;
     x: number;
     y: number;
-    subCommandCalls: number;
-}
-class SplitCommand implements DrawCommand{
-    childs : DrawCommand[];
-    typeIdentifierSplitCommand  = true;
-    constructor() {
-        this.childs = new Array<DrawTextCommand>(0);
+    constructor(width: number, heigth: number, x: number, y: number) {
+        super();
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.heigth = heigth;
     }
-    Draw(pdf: any, group: DrawStartCommand | null): void {
-        if(group){
-            group.subCommandCalls--;
-        }
-        this.childs.forEach(element => {
-            element.Draw(pdf, group);
-        });
+    public ShouldKeep(command: DrawCommand){
+        return !(command instanceof SplitCommand);
     }
+    abstract Draw(pdf: any, commands: Array<DrawCommand>) : void;
 }
-class DrawTextCommand implements DrawCommand{
-    childs : DrawCommand[];    
+//this class is a simple node that get's stripped during drawing but is required to build the pdf command tree
+class SplitCommand extends DrawCommand{
+    
+}
 
+
+class DrawTextCommand extends DrawCommand{
+    text: string;
     //family and size
     fontSize = 11;
     font = "Arial";
@@ -51,53 +43,119 @@ class DrawTextCommand implements DrawCommand{
     textAllign = "left";
     //decoration
     color = "black";
-    text: string;
     bold = false; //TODO: We need to change the font for that
     underline = false;
     strike = false;
     constructor(text: string){
-        this.childs = new Array<DrawTextCommand>(0);
+        super();
         this.text = text;
     }
-    Draw(pdf: any, group: DrawStartCommand | null): void {
-        if(group){
-            group.subCommandCalls--;
-        }
+}
 
-        if(group instanceof StartDrawTextCommand){
-            const area = group as StartDrawTextCommand;
-            pdf.fontSize(this.fontSize);
-            //pdf.font(this.font);
-            pdf.text(this.text, area.x, area.y, {width: area.width, height: area.heigth, continued: area.subCommandCalls !== 0, underline: this.underline, strike: this.strike});
+class StartDrawTextCommand extends GroupCommand{
+    constructor(x: number, y: number, width: number, heigth: number) {
+        super(width, heigth, x, y);
+    }
+    override ShouldKeep(command: DrawCommand): boolean {
+        return super.ShouldKeep(command) && (command instanceof DrawTextCommand);
+    }
+    Draw(pdf: any, commands: Array<DrawCommand>){
+        for(let i = 0; i < commands.length; i++){
+            const textCommand = commands[i] as DrawTextCommand;
+            if(i === 0){
+                pdf.text(textCommand.text, this.x, this.y, {width: this.width, height: this.heigth, continued: commands.length !== 1, underline: textCommand.underline, strike: textCommand.strike});
+            }else{
+                pdf.text(textCommand.text, {continued: commands.length -1 !== i, underline: textCommand.underline, strike: textCommand.strike});
+            }
         }
-        //
-        this.childs.forEach(element => {
-            element.Draw(pdf, group);
-        });
     }
 }
-class StartDrawTextCommand implements DrawCommand, DrawStartCommand{
+/*
+class StartDrawTableCommand implements DrawCommand, DrawStartCommand{
     childs : DrawCommand[];
-    typeIdentifierStartDrawTextCommand  = true;
+    typeIdentifierStartDrawTableCommand  = true;
     width: number;
     heigth: number;
     x: number;
     y: number;
     subCommandCalls = 0;
+     constructor(x: number, y: number, width: number, heigth: number) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.heigth = heigth;
+        this.childs = new Array<DrawCommand>(0);
+    }
+    Draw(pdf: any, group: DrawStartCommand | null): void {
+        console.log(this);
+        const table = pdf.table({position: {x: this.x, y: this.y}});
+        this.childs.forEach(element => {
+            element.Draw(table, this);
+        });
+    }
+}
+class StartDrawRowCommand implements DrawCommand, DrawStartCommand{
+    childs : DrawCommand[];
+    width: number;
+    heigth: number;
+    x: number;
+    y: number;
+    subCommandCalls = 0;
+    cells: StartDrawCellCommand[];
     constructor(x: number, y: number, width: number, heigth: number) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.heigth = heigth;
-        this.childs = new Array<DrawTextCommand>(0);
+        this.childs = new Array<DrawCommand>(0);
+        this.cells = new Array<StartDrawCellCommand>(0);
     }
     Draw(pdf: any, group: DrawStartCommand | null): void {
         //
         this.childs.forEach(element => {
             element.Draw(pdf, this);
         });
+        const row = new Array<string>();
+        for(let i = 0; i < this.cells.length; i++){
+            row.push("text");
+        }
+        pdf.row(row);
+
     }
 }
+class StartDrawCellCommand implements DrawCommand, DrawStartCommand{
+    childs: DrawCommand[];
+    width: number;
+    heigth: number;
+    x: number;
+    y: number;
+    subCommandCalls: number;
+    text = "";
+    allign: {x: string, y: string};
+    font = "";
+    textColor: string;
+
+    constructor(width: number, height: number){
+        this.childs = new Array<DrawCommand>(0);
+        this.width = width;
+        this.heigth = height;
+        this.x = 0;
+        this.y = 0;
+        this.subCommandCalls = 0;
+        this.textColor = "black";
+        this.allign = {x: "left", y: "middle"}
+    }
+    Draw(pdf: any, group: DrawStartCommand | null): void {
+        if(group instanceof StartDrawRowCommand){
+            const drawStartCommand = group as StartDrawRowCommand;
+            drawStartCommand.cells.push(this);
+        }
+        this.childs.forEach(element => {
+            element.Draw(pdf, this);
+        });
+    }
+    
+}*/
 function getCmInPixels(): number {
   const div = document.createElement("div");
   div.style.width = "1cm";
@@ -259,7 +317,7 @@ export function RenderToPDF(template: Template){
                     pdfDoc.addPage({size: [pageDescriptor.width, pageDescriptor.height], margins: {top: pageDescriptor.margin_top, bottom: pageDescriptor.margin_bottom, left: pageDescriptor.margin_left, right: pageDescriptor.margin_right}});
                     let elementCounter = 0;
                     const containerElement = basePage.children[0];
-                    const command = new SplitCommand();
+                    const textGroup = new StartDrawTextCommand(pageDescriptor.margin_left, pageDescriptor.margin_top, pageDescriptor.width, pageDescriptor.height);
                     for(let i = 0; i < containerElement.childNodes.length; i++){
                         const childNode = containerElement.childNodes.item(i);
                         let childElement = undefined;
@@ -268,10 +326,13 @@ export function RenderToPDF(template: Template){
                             elementCounter++;
                             //just render text as child
                         }
-                        command.childs.push(RenderHTMLNodeRecursive(pdfDoc, basePage, 0,0, pageDescriptor.margin_left, pageDescriptor.margin_top, childNode, containerElement.children[i] as HTMLElement, childElement as HTMLElement));
+                        const node = RenderHTMLNodeRecursive(pdfDoc, basePage, 0,0, pageDescriptor.margin_left, pageDescriptor.margin_top, childNode, containerElement.children[i] as HTMLElement, childElement as HTMLElement);
+                        if(node instanceof DrawTextCommand){
+                            textGroup.childs.push(node);
+                        }
                     }
-                    console.log(command);
-                    command.Draw(pdfDoc, null);
+                    textGroup.Draw(pdfDoc, textGroup.childs);
+                    //command.Draw(pdfDoc, null);
                     console.log("Finished Rendering a page");
                 }else{
                     break;
@@ -291,11 +352,8 @@ export function RenderToPDF(template: Template){
         return [pdfDoc, false];
     }
     function GenerateTextCommandFromCSS(style: CSSStyleDeclaration, text: string | null) : DrawTextCommand{
-        console.log(`Draw Text ${text}`);
-        console.log(style.fontSize);
         const command = new DrawTextCommand(text || "Error");
         command.fontSize = Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96);
-        console.log(command.fontSize);
         command.color = style.color;
         command.font = style.fontFamily;
         command.underline = style.textDecoration.includes("underline");
@@ -351,17 +409,22 @@ export function RenderToPDF(template: Template){
                 command = new StartDrawTextCommand(xPos, yPos, width, height);
             }
             else if (element instanceof HTMLAnchorElement){
-                const anchor = element as HTMLAnchorElement;
                 command = new StartDrawTextCommand(xPos, yPos, width, height);
             }else if(element instanceof HTMLDivElement){
                 //draw if required a box
                 
             }else if (element instanceof HTMLTableElement){
                 //start drawing table
+                //command = new StartDrawTableCommand(xPos, yPos, width, height);
+            }else if (element instanceof HTMLTableRowElement){
+                console.log("start row");
+                //command = new StartDrawRowCommand(xPos, yPos, width, height);
+            }else if (element instanceof HTMLTableColElement){
+                console.error("collumn elements are currently not supported!");
             }
-            //nodes who alter a pdf command
-            else if (element instanceof HTMLBRElement){
-                //start a new line
+            else if (element instanceof HTMLTableCellElement){
+                console.log("cell element");
+                //command = new StartDrawCellCommand(width, height);
             }
 
             //iterate over all childs recursive
@@ -388,16 +451,24 @@ export function RenderToPDF(template: Template){
                 console.log(`Unsupported node ${node}`);
             }
         }
-        if(command instanceof StartDrawTextCommand){
-            let childCount = 0;
-            function recursiveCountChildren(command: DrawCommand){
+        if(command instanceof GroupCommand){
+            const groupCommand = command as GroupCommand;
+            //build a straight command list
+            const commandList = new Array<DrawCommand>();
+            function recursiveBuild(command: DrawCommand){
+                if(groupCommand.ShouldKeep(command)){
+                    commandList.push(command);
+                }
                 command.childs.forEach((com) => {
-                    childCount++;
-                    recursiveCountChildren(com);
+                    recursiveBuild(com);
                 });
             }
-            recursiveCountChildren(command);
-            command.subCommandCalls = childCount;
+            command.childs.forEach((child) => {
+                recursiveBuild(child);
+            });
+            //now that we have a simple list, draw it
+            console.log(commandList);
+            groupCommand.Draw(pdf, commandList);
         }
         return command;
     }
