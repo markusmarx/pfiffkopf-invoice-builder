@@ -25,7 +25,7 @@ import {
   IconFileTypePdf,
   IconPalette
 } from "@tabler/icons-react";
-import { RenderToPDF } from "./pdf_renderer/renderer";
+import { renderToPDF } from "./pdf_renderer/renderer";
 
 export interface EditorPropertys {
   view?: ReactElement<ViewProperties>;
@@ -132,7 +132,7 @@ export function Editor(properties: EditorPropertys) {
 
             <Button
               leftSection={<IconFileTypePdf size={18} />}
-              onClick={() => RenderToPDF(properties.template)}
+              onClick={() => renderToPDF(properties.template)}
               variant="gradient"
               gradient={{ from: 'primary', to: 'accent', deg: 45 }}
               size="sm"
