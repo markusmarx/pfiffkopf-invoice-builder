@@ -1,8 +1,9 @@
+/* eslint-disable no-loss-of-precision */
 import { createRoot } from "react-dom/client";
 import { Template } from "../types";
 import { MantineProvider } from "@mantine/core";
-import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 import { saveAs } from "file-saver";
+import { PDFDocument, PDFKitTextOptions, PDFKitCellOptions } from "../pdf";
 
 abstract class DrawCommand {
   childs: DrawCommand[];
@@ -26,25 +27,27 @@ abstract class GroupCommand extends DrawCommand {
   public shouldKeep(command: DrawCommand) {
     return !(command instanceof SplitCommand);
   }
-  abstract draw(pdf: any, commands: Array<DrawCommand>): void;
+  abstract draw(pdf: PDFDocument, commands: Array<DrawCommand>): void;
 }
 //this class is a simple node that get's stripped during drawing but is required to build the pdf command tree
 class SplitCommand extends DrawCommand {}
 class DrawTextCommand extends DrawCommand {
   text: string;
-  style: TextStyle;
+  font: string;
+  fontSize: number;
+  color: string;
+  style: PDFKitTextOptions;
   constructor(text: string) {
     super();
     this.text = text;
+    this.fontSize = 11;
+    this.font = "Arial";
+    this.color = "black";
     this.style = {
-        font: "Arial",
-        fontSize: 11,
-        textAllign: "left",
-        color: "black",
-        bold: false,
+        stroke: false,
         underline: false,
         strike: false,
-        italic: false,
+        oblique: false,
         characterSpacing: 0,
         wordSpacing: 0,
         lineGap: 0,
@@ -53,78 +56,52 @@ class DrawTextCommand extends DrawCommand {
     }
   }
 }
-interface TextStyle{
-//family and size
-  fontSize : number;
-  font: string;
-  //align
-  textAllign : string;
-  //decoration
-  color: string;
-  bold: boolean;
-  underline: boolean;
-  strike: boolean;
-  italic: boolean;
-  wordSpacing: number;
-  characterSpacing: number | undefined;
-  lineGap: number;
-  lineBreak: boolean;
-  baseline: string;
-}
+
 class StartDrawTextCommand extends GroupCommand {
   override shouldKeep(command: DrawCommand): boolean {
     return super.shouldKeep(command) && command instanceof DrawTextCommand;
   }
-  draw(pdf: any, commands: Array<DrawCommand>) {
+  draw(pdf: PDFDocument, commands: Array<DrawCommand>) {
     for (let i = 0; i < commands.length; i++) {
       const textCommand = commands[i] as DrawTextCommand;
-      pdf.lineWidth(0.4); //emulate bold text
+      pdf.fontSize(textCommand.fontSize);
+      pdf.lineWidth(0.4); //emulate bold text, is triggered by enabeling stroke
       if (i === 0) {
-        pdf.text(textCommand.text, this.x, this.y, {
-          lineBreak: textCommand.style.lineBreak,
-          width: this.width,
-          height: this.heigth,
-          lineGap: textCommand.style.lineGap,
-          wordSpacing: textCommand.style.wordSpacing,
-          characterSpacing: textCommand.style.characterSpacing,
-          fill: true,
-          stroke: textCommand.style.bold,
-          underline: textCommand.style.underline,
-          strike: textCommand.style.strike,
-          oblique: textCommand.style.italic,
-          baseline: textCommand.style.baseline,
-          continued: commands.length !== 1,
-          align: textCommand.style.textAllign,
-        });
+        pdf.moveTo(this.x, this.y);
+        pdf.text(
+          {
+            text: textCommand.text,
+            x: this.x,
+            y: this.y,
+            options: {
+              ...textCommand.style, 
+              continued: commands.length !== 1,
+            }
+          });
       } else {
-        pdf.text(textCommand.text, {
-          lineBreak: textCommand.style.lineBreak,
-          width: this.width,
-          height: this.heigth,
-          lineGap: textCommand.style.lineGap,
-          wordSpacing: textCommand.style.wordSpacing,
-          characterSpacing: textCommand.style.characterSpacing,
-          fill: true,
-          stroke: textCommand.style.bold,
-          underline: textCommand.style.underline,
-          strike: textCommand.style.strike,
-          oblique: textCommand.style.italic,
-          baseline: textCommand.style.baseline,
-          continued: commands.length - 1 !== i,
-          align: textCommand.style.textAllign,
-        });
+        pdf.text(
+          {
+            text: textCommand.text,
+            options: {
+              ...textCommand.style, 
+              continued: commands.length - 1 !== i,
+            }
+          });
       }
       pdf.lineWidth(0);
     }
   }
 }
+
+
 class StartDrawTableCommand extends GroupCommand {
-  draw(pdf: any, commands: Array<DrawCommand>): void {
+  draw(pdf: PDFDocument, commands: Array<DrawCommand>): void {
     if (commands.length === 0) {
       //we try to draw a empty table, this shouldn't be visible
       return;
     }
-    const table = new Array<Array<string>>(0);
+    
+    const table = new Array<Array<PDFKitCellOptions>>(0);
     const collumnSize = new Array<number>(0);
     const rowSizes = new Array<number>(0);
     let row = null;
@@ -135,13 +112,19 @@ class StartDrawTableCommand extends GroupCommand {
         if (row) {
           table.push(row);
         }
-        row = new Array<string>();
+        row = new Array<PDFKitCellOptions>();
       } else if (commands[i] instanceof DrawCellCommand && row) {
         const cell = commands[i] as DrawCellCommand;
         if (table.length === 0) {
           collumnSize.push(cell.width);
         }
-        row.push("Cell");
+        //extract text
+        const text = cell.childs.find(x => x instanceof DrawTextCommand);
+        if(text){
+            row.push({text: text.text || "0", ...cell.cellStyle, textOptions: text.style});
+        }else{
+            row.push({text: ""});
+        }
       }
     }
     //the last row is never ended with a beginn new row marker, so always push the last
@@ -150,7 +133,7 @@ class StartDrawTableCommand extends GroupCommand {
     }
     pdf.table({
       position: {x: this.x, y: this.y},
-      columnStyles: collumnSize,
+      columnStyles: (collumnIndex : number) => { return {width: collumnSize[collumnIndex]}},
       rowStyles: rowSizes,
       data: table,
     });
@@ -173,9 +156,11 @@ class DrawRowCommand extends DrawCommand {
 }
 class DrawCellCommand extends DrawCommand {
   width: number;
+  cellStyle: PDFKitCellOptions;
   constructor(width: number) {
     super();
     this.width = width;
+    this.cellStyle = {};
   }
 }
 
@@ -218,7 +203,6 @@ function cssPixelToPostScriptPoint(value: string): number {
 }
 function cssPixelNumberToPostScriptPoint(value: number): number {
   return Number(
-    // eslint-disable-next-line no-loss-of-precision
     ((value / cmToPixels) * 5.6692857142857142857142857142857 * 5).toFixed(2),
   );
 }
@@ -234,31 +218,26 @@ function cssScaleToPostScriptPointWithCallback(
     return null;
   } else if (value.endsWith("cm")) {
     const cmNumber = Number(without_unit);
-    // eslint-disable-next-line no-loss-of-precision
     return Number(
       (cmNumber * 5.6692857142857142857142857142857 * 5).toFixed(2),
     );
   } else if (value.endsWith("mm")) {
     const mmNumber = Number(without_unit);
-    // eslint-disable-next-line no-loss-of-precision
     return Number(
       ((mmNumber * 5.6692857142857142857142857142857 * 5) / 100).toFixed(2),
     );
   } else if (value.endsWith("in")) {
     const inchNumber = Number(without_unit);
-    // eslint-disable-next-line no-loss-of-precision
     return Number(
       (inchNumber * 143.99984905143705330020367170284 * 5).toFixed(2),
     );
   } else if (value.endsWith("pt")) {
     const ptNumber = Number(without_unit);
-    // eslint-disable-next-line no-loss-of-precision
     return Number(
       ((ptNumber * 143.99984905143705330020367170284 * 5) / 72).toFixed(2),
     );
   } else if (value.endsWith("pc")) {
     const pcNumber = Number(without_unit);
-    // eslint-disable-next-line no-loss-of-precision
     return Number(
       ((pcNumber * 143.99984905143705330020367170284 * 5) / 6).toFixed(2),
     );
@@ -327,8 +306,8 @@ export function renderToPDF(template: Template) {
     searchElement: Element | null,
     parrent: Element | null,
     index: number,
-    pdfDoc: any,
-  ): [any, boolean] {
+    pdfDoc: PDFDocument,
+  ): [PDFDocument, boolean] {
     if (searchElement === null) {
       return [pdfDoc, false];
     } else if (searchElement.id === "real_paper") {
@@ -429,7 +408,6 @@ export function renderToPDF(template: Template) {
             }
           }
           textGroup.draw(pdfDoc, textGroup.childs);
-          //command.Draw(pdfDoc, null);
           console.log("Finished Rendering a page");
         } else {
           break;
@@ -458,28 +436,44 @@ export function renderToPDF(template: Template) {
   ): DrawTextCommand {
     const command = new DrawTextCommand(text || "Error");
     command.style = generateTextStyleFromCSS(style);
+    command.color = style.color;
+    command.font = style.font;
+    command.fontSize = Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96);
     return command;
   }
-  function generateTextStyleFromCSS(style: CSSStyleDeclaration) : TextStyle{
-    console.log();
+  function drawCellCommandFromStyle(style: CSSStyleDeclaration, width: number) : DrawCellCommand{
+    const cell = new DrawCellCommand(width);
+    const textOptions =  generateTextStyleFromCSS(style);
+    console.log(style.backgroundColor);
+    cell.cellStyle = {
+      textOptions:textOptions,
+      //border
+      borderColor: style.borderColor,
+      font: {size: Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96)},
+      //backgroundColor: style.backgroundColor,
+      align: {x: style.textAlign.replace("middle", "center"), y: style.verticalAlign.replace("middle", "center")},
+      textStroke: 0.4,
+      textStrokeColor: style.color,
+    }; 
+    return cell
+  }
+  function generateTextStyleFromCSS(style: CSSStyleDeclaration) : PDFKitTextOptions{
     return {
-        color: style.color,
-        font: style.font,
-        fontSize: Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96),
         underline: style.textDecoration.includes("underline"),
         strike: style.textDecoration.includes("line-through"),
-        bold: style.fontWeight === "bold" || Number(style.fontWeight) >= 700,
-        textAllign: style.textAlign.replace("start", "left").replace("end", "right"),
-        italic: style.fontStyle.includes("italic") || style.fontStyle.includes("oblique"),
+        stroke: style.fontWeight === "bold" || Number(style.fontWeight) >= 700,
+        oblique: style.fontStyle.includes("italic") || style.fontStyle.includes("oblique"),
         wordSpacing: cssPixelToPostScriptPoint(style.wordSpacing),
         characterSpacing: style.letterSpacing.includes("normal") ? undefined : cssPixelToPostScriptPoint(style.letterSpacing),
         lineGap: cssPixelToPostScriptPoint(style.lineHeight) - cssPixelToPostScriptPoint(style.fontSize),
         lineBreak: !style.whiteSpace.includes("nowrap"),
         baseline: style.alignmentBaseline ? style.alignmentBaseline.replace("mathematical", "baseline").replace("central", "baseline").replace("text-top", "top").replace("text-bottom", "bottom") : "baseline",
-    }
+        align: style.textAlign.replace("start", "left").replace("end", "right"),
+        fill: true
+      }
   }
   function renderHTMLNodeRecursive(
-    pdf: any,
+    pdf: PDFDocument,
     page: HTMLElement,
     xOffset: number,
     yOffset: number,
@@ -554,8 +548,7 @@ export function renderToPDF(template: Template) {
       } else if (element instanceof HTMLTableColElement) {
         console.error("collumn elements are currently not supported!");
       } else if (element instanceof HTMLTableCellElement) {
-        const cell = element as HTMLTableCellElement;
-        const cellCommand = new DrawCellCommand(width);
+        const cellCommand = drawCellCommandFromStyle(computedStyle, width);
         
         command = cellCommand;
       }
