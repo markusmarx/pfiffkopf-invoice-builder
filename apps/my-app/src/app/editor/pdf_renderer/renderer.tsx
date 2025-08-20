@@ -62,7 +62,6 @@ class StartDrawTextCommand extends GroupCommand {
     return super.shouldKeep(command) && command instanceof DrawTextCommand;
   }
   draw(pdf: PDFDocument, commands: Array<DrawCommand>) {
-    console.log(commands);
     for (let i = 0; i < commands.length; i++) {
       const textCommand = commands[i] as DrawTextCommand;
       pdf.fontSize(textCommand.fontSize);

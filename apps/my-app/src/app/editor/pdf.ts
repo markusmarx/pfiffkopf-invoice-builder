@@ -131,6 +131,7 @@ export class PDFDocument{
     this.doc.fontSize(size);
   }
   public text(options?: PFFKitTextProps){
+    console.log(options);
     this.doc.text(options?.text, options?.x, options?.y, options?.options);
   }
 
