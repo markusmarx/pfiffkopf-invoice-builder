@@ -74,7 +74,7 @@ class StartDrawTextCommand extends GroupCommand {
             y: this.y,
             options: {
               ...textCommand.style, 
-              width: this.width,
+              width: this.width+1,
               height: this.heigth,
               continued: commands.length !== 1,
             }
@@ -83,9 +83,11 @@ class StartDrawTextCommand extends GroupCommand {
         pdf.text(
           {
             text: textCommand.text,
+            x: this.x,
+            y: this.y,
             options: {
               ...textCommand.style,
-              width: this.width,
+              width: this.width+1,
               height: this.heigth, 
               continued: commands.length - 1 !== i,
             }
