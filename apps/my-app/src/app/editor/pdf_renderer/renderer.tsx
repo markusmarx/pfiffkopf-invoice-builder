@@ -62,12 +62,12 @@ class StartDrawTextCommand extends GroupCommand {
     return super.shouldKeep(command) && command instanceof DrawTextCommand;
   }
   draw(pdf: PDFDocument, commands: Array<DrawCommand>) {
+    console.log(commands);
     for (let i = 0; i < commands.length; i++) {
       const textCommand = commands[i] as DrawTextCommand;
       pdf.fontSize(textCommand.fontSize);
       pdf.lineWidth(0.4); //emulate bold text, is triggered by enabeling stroke
       if (i === 0) {
-        pdf.moveTo(this.x, this.y);
         pdf.text(
           {
             text: textCommand.text,
@@ -75,6 +75,8 @@ class StartDrawTextCommand extends GroupCommand {
             y: this.y,
             options: {
               ...textCommand.style, 
+              width: this.width,
+              height: this.heigth,
               continued: commands.length !== 1,
             }
           });
@@ -83,7 +85,9 @@ class StartDrawTextCommand extends GroupCommand {
           {
             text: textCommand.text,
             options: {
-              ...textCommand.style, 
+              ...textCommand.style,
+              width: this.width,
+              height: this.heigth, 
               continued: commands.length - 1 !== i,
             }
           });
@@ -121,7 +125,7 @@ class StartDrawTableCommand extends GroupCommand {
         //extract text
         const text = cell.childs.find(x => x instanceof DrawTextCommand);
         if(text){
-            row.push({text: text.text || "0", ...cell.cellStyle, textOptions: text.style});
+            row.push({text: text.text || " ", ...cell.cellStyle, textOptions: text.style});
         }else{
             row.push({text: ""});
         }
@@ -206,7 +210,27 @@ function cssPixelNumberToPostScriptPoint(value: number): number {
     ((value / cmToPixels) * 5.6692857142857142857142857142857 * 5).toFixed(2),
   );
 }
-
+function cssColorToPDFColor(color: string) : string | undefined{
+    if(color.startsWith("#")){
+      return color;
+    }else if (color.startsWith("rgb")){
+      const rgba = color.substring(color.indexOf("(")+1, color.lastIndexOf(")")).split(",");
+      const redHex = Number(rgba[0]).toString(16).padStart(2, '0');
+      const greenHex = Number(rgba[1]).toString(16).padStart(2, '0');
+      const blueHex = Number(rgba[2]).toString(16).padStart(2, '0');
+      if(rgba.length === 4){
+        const alpha = Number(rgba[3]);
+        return alpha > 0.5 ? `${redHex}${greenHex}${blueHex}` : undefined;
+      }else{
+        return `${redHex}${greenHex}${blueHex}`;
+      }
+    }else if (color.startsWith("hsl")){
+      return undefined;
+    }else if (color.startsWith("hsla")){
+      return undefined;
+    }
+    return color;
+}
 
 function cssScaleToPostScriptPointWithCallback(
   value: string,
@@ -444,13 +468,12 @@ export function renderToPDF(template: Template) {
   function drawCellCommandFromStyle(style: CSSStyleDeclaration, width: number) : DrawCellCommand{
     const cell = new DrawCellCommand(width);
     const textOptions =  generateTextStyleFromCSS(style);
-    console.log(style.backgroundColor);
     cell.cellStyle = {
       textOptions:textOptions,
-      //border
-      borderColor: style.borderColor,
+      border: {top: cssPixelToPostScriptPoint(style.borderTopWidth), left: cssPixelToPostScriptPoint(style.borderLeftWidth), right: cssPixelToPostScriptPoint(style.borderRightWidth), bottom: cssPixelToPostScriptPoint(style.borderBottomWidth)},
+      borderColor: cssColorToPDFColor(style.borderColor),
       font: {size: Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96)},
-      //backgroundColor: style.backgroundColor,
+      backgroundColor: cssColorToPDFColor(style.backgroundColor),
       align: {x: style.textAlign.replace("middle", "center"), y: style.verticalAlign.replace("middle", "center")},
       textStroke: 0.4,
       textStrokeColor: style.color,
