@@ -97,11 +97,14 @@ export interface PDFKitTableOptions{
   rowStyles: number | number[] | ((row: number) => any)
   data: string[][] | PDFKitCellOptions[][];
 }
+export interface PDFKitSetFontProps{
+  fontName: string,
+  fontFile?: string
+}
 export class PDFDocument{
   doc: any;
   public constructor(props: PDFKitDocumentConstructorProps){
     this.doc = new pdf.default(props);
-    console.log(this.doc);
   }
   public on(event: string, action: unknown){
     this.doc.on(event, action);
@@ -130,8 +133,14 @@ export class PDFDocument{
   public fontSize(size: number){
     this.doc.fontSize(size);
   }
+  public font(options: PDFKitSetFontProps){
+    if(options.fontFile){
+      this.doc.font(options.fontFile, options.fontName);
+    }else{
+      this.doc.font(options.fontName);
+    }
+  }
   public text(options?: PFFKitTextProps){
-    console.log(options);
     this.doc.text(options?.text, options?.x, options?.y, options?.options);
   }
 

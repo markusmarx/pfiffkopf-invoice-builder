@@ -1,6 +1,6 @@
 /* eslint-disable no-loss-of-precision */
 import { createRoot } from "react-dom/client";
-import { Template } from "../types";
+import { FontStorage, Template } from "../types";
 import { MantineProvider } from "@mantine/core";
 import { saveAs } from "file-saver";
 import { PDFDocument, PDFKitTextOptions, PDFKitCellOptions } from "../pdf";
@@ -65,6 +65,7 @@ class StartDrawTextCommand extends GroupCommand {
     for (let i = 0; i < commands.length; i++) {
       const textCommand = commands[i] as DrawTextCommand;
       pdf.fontSize(textCommand.fontSize);
+      pdf.font({fontName: textCommand.font});
       pdf.lineWidth(0.4); //emulate bold text, is triggered by enabeling stroke
       if (i === 0) {
         pdf.text(
@@ -460,20 +461,21 @@ export function renderToPDF(template: Template) {
     text: string | null,
   ): DrawTextCommand {
     const command = new DrawTextCommand(text || "Error");
-    command.style = generateTextStyleFromCSS(style);
+    const textOptions = generateTextStyleFromCSS(style, template.GetFontStorage());
+    command.style = textOptions.style;
     command.color = style.color;
-    command.font = style.font;
+    command.font = textOptions.fontFamily;
     command.fontSize = Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96);
     return command;
   }
   function drawCellCommandFromStyle(style: CSSStyleDeclaration, width: number) : DrawCellCommand{
     const cell = new DrawCellCommand(width);
-    const textOptions =  generateTextStyleFromCSS(style);
+    const textOptions =  generateTextStyleFromCSS(style, template.GetFontStorage());
     cell.cellStyle = {
-      textOptions:textOptions,
+      textOptions:textOptions.style,
       border: {top: cssPixelToPostScriptPoint(style.borderTopWidth), left: cssPixelToPostScriptPoint(style.borderLeftWidth), right: cssPixelToPostScriptPoint(style.borderRightWidth), bottom: cssPixelToPostScriptPoint(style.borderBottomWidth)},
       borderColor: cssColorToPDFColor(style.borderColor),
-      font: {size: Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96)},
+      font: {size: Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96), src: textOptions.fontFamily},
       backgroundColor: cssColorToPDFColor(style.backgroundColor),
       align: {x: style.textAlign.replace("middle", "center"), y: style.verticalAlign.replace("middle", "center")},
       textStroke: 0.4,
@@ -481,12 +483,30 @@ export function renderToPDF(template: Template) {
     }; 
     return cell
   }
-  function generateTextStyleFromCSS(style: CSSStyleDeclaration) : PDFKitTextOptions{
+  function generateTextStyleFromCSS(style: CSSStyleDeclaration, storage: FontStorage) : {style: PDFKitTextOptions, fontFamily: string}{
+    const family = storage.getByFamily(style.fontFamily);
+    let oblique = style.fontStyle.includes("italic") || style.fontStyle.includes("oblique");
+    let bold = style.fontWeight === "bold" || Number(style.fontWeight) >= 700;
+    let font = "Helvetica";
+    if(family){
+      if(family.boldItalicVersion && bold && oblique){
+        font = family.boldItalicVersion;
+        oblique = false;
+        bold = false;
+      }else if (family.boldVersion && bold && !oblique){
+        font = family.boldVersion;
+        bold = false;
+      }else if (family.italicVersion && !bold && oblique){
+        font = family.italicVersion;
+        oblique = false;
+      }
+    }
     return {
+      style: {
         underline: style.textDecoration.includes("underline"),
         strike: style.textDecoration.includes("line-through"),
-        stroke: style.fontWeight === "bold" || Number(style.fontWeight) >= 700,
-        oblique: style.fontStyle.includes("italic") || style.fontStyle.includes("oblique"),
+        stroke: bold,
+        oblique: oblique,
         wordSpacing: cssPixelToPostScriptPoint(style.wordSpacing),
         characterSpacing: style.letterSpacing.includes("normal") ? undefined : cssPixelToPostScriptPoint(style.letterSpacing),
         lineGap: cssPixelToPostScriptPoint(style.lineHeight) - cssPixelToPostScriptPoint(style.fontSize),
@@ -494,7 +514,9 @@ export function renderToPDF(template: Template) {
         baseline: style.alignmentBaseline ? style.alignmentBaseline.replace("mathematical", "baseline").replace("central", "baseline").replace("text-top", "top").replace("text-bottom", "bottom") : "baseline",
         align: style.textAlign.replace("start", "left").replace("end", "right"),
         fill: true
-      }
+      },
+      fontFamily: font
+    };
   }
   function renderHTMLNodeRecursive(
     pdf: PDFDocument,

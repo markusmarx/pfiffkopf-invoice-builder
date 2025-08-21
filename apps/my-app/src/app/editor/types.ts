@@ -203,7 +203,12 @@ export class DragVector {
 export interface FontStorageEntry {
   value: string;
   label: string;
-  url: string;
+
+  postScriptName?: string;
+  boldVersion?: string;
+  italicVersion?: string;
+  boldItalicVersion?: string;
+  url?: string;
 }
 export class FontSelector {
   private fontFace: string;
@@ -218,7 +223,6 @@ export class FontSelector {
   public Set(font: string) {
     this.fontFace = font;
   }
-  //TODO: Rewrite as promise
   public TryUpload(file: File, displayName?: string, id?: string, onSucces?: (fontName: string) => void, onFail?: (error: Error) => void) {
     const promise = this.storage.LoadCustomFontFromFile(file, displayName, id);
     promise.then(
@@ -239,7 +243,7 @@ export class FontSelector {
     return this.storage.List();
   }
 }
-const SYSTEM_FONT = "Arial";
+const SYSTEM_FONT = "Helvetica";
 export class FontStorage {
   private fontFace: string;
   private customFont: null | FontFace;
@@ -249,9 +253,28 @@ export class FontStorage {
     this.fontFace = SYSTEM_FONT;
     this.fonts = Array<FontStorageEntry>();
     this.fonts.push({
-      value: SYSTEM_FONT,
-      label: SYSTEM_FONT,
-      url: "fonts/ARIAL.TTF"
+      value: "Courier",
+      label: "Courier",
+      postScriptName: "Courier-Bold",
+      boldVersion: "Courier-Bold",
+      italicVersion: "Courier-Oblique",
+      boldItalicVersion: "Courier-BoldOblique",
+    });
+    this.fonts.push({
+      value: "Helvetica",
+      label: "Helvetica",
+      postScriptName: "Helvetica",
+      boldVersion: "Helvetica-Bold",
+      italicVersion: "Helvetica-Oblique",
+      boldItalicVersion: "Helvetica-BoldOblique",
+    });
+    this.fonts.push({
+      value: "Times-Roman",
+      label: "Times-Roman",
+      postScriptName: "Times-Roman",
+      boldVersion: "Times-Bold",
+      italicVersion: "Times-Italic",
+      boldItalicVersion: "Times-BoldItalic",
     });
   }
   public GetDefault(): string {
@@ -284,6 +307,9 @@ export class FontStorage {
     if (this.customFont) {
       (document.fonts as any).delete(this.customFont);
     }
+  }
+  public getByFamily(family: string){
+    return this.fonts.find(x => x.value === family);
   }
 
   public LoadCustomFontFromFile(file: File, displayName?: string, id?: string): Promise<string> {
