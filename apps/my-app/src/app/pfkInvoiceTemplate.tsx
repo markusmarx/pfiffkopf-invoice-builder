@@ -2,7 +2,6 @@ import {FileInput, Group, Stack, Text, TextInput, Title} from "@mantine/core";
 import {
   DragVector,
   FontSelector,
-  FontStorage,
   TableData,
   Template,
   TemplateDrawProperties,
@@ -31,7 +30,10 @@ export class LetterpaperSection extends TemplateTab {
     this.drawUI = (properties: TemplateTabDrawProperties) => {
       return (
         <div>
-          <FileInput label="Briefpapier hochladen" style={{fontFamily: "Custom Font"}}/>
+          <FileInput label="Briefpapier hochladen" style={{fontFamily: "Custom Font"}} onChange={(file) => {
+            //
+              
+          }}/>
           <TextInput
             label="dummy text"
             defaultValue={this.testText}
@@ -159,7 +161,6 @@ export class PfkInvoiceTemplate extends Template {
 
 
   DrawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
-    console.log(this.letterpaper?.font);
     return Array<JSX.Element>(
       <Page
         format={PageFormat.A4}
@@ -195,7 +196,7 @@ export class PfkInvoiceTemplate extends Template {
           </Text>
           <Text> - Zusatz - </Text>
           <Text>
-            012<b>34</b> Musterhausen
+            01234 Musterhausen
           </Text>
         </MovableBox>
         <MovableBox
@@ -209,7 +210,7 @@ export class PfkInvoiceTemplate extends Template {
           id="invoiceParam"
         >
           <Stack align={"flex-end"} gap={0}>
-            <Title order={3}>
+            <Title order={3} style={{fontFamily: this.letterpaper?.font.Family()}}>
               Rechnung
             </Title>
             <Group justify={"space-between"}>

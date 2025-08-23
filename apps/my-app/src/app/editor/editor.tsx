@@ -7,15 +7,14 @@ import {
   Button,
   Flex,
   Group,
-  Input,
   NumberInput,
-  Space,
   Text,
   Badge,
   ActionIcon,
   Tooltip,
   Divider,
-  Title
+  Title,
+  MantineProvider,
 } from "@mantine/core";
 import {
   IconChevronLeft,
@@ -23,9 +22,11 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
   IconFileTypePdf,
-  IconPalette
+  IconPalette,
 } from "@tabler/icons-react";
 import { renderToPDF } from "./pdf_renderer/renderer";
+import { PDFKitPDFSubset, PDFKitPDFVersion } from "./pdf";
+import saveAs from "file-saver";
 
 export interface EditorPropertys {
   view?: ReactElement<ViewProperties>;
@@ -33,11 +34,16 @@ export interface EditorPropertys {
 }
 
 export function Editor(properties: EditorPropertys) {
-  const [currentPropertiesTab, setCurrentPropertiesTab] = useState<string|null>("");
-  const [, forceUpdate] = useReducer(x => x + 1, 0);
+  const [currentPropertiesTab, setCurrentPropertiesTab] = useState<
+    string | null
+  >("");
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const pages = properties.template.DrawPaper({currentTab: ""});
+  const pages = properties.template.DrawPaper({
+    currentTab: "",
+    pdfRenderer: false,
+  });
   const maxPages = pages instanceof Array ? pages.length : 1;
 
   return (
@@ -46,8 +52,8 @@ export function Editor(properties: EditorPropertys) {
       navbar={{ width: 520, breakpoint: "sm" }}
       styles={{
         main: {
-          backgroundColor: 'var(--mantine-color-gray-0)',
-        }
+          backgroundColor: "var(--mantine-color-gray-0)",
+        },
       }}
     >
       <AppShell.Header>
@@ -82,7 +88,9 @@ export function Editor(properties: EditorPropertys) {
                     <Tooltip label="Vorherige Seite">
                       <ActionIcon
                         variant="light"
-                        onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                        onClick={() =>
+                          setCurrentPage(Math.max(currentPage - 1, 1))
+                        }
                         disabled={currentPage === 1}
                       >
                         <IconChevronLeft size={16} />
@@ -93,8 +101,8 @@ export function Editor(properties: EditorPropertys) {
                         input: {
                           textAlign: "center",
                           width: 60,
-                          borderRadius: 'var(--mantine-radius-sm)'
-                        }
+                          borderRadius: "var(--mantine-radius-sm)",
+                        },
                       }}
                       variant="filled"
                       size="sm"
@@ -104,12 +112,16 @@ export function Editor(properties: EditorPropertys) {
                       decimalScale={0}
                       hideControls
                       value={currentPage}
-                      onValueChange={(v) => setCurrentPage(v.floatValue ? v.floatValue : 1)}
+                      onValueChange={(v) =>
+                        setCurrentPage(v.floatValue ? v.floatValue : 1)
+                      }
                     />
                     <Tooltip label="Nächste Seite">
                       <ActionIcon
                         variant="light"
-                        onClick={() => setCurrentPage(Math.min(currentPage + 1, maxPages))}
+                        onClick={() =>
+                          setCurrentPage(Math.min(currentPage + 1, maxPages))
+                        }
                         disabled={currentPage === maxPages}
                       >
                         <IconChevronRight size={16} />
@@ -132,9 +144,21 @@ export function Editor(properties: EditorPropertys) {
 
             <Button
               leftSection={<IconFileTypePdf size={18} />}
-              onClick={() => renderToPDF(properties.template)}
+              onClick={() =>
+                renderToPDF({
+                  template: properties.template,
+                  wrapper: (template) => {
+                    return <MantineProvider>{template}</MantineProvider>;
+                  },
+                  pdfCreationOptions: {subset: PDFKitPDFSubset.pdfA_oneA, pdfVersion: PDFKitPDFVersion.oneDFour, tagged: true},
+                  onFinishPDFCreation: (chunks) => {
+                    const blob = new Blob(chunks as BlobPart[], { type: "application/pdf" });
+                    saveAs(blob, "generierte Rechnung.pdf");
+                  }
+                })
+              }
               variant="gradient"
-              gradient={{ from: 'primary', to: 'accent', deg: 45 }}
+              gradient={{ from: "primary", to: "accent", deg: 45 }}
               size="sm"
               radius="md"
             >
@@ -148,7 +172,9 @@ export function Editor(properties: EditorPropertys) {
         <Propertys
           template={properties.template}
           pageIndex={currentPage}
-          onTabChanges={(n) => {if(currentPropertiesTab !== n) setCurrentPropertiesTab(n) } }
+          onTabChanges={(n) => {
+            if (currentPropertiesTab !== n) setCurrentPropertiesTab(n);
+          }}
         />
       </AppShell.Navbar>
 

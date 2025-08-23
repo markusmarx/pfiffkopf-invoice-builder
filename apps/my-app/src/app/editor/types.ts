@@ -199,16 +199,19 @@ export class DragVector {
     };
   }
 }
-
+export interface WebFont{
+  name: string;
+  url: string;
+  file?: ArrayBuffer;
+}
+//loadFont("")
 export interface FontStorageEntry {
-  value: string;
+  value: string; //font family
   label: string;
-
-  postScriptName?: string;
-  boldVersion?: string;
-  italicVersion?: string;
-  boldItalicVersion?: string;
-  url?: string;
+  regular: WebFont;
+  bold?: WebFont;
+  italic?: WebFont;
+  boldItalic?: WebFont;
 }
 export class FontSelector {
   private fontFace: string;
@@ -252,29 +255,48 @@ export class FontStorage {
     this.customFont = null;
     this.fontFace = SYSTEM_FONT;
     this.fonts = Array<FontStorageEntry>();
+    const testFontUrl = "https://raw.githubusercontent.com/coderiver/cubitssuperlanding/master/css/fonts/Helvetica-Regular.ttf";
+    //(window as any).queryLocalFonts().then((v) => console.log("loaded fonts"));
     this.fonts.push({
       value: "Courier",
       label: "Courier",
-      postScriptName: "Courier-Bold",
+      regular: {
+        name: "Courier",
+        url: testFontUrl,
+      }
+      /*postScriptName: "Courier",
       boldVersion: "Courier-Bold",
       italicVersion: "Courier-Oblique",
-      boldItalicVersion: "Courier-BoldOblique",
+      boldItalicVersion: "Courier-BoldOblique",*/
     });
     this.fonts.push({
       value: "Helvetica",
       label: "Helvetica",
-      postScriptName: "Helvetica",
+      regular: {
+        name: "Helvetica",
+        url: testFontUrl,
+      },
+      bold: {
+        name: "Helvetica-Bold",
+        url: testFontUrl,
+      }
+      /*postScriptName: "Helvetica",
       boldVersion: "Helvetica-Bold",
       italicVersion: "Helvetica-Oblique",
-      boldItalicVersion: "Helvetica-BoldOblique",
+      boldItalicVersion: "Helvetica-BoldOblique",*/
     });
     this.fonts.push({
       value: "Times-Roman",
       label: "Times-Roman",
-      postScriptName: "Times-Roman",
+      regular: {
+        name: "Times-Roman",
+        url: testFontUrl,
+      }
+      /*
       boldVersion: "Times-Bold",
       italicVersion: "Times-Italic",
       boldItalicVersion: "Times-BoldItalic",
+      */
     });
   }
   public GetDefault(): string {
@@ -290,14 +312,13 @@ export class FontStorage {
     }
 
     const fontFace = new FontFace(displayName, `url(${fontURL})`);
-    console.log(fontFace);
     try {
       await fontFace.load();
       await (document.fonts as any).add(fontFace);
-      this.fonts.push({ value: id, label: displayName, url: fontURL });
+      this.fonts.push({ value: id, label: displayName, regular: {name: id, url: fontURL} });
       return Promise.resolve(id);
     } catch (error) {
-      console.error("An error is occured!");
+      console.error("An error is occured loading a font!");
       this.fontFace = SYSTEM_FONT;
       return Promise.reject(error);
     }

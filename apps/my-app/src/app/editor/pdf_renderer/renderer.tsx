@@ -1,9 +1,20 @@
-/* eslint-disable no-loss-of-precision */
 import { createRoot } from "react-dom/client";
-import { FontStorage, Template } from "../types";
-import { MantineProvider } from "@mantine/core";
-import { saveAs } from "file-saver";
-import { PDFDocument, PDFKitTextOptions, PDFKitCellOptions } from "../pdf";
+import { FontStorage, Template, WebFont } from "../types";
+import {
+  PDFDocument,
+  PDFKitTextOptions,
+  PDFKitCellOptions,
+  PDFKitDocumentConstructorOptions,
+} from "../pdf";
+import { ReactNode } from "react";
+import {
+  cssColorToPDFColor,
+  cssFontSizeToPostScriptSize,
+  cssPixelToPostScriptPoint,
+  cssScaleToPostScriptPoint,
+  fetchBuffer,
+} from "../../util";
+import { parsePositionFromHTML } from "./htmlPositionParser";
 
 abstract class DrawCommand {
   childs: DrawCommand[];
@@ -43,20 +54,9 @@ class DrawTextCommand extends DrawCommand {
     this.fontSize = 11;
     this.font = "Arial";
     this.color = "black";
-    this.style = {
-        stroke: false,
-        underline: false,
-        strike: false,
-        oblique: false,
-        characterSpacing: 0,
-        wordSpacing: 0,
-        lineGap: 0,
-        lineBreak: true,
-        baseline: "baseline"
-    }
+    this.style = {};
   }
 }
-
 class StartDrawTextCommand extends GroupCommand {
   override shouldKeep(command: DrawCommand): boolean {
     return super.shouldKeep(command) && command instanceof DrawTextCommand;
@@ -65,48 +65,29 @@ class StartDrawTextCommand extends GroupCommand {
     for (let i = 0; i < commands.length; i++) {
       const textCommand = commands[i] as DrawTextCommand;
       pdf.fontSize(textCommand.fontSize);
-      pdf.font({fontName: textCommand.font});
-      pdf.lineWidth(0.4); //emulate bold text, is triggered by enabeling stroke
-      if (i === 0) {
-        pdf.text(
-          {
-            text: textCommand.text,
-            x: this.x,
-            y: this.y,
-            options: {
-              ...textCommand.style, 
-              width: this.width+1,
-              height: this.heigth,
-              continued: commands.length !== 1,
-            }
-          });
-      } else {
-        pdf.text(
-          {
-            text: textCommand.text,
-            x: this.x,
-            y: this.y,
-            options: {
-              ...textCommand.style,
-              width: this.width+1,
-              height: this.heigth, 
-              continued: commands.length - 1 !== i,
-            }
-          });
-      }
-      pdf.lineWidth(0);
+      pdf.font({ fontName: textCommand.font });
+      pdf.lineWidth(0.4);
+      pdf.text({
+        text: textCommand.text,
+        x: this.x,
+        y: this.y,
+        options: {
+          ...textCommand.style,
+          width: this.width + 1,
+          height: this.heigth,
+          continued: commands.length - 1 !== i,
+        },
+      });
     }
   }
 }
-
-
 class StartDrawTableCommand extends GroupCommand {
   draw(pdf: PDFDocument, commands: Array<DrawCommand>): void {
     if (commands.length === 0) {
       //we try to draw a empty table, this shouldn't be visible
       return;
     }
-    
+
     const table = new Array<Array<PDFKitCellOptions>>(0);
     const collumnSize = new Array<number>(0);
     const rowSizes = new Array<number>(0);
@@ -125,12 +106,12 @@ class StartDrawTableCommand extends GroupCommand {
           collumnSize.push(cell.width);
         }
         //extract text
-        const text = cell.childs.find(x => x instanceof DrawTextCommand);
-        if(text){
-            row.push({text: text.text || " ", ...cell.cellStyle, textOptions: text.style});
-        }else{
-            row.push({text: ""});
-        }
+        const text = cell.childs.find((x) => x instanceof DrawTextCommand);
+        row.push({
+          text: text?.text || "Error, was unable to find text to render!",
+          ...cell.cellStyle,
+          textOptions: text?.style,
+        });
       }
     }
     //the last row is never ended with a beginn new row marker, so always push the last
@@ -138,8 +119,8 @@ class StartDrawTableCommand extends GroupCommand {
       table.push(row);
     }
     pdf.table({
-      position: {x: this.x, y: this.y},
-      columnStyles: (collumnIndex : number) => { return {width: collumnSize[collumnIndex]}},
+      position: { x: this.x, y: this.y },
+      columnStyles: collumnSize,
       rowStyles: rowSizes,
       data: table,
     });
@@ -169,174 +150,183 @@ class DrawCellCommand extends DrawCommand {
     this.cellStyle = {};
   }
 }
-
-function getCmInPixels(): number {
-  const div = document.createElement("div");
-  div.style.width = "1cm";
-  div.style.position = "absolute";
-  div.style.visibility = "hidden";
-  document.body.appendChild(div);
-
-  const pixels = div.getBoundingClientRect().width;
-  document.body.removeChild(div);
-
-  return pixels;
+async function generateTextCommandFromCSS(
+  style: CSSStyleDeclaration,
+  text: string | null,
+  pdf: PDFDocument,
+  storage: FontStorage,
+): Promise<DrawTextCommand> {
+  const command = new DrawTextCommand(text || "Error");
+  const textOptions = await generateTextStyleFromCSS(style, storage, pdf);
+  command.style = textOptions.style;
+  command.color = style.color;
+  command.font = textOptions.fontFamily;
+  command.fontSize = cssFontSizeToPostScriptSize(style.fontSize);
+  return command;
 }
-const cmToPixels = getCmInPixels();
-function cssScaleToPostScriptPoint(
-  value: string,
-  self?: HTMLElement | null,
-  name?: string,
-): number | null {
-  function percentRecursive(node: HTMLElement, read: string) {
-    const percent = Number(read.substring(0, read.length - 1)) / 100;
-    if (!node || !name || !node.parentElement) return 0;
-    return (
-      percent *
-      (cssScaleToPostScriptPointWithCallback(
-        node.parentElement.style.getPropertyValue(name),
-        node.parentElement,
-        percentRecursive,
-      ) || 1)
-    );
-  }
-
-  return cssScaleToPostScriptPointWithCallback(value, self, percentRecursive);
+async function drawCellCommandFromStyle(
+  style: CSSStyleDeclaration,
+  width: number,
+  pdf: PDFDocument,
+  storage: FontStorage,
+): Promise<DrawCellCommand> {
+  const cell = new DrawCellCommand(width);
+  const textOptions = await generateTextStyleFromCSS(style, storage, pdf);
+  cell.cellStyle = {
+    textOptions: textOptions.style,
+    border: {
+      top: cssPixelToPostScriptPoint(style.borderTopWidth),
+      left: cssPixelToPostScriptPoint(style.borderLeftWidth),
+      right: cssPixelToPostScriptPoint(style.borderRightWidth),
+      bottom: cssPixelToPostScriptPoint(style.borderBottomWidth),
+    },
+    borderColor: cssColorToPDFColor(style.borderColor),
+    font: {
+      size: cssFontSizeToPostScriptSize(style.fontSize),
+      src: textOptions.fontFamily,
+    },
+    backgroundColor: cssColorToPDFColor(style.backgroundColor),
+    align: {
+      x: style.textAlign.replace("middle", "center"),
+      y: style.verticalAlign.replace("middle", "center"),
+    },
+    textStroke: 0.4,
+    textStrokeColor: style.color,
+    //padding cuts of the text, so we can't support html padding for now
+  };
+  return cell;
 }
-
-function cssPixelToPostScriptPoint(value: string): number {
-  return cssPixelNumberToPostScriptPoint(Number(value.substring(0, value.length - 2)))
-}
-function cssPixelNumberToPostScriptPoint(value: number): number {
-  return Number(
-    ((value / cmToPixels) * 5.6692857142857142857142857142857 * 5).toFixed(2),
-  );
-}
-function cssColorToPDFColor(color: string) : string | undefined{
-    if(color.startsWith("#")){
-      return color;
-    }else if (color.startsWith("rgb")){
-      const rgba = color.substring(color.indexOf("(")+1, color.lastIndexOf(")")).split(",");
-      const redHex = Number(rgba[0]).toString(16).padStart(2, '0');
-      const greenHex = Number(rgba[1]).toString(16).padStart(2, '0');
-      const blueHex = Number(rgba[2]).toString(16).padStart(2, '0');
-      if(rgba.length === 4){
-        const alpha = Number(rgba[3]);
-        return alpha > 0.5 ? `${redHex}${greenHex}${blueHex}` : undefined;
-      }else{
-        return `${redHex}${greenHex}${blueHex}`;
-      }
-    }else if (color.startsWith("hsl")){
-      return undefined;
-    }else if (color.startsWith("hsla")){
-      return undefined;
+async function checkWebFont(font: WebFont, doc: PDFDocument) {
+  if (!doc.isFontRegistered(font.name)) {
+    if (!font.file) {
+      font.file = await fetchBuffer(font.url);
     }
-    return color;
+    doc.embedFont(font.name, font.file);
+  }
+}
+async function generateTextStyleFromCSS(
+  style: CSSStyleDeclaration,
+  storage: FontStorage,
+  pdf: PDFDocument,
+): Promise<{ style: PDFKitTextOptions; fontFamily: string }> {
+  const family = storage.getByFamily(style.fontFamily);
+  let oblique =
+    style.fontStyle.includes("italic") || style.fontStyle.includes("oblique");
+  let bold = style.fontWeight === "bold" || Number(style.fontWeight) >= 700;
+
+  let font = family?.value || "Helvetica";
+  if (family) {
+    if (family.boldItalic && bold && oblique) {
+      await checkWebFont(family.boldItalic, pdf);
+      font = family.boldItalic.name;
+      oblique = false;
+      bold = false;
+    } else if (family.bold && bold && !oblique) {
+      await checkWebFont(family.bold, pdf);
+      font = family.bold.name;
+      bold = false;
+    } else if (family.italic && !bold && oblique) {
+      await checkWebFont(family.italic, pdf);
+      font = family.italic.name;
+      oblique = false;
+    } else {
+      font = family.regular.name;
+      await checkWebFont(family.regular, pdf);
+    }
+  }
+  return {
+    style: {
+      underline: style.textDecoration.includes("underline"),
+      strike: style.textDecoration.includes("line-through"),
+      stroke: bold,
+      oblique: oblique,
+      wordSpacing: cssPixelToPostScriptPoint(style.wordSpacing),
+      characterSpacing: style.letterSpacing.includes("normal")
+        ? undefined
+        : cssPixelToPostScriptPoint(style.letterSpacing),
+      lineGap:
+        cssPixelToPostScriptPoint(style.lineHeight) -
+        cssPixelToPostScriptPoint(style.fontSize),
+      lineBreak: !style.whiteSpace.includes("nowrap"),
+      baseline: style.alignmentBaseline
+        ? style.alignmentBaseline
+            .replace("mathematical", "baseline")
+            .replace("central", "baseline")
+            .replace("text-top", "top")
+            .replace("text-bottom", "bottom")
+        : "baseline",
+      align: style.textAlign.replace("start", "left").replace("end", "right"),
+      fill: true,
+    },
+    fontFamily: font,
+  };
 }
 
-function cssScaleToPostScriptPointWithCallback(
-  value: string,
-  self?: HTMLElement | null,
-  getParrentSize?: (node: HTMLElement, read: string) => number,
-): number | null {
-  const without_unit = value.substring(0, value.length - 2);
-  if (!value) {
-    return null;
-  } else if (value.endsWith("cm")) {
-    const cmNumber = Number(without_unit);
-    return Number(
-      (cmNumber * 5.6692857142857142857142857142857 * 5).toFixed(2),
-    );
-  } else if (value.endsWith("mm")) {
-    const mmNumber = Number(without_unit);
-    return Number(
-      ((mmNumber * 5.6692857142857142857142857142857 * 5) / 100).toFixed(2),
-    );
-  } else if (value.endsWith("in")) {
-    const inchNumber = Number(without_unit);
-    return Number(
-      (inchNumber * 143.99984905143705330020367170284 * 5).toFixed(2),
-    );
-  } else if (value.endsWith("pt")) {
-    const ptNumber = Number(without_unit);
-    return Number(
-      ((ptNumber * 143.99984905143705330020367170284 * 5) / 72).toFixed(2),
-    );
-  } else if (value.endsWith("pc")) {
-    const pcNumber = Number(without_unit);
-    return Number(
-      ((pcNumber * 143.99984905143705330020367170284 * 5) / 6).toFixed(2),
-    );
-  } else if (value.endsWith("px")) {
-    const pxNumber = Number(without_unit);
-    return cssScaleToPostScriptPoint((pxNumber / cmToPixels).toFixed(2) + "cm");
-  } else if (value.endsWith("%")) {
-    if (self && getParrentSize) return getParrentSize(self, value);
-    else return null;
-  }
-  console.log(`Can't convert ${value} to PostScript Point`);
-  return null;
-}
-export function renderToPDF(template: Template) {
+export async function renderToPDF(options: {
+  template: Template;
+  wrapper?: (template: ReactNode) => ReactNode;
+  pdfCreationOptions?: PDFKitDocumentConstructorOptions;
+  onFinishPDFCreation?: (pdfFile: Uint8Array[]) => unknown;
+}) {
   const container: HTMLDivElement = document.createElement("div");
   container.className = "pdf_render_node";
   container.style.position = "absolute";
   document.body.appendChild(container);
-  const observer = new MutationObserver((mutations) => {
-    console.log("finished rendering pdf as html, convert structure to pdf");
+  const observer = new MutationObserver(async (mutations) => {
     //setup pdf document
-    let doc = new PDFDocument({ autoFirstPage: false });
+    const doc = new PDFDocument({
+      ...options.pdfCreationOptions,
+      autoFirstPage: false,
+    });
     const chunks: Uint8Array[] = [];
     //setup writing to buffer
     doc.on("data", (chunk: Uint8Array<ArrayBufferLike>) => chunks.push(chunk));
     doc.on("end", () => {
-      const blob = new Blob(chunks as BlobPart[], { type: "application/pdf" });
-      saveAs(blob, "example.pdf");
+      if (options.onFinishPDFCreation) {
+        options.onFinishPDFCreation(chunks);
+      }
     });
-    //register fonts
-    const fonts = template.GetFontStorage().List();
-    for (let i = 0; i < fonts.length; i++) {
-      //   doc.registerFont(fonts[i].label, fonts[i].url);
-    }
     //render html to pdf
     for (let i = 0; i < container.children.length; i++) {
-      const ret = recursiveFindRotAndCreatePages(
-        container.children.item(i),
-        container,
-        i,
-        doc,
-      );
-      doc = ret[0];
-      if (ret[1]) {
+      if (
+        await recursiveFindRotAndCreatePages(
+          container.children.item(i),
+          container,
+          i,
+          doc,
+        )
+      ) {
         break;
       }
     }
     doc.end();
-
-    console.log("cleaning up the structure");
     observer.disconnect();
     container.remove();
+
+    return doc;
   });
   observer.observe(container, { childList: true });
   const root = createRoot(container);
+
+  const renderTemplate = options.template.DrawPaper({
+    currentTab: "RENDER_PDF",
+    pdfRenderer: true,
+  });
   root.render(
-    <MantineProvider>
-      {template.DrawPaper({
-        currentTab: "RENDER_ENGINE",
-        pdfRenderer: true,
-      })}
-    </MantineProvider>,
+    options.wrapper ? options.wrapper(renderTemplate) : renderTemplate,
   );
 
-  function recursiveFindRotAndCreatePages(
+  async function recursiveFindRotAndCreatePages(
     searchElement: Element | null,
     parrent: Element | null,
     index: number,
     pdfDoc: PDFDocument,
-  ): [PDFDocument, boolean] {
+  ): Promise<boolean> {
     if (searchElement === null) {
-      return [pdfDoc, false];
-    } else if (searchElement.id === "real_paper") {
+      return false;
+    } 
+    
+    if (searchElement.id === "real_paper") {
       //start rendering pages
       let basePage: HTMLElement = searchElement as HTMLElement;
       const pageDescriptor = {
@@ -385,10 +375,6 @@ export function renderToPDF(template: Template) {
               pageDescriptor.height * (drawAreaPagesCover + add) -
               pageDescriptor.margin_top -
               drawAreaHeight;
-
-            console.log(
-              `Changing page format to width: ${basePage.style.width} height: ${basePage.style.height}`,
-            );
           } else if (element.id !== "paper-container-expand") {
             i++;
             continue;
@@ -418,8 +404,9 @@ export function renderToPDF(template: Template) {
               elementCounter++;
               //just render text as child
             }
-            const node = renderHTMLNodeRecursive(
+            const node = await renderHTMLNodeRecursive(
               pdfDoc,
+              options.template.GetFontStorage(),
               basePage,
               0,
               0,
@@ -439,87 +426,27 @@ export function renderToPDF(template: Template) {
           break;
         }
       }
-      return [pdfDoc, true];
+      return true;
     } else {
       for (let i = 0; i < searchElement.children.length; i++) {
-        const ret = recursiveFindRotAndCreatePages(
-          searchElement.children.item(i),
-          searchElement,
-          i,
-          pdfDoc,
-        );
-        pdfDoc = ret[0];
-        if (ret[1]) {
-          return [pdfDoc, true];
+        if (
+          await recursiveFindRotAndCreatePages(
+            searchElement.children.item(i),
+            searchElement,
+            i,
+            pdfDoc,
+          )
+        ) {
+          return true;
         }
       }
     }
-    return [pdfDoc, false];
+    return false;
   }
-  function generateTextCommandFromCSS(
-    style: CSSStyleDeclaration,
-    text: string | null,
-  ): DrawTextCommand {
-    const command = new DrawTextCommand(text || "Error");
-    const textOptions = generateTextStyleFromCSS(style, template.GetFontStorage());
-    command.style = textOptions.style;
-    command.color = style.color;
-    command.font = textOptions.fontFamily;
-    command.fontSize = Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96);
-    return command;
-  }
-  function drawCellCommandFromStyle(style: CSSStyleDeclaration, width: number) : DrawCellCommand{
-    const cell = new DrawCellCommand(width);
-    const textOptions =  generateTextStyleFromCSS(style, template.GetFontStorage());
-    cell.cellStyle = {
-      textOptions:textOptions.style,
-      border: {top: cssPixelToPostScriptPoint(style.borderTopWidth), left: cssPixelToPostScriptPoint(style.borderLeftWidth), right: cssPixelToPostScriptPoint(style.borderRightWidth), bottom: cssPixelToPostScriptPoint(style.borderBottomWidth)},
-      borderColor: cssColorToPDFColor(style.borderColor),
-      font: {size: Number(style.fontSize.substring(0, style.fontSize.length - 2)) * (72 / 96), src: textOptions.fontFamily},
-      backgroundColor: cssColorToPDFColor(style.backgroundColor),
-      align: {x: style.textAlign.replace("middle", "center"), y: style.verticalAlign.replace("middle", "center")},
-      textStroke: 0.4,
-      textStrokeColor: style.color,
-    }; 
-    return cell
-  }
-  function generateTextStyleFromCSS(style: CSSStyleDeclaration, storage: FontStorage) : {style: PDFKitTextOptions, fontFamily: string}{
-    const family = storage.getByFamily(style.fontFamily);
-    let oblique = style.fontStyle.includes("italic") || style.fontStyle.includes("oblique");
-    let bold = style.fontWeight === "bold" || Number(style.fontWeight) >= 700;
-    let font = "Helvetica";
-    if(family){
-      if(family.boldItalicVersion && bold && oblique){
-        font = family.boldItalicVersion;
-        oblique = false;
-        bold = false;
-      }else if (family.boldVersion && bold && !oblique){
-        font = family.boldVersion;
-        bold = false;
-      }else if (family.italicVersion && !bold && oblique){
-        font = family.italicVersion;
-        oblique = false;
-      }
-    }
-    return {
-      style: {
-        underline: style.textDecoration.includes("underline"),
-        strike: style.textDecoration.includes("line-through"),
-        stroke: bold,
-        oblique: oblique,
-        wordSpacing: cssPixelToPostScriptPoint(style.wordSpacing),
-        characterSpacing: style.letterSpacing.includes("normal") ? undefined : cssPixelToPostScriptPoint(style.letterSpacing),
-        lineGap: cssPixelToPostScriptPoint(style.lineHeight) - cssPixelToPostScriptPoint(style.fontSize),
-        lineBreak: !style.whiteSpace.includes("nowrap"),
-        baseline: style.alignmentBaseline ? style.alignmentBaseline.replace("mathematical", "baseline").replace("central", "baseline").replace("text-top", "top").replace("text-bottom", "bottom") : "baseline",
-        align: style.textAlign.replace("start", "left").replace("end", "right"),
-        fill: true
-      },
-      fontFamily: font
-    };
-  }
-  function renderHTMLNodeRecursive(
+
+  async function renderHTMLNodeRecursive(
     pdf: PDFDocument,
+    storage: FontStorage,
     page: HTMLElement,
     xOffset: number,
     yOffset: number,
@@ -528,77 +455,66 @@ export function renderToPDF(template: Template) {
     node: ChildNode,
     parrent: HTMLElement,
     element?: HTMLElement,
-  ): DrawCommand {
+  ): Promise<DrawCommand> {
     //read/calculate position and size from html dom
     let command: DrawCommand = new SplitCommand();
 
     if (element) {
       const computedStyle = getComputedStyle(element);
-
-      let xPos = cssPixelNumberToPostScriptPoint(element.offsetLeft) + xOffset;
-      let yPos = cssPixelNumberToPostScriptPoint(element.offsetTop) + yOffset;
-
-      const transform = convertCSSTransformToPostScriptTransform(element);
-
-      const positionCss = computedStyle.getPropertyValue("position");
-      switch (positionCss) {
-        case "static":
-          break;
-        case "absolute":
-          xPos =
-            cssScaleToPostScriptPoint(element.style.left, element, "left") ||
-            0 + xOffset + paddingLeft;
-          yPos =
-            cssScaleToPostScriptPoint(element.style.top, element, "top") ||
-            0 + yOffset + paddingTop;
-          if (transform.left && transform.top) {
-            xPos += transform.left - paddingLeft;
-            yPos += transform.top - paddingTop;
-          }
-          xOffset = xPos;
-          yOffset = yPos;
-          break;
-        case "relative":
-          xPos +=
-            cssScaleToPostScriptPoint(computedStyle.left, element, "left") ||
-            0 + (transform.left || 0);
-          yPos +=
-            cssScaleToPostScriptPoint(computedStyle.top, element, "top") ||
-            0 + (transform.left || 0);
-          break;
-        default:
-          console.log(`Unsuported position ${positionCss}`);
-          break;
-      }
-
-      const width = cssPixelNumberToPostScriptPoint(element.offsetWidth);
-      const height = cssPixelNumberToPostScriptPoint(element.offsetHeight);
-
-      //pdf.rect(xPos, yPos, width, height).stroke();
+      const position = parsePositionFromHTML(
+        element,
+        computedStyle,
+        xOffset,
+        yOffset,
+        paddingLeft,
+        paddingTop,
+      );
+      xOffset = position.xOffset;
+      yOffset = position.yOffset;
       //interpret html node type to define what to render:
       //nodes that start a pdf command
       if (element instanceof HTMLParagraphElement) {
-        //insert text
-        command = new StartDrawTextCommand(xPos, yPos, width, height);
+        command = new StartDrawTextCommand(
+          position.x,
+          position.y,
+          position.width,
+          position.height,
+        );
       } else if (element instanceof HTMLHeadingElement) {
-        command = new StartDrawTextCommand(xPos, yPos, width, height);
+        command = new StartDrawTextCommand(
+          position.x,
+          position.y,
+          position.width,
+          position.height,
+        );
       } else if (element instanceof HTMLAnchorElement) {
-        command = new StartDrawTextCommand(xPos, yPos, width, height);
+        command = new StartDrawTextCommand(
+          position.x,
+          position.y,
+          position.width,
+          position.height,
+        );
       } else if (element instanceof HTMLDivElement) {
         //draw if required a box
       } else if (element instanceof HTMLTableElement) {
-        //start drawing table
-        command = new StartDrawTableCommand(xPos, yPos, width, height);
+        command = new StartDrawTableCommand(
+          position.x,
+          position.y,
+          position.width,
+          position.height,
+        );
       } else if (element instanceof HTMLTableRowElement) {
-        command = new DrawRowCommand(height);
+        command = new DrawRowCommand(position.height);
       } else if (element instanceof HTMLTableColElement) {
         console.error("collumn elements are currently not supported!");
       } else if (element instanceof HTMLTableCellElement) {
-        const cellCommand = drawCellCommandFromStyle(computedStyle, width);
-        
-        command = cellCommand;
+        command = await drawCellCommandFromStyle(
+          computedStyle,
+          position.width,
+          pdf,
+          storage,
+        );
       }
-
       //iterate over all childs recursive
       let elementCounter = 0;
       //iterate over all children and render them
@@ -606,12 +522,12 @@ export function renderToPDF(template: Template) {
         const childNode = element.childNodes.item(i);
         let childElement = undefined;
         if (childNode.nodeName !== "#text") {
-          //just render text as child
           childElement = element.children[elementCounter];
           elementCounter++;
         }
-        const childCommand = renderHTMLNodeRecursive(
+        const childCommand = await renderHTMLNodeRecursive(
           pdf,
+          storage,
           page,
           xOffset,
           yOffset,
@@ -621,21 +537,22 @@ export function renderToPDF(template: Template) {
           element,
           childElement as HTMLElement,
         );
-        if (command) {
-          command.childs.push(childCommand);
-        }
+        command.childs.push(childCommand);
       }
     } else {
       if (node.nodeName === "#text") {
         //draw a text
-        return generateTextCommandFromCSS(
+        return await generateTextCommandFromCSS(
           getComputedStyle(parrent),
           node.textContent,
+          pdf,
+          storage,
         );
       } else {
-        console.log(`Unsupported node ${node}`);
+        console.warn(`Unsupported node ${node}`);
       }
     }
+    //rendered all the childs, now in case we have a group, render the commands to the pdf buffer
     if (command instanceof GroupCommand) {
       const groupCommand = command as GroupCommand;
       //build a straight command list
@@ -656,37 +573,4 @@ export function renderToPDF(template: Template) {
     }
     return command;
   }
-}
-interface PostScriptTransform {
-  left?: number;
-  top?: number;
-}
-function readTransformValue(
-  transform: string,
-  transformOp: string,
-): string | null {
-  const operationIndex = transform.indexOf(transformOp);
-  if (operationIndex === -1) {
-    return null;
-  }
-  return transform.substring(
-    operationIndex + transformOp.length + 1,
-    transform.indexOf(")", operationIndex),
-  );
-}
-function convertCSSTransformToPostScriptTransform(
-  node: HTMLElement,
-): PostScriptTransform {
-  const ret: PostScriptTransform = {};
-
-  const translate = readTransformValue(node.style.transform, "translate");
-  if (translate) {
-    const splitTransform = translate.split(",");
-    const left = cssScaleToPostScriptPoint(splitTransform[0]);
-    const top = cssScaleToPostScriptPoint(splitTransform[1]);
-
-    ret.left = left || 0;
-    ret.top = top || 0;
-  }
-  return ret;
 }

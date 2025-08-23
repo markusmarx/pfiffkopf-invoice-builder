@@ -1,5 +1,6 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from "react";
 import { RenderableBlockParams } from "../types";
+import { cmToPixels } from "../../util";
 
 export enum PageFormat {
     Custom = 0,
@@ -27,18 +28,6 @@ interface PageProperties{
     style?: React.CSSProperties
 }
 
-function getCmInPixels(): number {
-  const div = document.createElement("div");
-  div.style.width = "1cm";
-  div.style.position = "absolute";
-  div.style.visibility = "hidden";
-  document.body.appendChild(div);
-
-  const pixels = div.getBoundingClientRect().width;
-  document.body.removeChild(div);
-
-  return pixels;
-}
 
 export function Page(properties: PageProperties){
 
@@ -50,8 +39,6 @@ export function Page(properties: PageProperties){
 
     const [pagesExpandCount, setPageExpandCount] = useState<number>(1);
     const containerRef = useRef<HTMLDivElement>(null);
-
-    const cmToPixels = getCmInPixels();
 
     useLayoutEffect(() => {
         if(!containerRef.current) return;

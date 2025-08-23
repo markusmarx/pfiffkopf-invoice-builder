@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as pdf from "pdfkit/js/pdfkit.standalone.js";
 type sn = string | number
-export interface UserPermissions{
+export interface PDFKitUserPermissions{
   printing?: string;
   modifying: boolean;
   copying: boolean;
@@ -10,14 +10,14 @@ export interface UserPermissions{
   contentAccessibility: boolean;
   documentAssembly: boolean;
 }
-export interface PDFKitDocumentConstructorProps{
+export interface PDFKitDocumentConstructorOptions{
   autoFirstPage?: boolean;
   info?: PDFKitMetadata;
   userPassword?: string;
   ownerPassword?: string;
-  pdfVersion?: string;
-  permissions?: UserPermissions;
-  subset?: string;
+  pdfVersion?: PDFKitPDFVersion;
+  permissions?: PDFKitUserPermissions;
+  subset?: PDFKitPDFSubset;
   tagged?: boolean;
 }
 export interface PDFKitMetadata{
@@ -30,15 +30,15 @@ export interface PDFKitMetadata{
 }
 export interface PDFKitAddPageProps{
   size?: string | number[],
-  margins?: {top?: sn, bottom?: sn, left?: sn, right?: sn} | sn,
+  margins?: PDFKitSide | sn,
   fontSize?: number, 
   font?: string,
 }
-export interface PDFKitBorder{
-  top: number,
-  right: number,
-  bottom: number,
-  left: number
+export interface PDFKitSide{
+  top?: number,
+  right?: number,
+  bottom?: number,
+  left?: number
 }
 export interface PDFKitTextOptions{
   lineBreak?: boolean,
@@ -76,8 +76,8 @@ export interface PFFKitTextProps{
 }
 export interface PDFKitCellOptions{
     text?: string,
-    padding?: string,
-    border?: PDFKitBorder, //pt
+    padding?: PDFKitSide | sn,
+    border?: PDFKitSide | sn, //pt
     borderColor?: string,
     font?: PDFKitCellFontOptions,
     backgroundColor?: string,
@@ -101,10 +101,32 @@ export interface PDFKitSetFontProps{
   fontName: string,
   fontFile?: string
 }
+export enum PDFKitPDFVersion{
+  oneDThree = "1.3",
+  oneDFour = "1.4",
+  oneDFive = "1.5",
+  oneDSix = "1.6",
+  oneDSeven = "1.7",
+  oneDSevenExtThree = "1.7ext3"
+}
+export enum PDFKitPDFSubset{
+  pdfA_one = "PDF/A-1",
+  pdfA_oneA = "PDF/A-1a",
+  pdfA_oneB = "PDF/A-1b",
+  pdfA_two = "PDF/A-2",
+  pdfA_twoA = "PDF/A-2a",
+  pdfA_twoB = "PDF/A-2b",
+  pdfA_three = "PDF/A-3",
+  pdfA_threeA = "PDF/A-3a",
+  pdfA_threeB = "PDF/A-3b",
+}
+
 export class PDFDocument{
   doc: any;
-  public constructor(props: PDFKitDocumentConstructorProps){
+  registeredFonts: string[];
+  public constructor(props: PDFKitDocumentConstructorOptions){
     this.doc = new pdf.default(props);
+    this.registeredFonts = new Array<string>();
   }
   public on(event: string, action: unknown){
     this.doc.on(event, action);
@@ -128,7 +150,16 @@ export class PDFDocument{
   public stroke(){
     this.doc.stroke();
   }
-  
+  //font
+  public embedFont(id: string, file: string | BufferSource, fontName?: string){
+    this.doc.registerFont(id, file, fontName);
+    this.registeredFonts.push(id);
+    console.log(`Registered font with name ${id}`);
+  }
+
+  public isFontRegistered(fontFamily: string){
+    return this.registeredFonts.includes(fontFamily);
+  }
   //text
   public fontSize(size: number){
     this.doc.fontSize(size);

@@ -1,8 +1,5 @@
 import {
-  Center,
-  Divider,
   ScrollArea,
-  Space,
   Tabs,
   Text,
   Title,
