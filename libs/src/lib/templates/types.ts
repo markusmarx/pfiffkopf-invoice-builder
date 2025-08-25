@@ -9,6 +9,7 @@ export interface TemplateDrawProperties {
 export interface TemplateTabDrawProperties {
   currentTab: string;
   template: Template;
+  isMobile: boolean;
 }
 
 export abstract class Template {

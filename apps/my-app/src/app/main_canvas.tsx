@@ -70,14 +70,16 @@ const MainCanvas: React.FC<MainCanvasProps> = ({
         <Box
           p={isMobile ? 10 : isTablet ? 20 : 40}
           style={{
-            background: '#f1f5f9',
+            //background: '#f1f5f9',
             display: 'flex',
             justifyContent: 'center',
             minHeight: '100%',
             minWidth: "100%"            
           }}
         >
-           {page}
+          <div>
+            {page}
+          </div>
         </Box>
       </ScrollArea>
 

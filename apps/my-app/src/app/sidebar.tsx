@@ -88,6 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       ? props.tab.drawUI({
           template: props.template,
           currentTab: props.tab.id,
+          isMobile: isMobile || false
         })
       : '';
   }
@@ -111,6 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if ((isMobile || isTablet) && !isAnimating) {
       setIsAnimating(true);
       setCurrentTab(category);
+      
 
       // Kleine Verzögerung für visuellen Feedback
       setTimeout(() => {
@@ -119,6 +121,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       }, 150);
     } else {
       setCurrentTab(category);
+    }
+    if(onTabChanges){
+      onTabChanges(category.id);
     }
   };
   const handleBackToMenu = () => {
