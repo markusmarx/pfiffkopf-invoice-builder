@@ -64,7 +64,8 @@ const MainCanvas: React.FC<MainCanvasProps> = ({
 
       {/* Canvas Area */}
       <ScrollArea 
-        viewportProps={{style: { flex: 1 }}}
+        viewportProps={{style: { flex: 1, height: "100%" }}}
+        style={{background: '#f1f5f9',}}
       >
         <Box
           p={isMobile ? 10 : isTablet ? 20 : 40}
@@ -73,10 +74,7 @@ const MainCanvas: React.FC<MainCanvasProps> = ({
             display: 'flex',
             justifyContent: 'center',
             minHeight: '100%',
-            minWidth: "100%"
-            //minHeight: "max-content",
-            //minWidth: "max-content"
-            
+            minWidth: "100%"            
           }}
         >
            {page}

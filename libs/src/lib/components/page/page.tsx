@@ -146,7 +146,7 @@ export function Page(properties: PageProperties) {
   }
   const maxWorplaceHeight = properties.autoExpand
     ? (
-        (pagesExpandCount + 1) * height -
+        (pagesExpandCount + 0.3) * height -
         (properties.borderTop || 0) -
         (properties.borderBottom || 0)
       ).toString() + 'cm'
