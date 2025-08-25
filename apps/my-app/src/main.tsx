@@ -2,8 +2,7 @@ import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import App from './app/app';
 import { MantineProvider } from '@mantine/core';
-import { mantineTheme } from './app/test_theme/theme';
-import { mantineCssVariableResolver } from './app/test_theme/cssVariableResolver';
+import { pfkTheme } from './app/theme/theme';
 import '@mantine/core/styles.css';
 
 const root = ReactDOM.createRoot(
@@ -12,7 +11,7 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <StrictMode>
-    <MantineProvider theme={mantineTheme} cssVariablesResolver={mantineCssVariableResolver}>
+    <MantineProvider theme={pfkTheme}>
       <App />
     </MantineProvider>
   </StrictMode>

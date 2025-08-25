@@ -28,7 +28,7 @@ function PropertiesTab(props: {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
-    props.tab.SetDataProperties(forceUpdate);
+    props.tab.setDataProperties(forceUpdate);
   });
 
   return props.tab.drawUI
@@ -48,7 +48,7 @@ export function Propertys(properties: PropertysProperty) {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
-    properties.template.SetDataProperties(forceUpdate);
+    properties.template.setDataProperties(forceUpdate);
   }, [properties.template]);
 
   function findFirstTab(): string {

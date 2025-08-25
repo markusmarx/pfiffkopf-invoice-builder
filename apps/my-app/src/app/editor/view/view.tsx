@@ -20,7 +20,7 @@ export function DefaultView(properties: ViewProperties) {
 
   useEffect(() => {
     if (properties.template != null) {
-      properties.template.SetDataView(forceUpdate);
+      properties.template.setDataView(forceUpdate);
     }
 
     if (editorWindow.current != null && paperElement.current != null) {
@@ -74,7 +74,7 @@ export function DefaultView(properties: ViewProperties) {
   const offsetY = `calc(var(--app-shell-header-height, 0px) + ${EditorUtil.yPos}px)`;
   const offsetX = `calc(var(--app-shell-navbar-width) + ${EditorUtil.xPos}px)`;
 
-  const pages = properties.template.DrawPaper({
+  const pages = properties.template.drawPaper({
     currentTab:
       currentSelectedPropertiesTab !== undefined
         ? currentSelectedPropertiesTab

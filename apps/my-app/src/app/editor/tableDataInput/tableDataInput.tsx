@@ -30,7 +30,7 @@ export function TableDataInput(props: TableDataInputProps) {
               defaultValue={propserties.item.label}
               onChange={(event) => {
                 propserties.item.label = event.target.value;
-                props.template.RedrawView();
+                props.template.redrawView();
               }}
             />
           )}
@@ -42,7 +42,7 @@ export function TableDataInput(props: TableDataInputProps) {
             disabled={!props.enableEditing}
             onChange={(event) => {
               propserties.item.enabled = event.currentTarget.checked;
-              props.template.RedrawView();
+              props.template.redrawView();
             }}
           />
         </Table.Td>
@@ -52,7 +52,7 @@ export function TableDataInput(props: TableDataInputProps) {
               defaultValue={propserties.item.width}
               onChange={(event) => {
                 propserties.item.width = Number(event);
-                props.template.RedrawView();
+                props.template.redrawView();
               }}
             />
           )}
@@ -86,7 +86,7 @@ export function TableDataInput(props: TableDataInputProps) {
           props.tableData.tableEntries[destIndex] =
             props.tableData.tableEntries[sourceIndex];
           props.tableData.tableEntries[sourceIndex] = dest;
-          props.template.RedrawView();
+          props.template.redrawView();
           forceUpdate();
         }}
       >

@@ -308,7 +308,7 @@ export async function renderToPDF(options: {
   observer.observe(container, { childList: true });
   const root = createRoot(container);
 
-  const renderTemplate = options.template.DrawPaper({
+  const renderTemplate = options.template.drawPaper({
     currentTab: 'RENDER_PDF',
     pdfRenderer: true,
   });
@@ -406,7 +406,7 @@ export async function renderToPDF(options: {
             }
             const node = await renderHTMLNodeRecursive(
               pdfDoc,
-              options.template.GetFontStorage(),
+              options.template.getFontStorage(),
               basePage,
               0,
               0,

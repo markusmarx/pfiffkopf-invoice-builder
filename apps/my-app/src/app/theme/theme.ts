@@ -1,16 +1,16 @@
 
-import { createTheme, rem, colorsTuple, MantineColorsTuple } from "@mantine/core";
+import {
+  createTheme,
+  rem,
+  colorsTuple,
+  MantineColorsTuple,
+  MantineThemeColorsOverride,
+} from '@mantine/core';
+import { PfkColors } from './colors';
 
-// Moderne Farbpalette
-const primaryColor: MantineColorsTuple = colorsTuple('#2563eb'); // Modernes Blau
-const accentColor: MantineColorsTuple = colorsTuple('#f59e0b'); // Warmes Amber
-
-export const mantineTheme = createTheme({
+export const pfkTheme = createTheme({
   primaryColor: 'primary',
-  colors: {
-    primary: primaryColor,
-    accent: accentColor,
-  },
+  colors: PfkColors as MantineThemeColorsOverride,
   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   fontFamilyMonospace: '"SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace',
   headings: {

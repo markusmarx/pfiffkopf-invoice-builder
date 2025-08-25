@@ -22,6 +22,7 @@ export function MovableBox(properties: RenderableBlockParams) {
       posVector={properties.posVector}
       onSubmitPositionChange={properties.onSubmitPositionChange}
       onDrag={properties.onDrag}
+      
     >
       <div
         id={properties.id}

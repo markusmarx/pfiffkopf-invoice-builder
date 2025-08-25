@@ -8,7 +8,6 @@ export interface TemplateDrawProperties {
 
 export interface TemplateTabDrawProperties {
   currentTab: string;
-  edited: boolean;
   template: Template;
 }
 
@@ -21,31 +20,31 @@ export abstract class Template {
   private refreshUI?: () => void;
   private refreshView?: () => void;
 
-  public abstract DrawPaper(
+  public abstract drawPaper(
     prop: TemplateDrawProperties,
   ): JSX.Element | Array<JSX.Element>;
 
-  public GetFontStorage() {
+  public getFontStorage() {
     return this.fontStorage;
   }
 
-  public RedrawProperties() {
+  public redrawProperties() {
     if (this.refreshUI) {
       this.refreshUI();
     }
   }
 
-  public SetDataProperties(refreshUI: () => void) {
+  public setDataProperties(refreshUI: () => void) {
     this.refreshUI = refreshUI;
   }
 
-  public RedrawView() {
+  public redrawView() {
     if (this.refreshView) {
       this.refreshView();
     }
   }
 
-  public SetDataView(refreshView: () => void) {
+  public setDataView(refreshView: () => void) {
     this.refreshView = refreshView;
   }
 }
@@ -53,19 +52,21 @@ export abstract class Template {
 export abstract class TemplateTab {
   public drawUI?: (properties: TemplateTabDrawProperties) => JSX.Element;
 
-  public abstract DisplayName(): string;
-
-  public abstract PageNumbers(): number | number[];
+  public abstract get id() : string;
+  public abstract get displayName() : string;
+  public abstract get shortDisplayName() : string;
+  public abstract get description() : string;
+  public abstract get pageNumbers(): number | number[];
 
   private refreshUI?: () => void;
 
-  public RedrawProperties() {
+  public redrawProperties() {
     if (this.refreshUI) {
       this.refreshUI();
     }
   }
 
-  public SetDataProperties(refreshUI: () => void) {
+  public setDataProperties(refreshUI: () => void) {
     this.refreshUI = refreshUI;
   }
 }
@@ -95,7 +96,7 @@ export class TableData {
     });
   }
 
-  public DynamicTable() {
+  public dynamicTable() {
     return {
       header:
         this.tableEntries.map((v) => {
@@ -119,8 +120,8 @@ export class TableData {
             }
           }
         });
-        template?.RedrawView();
-        tab?.RedrawProperties();
+        template?.redrawView();
+        tab?.redrawProperties();
       },
     };
   }
@@ -135,12 +136,12 @@ export class DragVector {
     this.y = y;
   }
 
-  public DragPos() {
+  public dragPos() {
     return {
       onDrag: (x: number, y: number, tab?: TemplateTab) => {
         this.x = x;
         this.y = y;
-        tab?.RedrawProperties();
+        tab?.redrawProperties();
       },
       onSubmitPositionChange: (
         x: number,
@@ -150,8 +151,8 @@ export class DragVector {
       ) => {
         this.x = x;
         this.y = y;
-        tab?.RedrawProperties();
-        template?.RedrawView();
+        tab?.redrawProperties();
+        template?.redrawView();
       },
       posVector: this,
     };
@@ -162,7 +163,7 @@ export class DragVector {
       value: this.x,
       onChange: (v: string | number) => {
         this.x = v as number;
-        template?.RedrawView();
+        template?.redrawView();
       },
     };
   }
@@ -172,17 +173,17 @@ export class DragVector {
       value: this.y,
       onChange: (v: string | number) => {
         this.y = v as number;
-        template?.RedrawView();
+        template?.redrawView();
       },
     };
   }
 
-  public DragSize() {
+  public dragSize() {
     return {
       onResize: (x: number, y: number, tab?: TemplateTab) => {
         this.x = x;
         this.y = y;
-        tab?.RedrawProperties();
+        tab?.redrawProperties();
       },
       onSubmitSizeChange: (
         x: number,
@@ -192,8 +193,8 @@ export class DragVector {
       ) => {
         this.x = x;
         this.y = y;
-        tab?.RedrawProperties();
-        template?.RedrawView();
+        tab?.redrawProperties();
+        template?.redrawView();
       },
       sizeVector: this,
     };
@@ -204,7 +205,6 @@ export interface WebFont {
   url: string;
   file?: ArrayBuffer;
 }
-//loadFont("")
 export interface FontStorageEntry {
   value: string; //font family
   label: string;
@@ -218,22 +218,22 @@ export class FontSelector {
   private storage: FontStorage;
   constructor(storage: FontStorage) {
     this.storage = storage;
-    this.fontFace = storage.GetDefault();
+    this.fontFace = storage.getDefault();
   }
-  public Family(): string {
+  public family(): string {
     return this.fontFace;
   }
-  public Set(font: string) {
+  public set(font: string) {
     this.fontFace = font;
   }
-  public TryUpload(
+  public tryUpload(
     file: File,
     displayName?: string,
     id?: string,
     onSucces?: (fontName: string) => void,
     onFail?: (error: Error) => void,
   ) {
-    const promise = this.storage.LoadCustomFontFromFile(file, displayName, id);
+    const promise = this.storage.loadCustomFontFromFile(file, displayName, id);
     promise.then(
       (value) => {
         this.fontFace = value;
@@ -248,8 +248,8 @@ export class FontSelector {
       },
     );
   }
-  public GetList() {
-    return this.storage.List();
+  public getList() {
+    return this.storage.list();
   }
 }
 const SYSTEM_FONT = 'Helvetica';
@@ -306,14 +306,14 @@ export class FontStorage {
       */
     });
   }
-  public GetDefault(): string {
+  public getDefault(): string {
     return SYSTEM_FONT;
   }
 
-  public List() {
+  public list() {
     return this.fonts;
   }
-  public async CrawlFromURL(
+  public async crawlFromURL(
     fontURL: string,
     displayName: string,
     id: string,
@@ -338,7 +338,7 @@ export class FontStorage {
       return Promise.reject(error);
     }
   }
-  public SetCSSFont(fontName: string) {
+  public setCSSFont(fontName: string) {
     this.fontFace = fontName;
     if (this.customFont) {
       (document.fonts as any).delete(this.customFont);
@@ -348,13 +348,13 @@ export class FontStorage {
     return this.fonts.find((x) => x.value === family);
   }
 
-  public LoadCustomFontFromFile(
+  public loadCustomFontFromFile(
     file: File,
     displayName?: string,
     id?: string,
   ): Promise<string> {
     const fontURL = URL.createObjectURL(file);
-    return this.CrawlFromURL(
+    return this.crawlFromURL(
       fontURL,
       displayName || file.name,
       id || file.name,

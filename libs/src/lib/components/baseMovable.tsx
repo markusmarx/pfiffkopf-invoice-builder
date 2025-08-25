@@ -62,6 +62,9 @@ export function BaseMovableBox(properties: RenderableBlockParams) {
           }
         }
       }}
+      style={{
+        position: "relative"
+      }}
     >
       {properties.children}
     </Rnd>

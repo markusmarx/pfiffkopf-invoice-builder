@@ -27,12 +27,12 @@ export function FontSelectorUI(properties: FontSelectorUIProps) {
             const fileBuffer = ev.target.files[0].arrayBuffer();
             fileBuffer.then((buffer) => {
               const meta = FontName.parse(buffer);
-              properties.fontSelector.TryUpload(
+              properties.fontSelector.tryUpload(
                 file,
                 meta[0].fullName,
                 meta[0].fullName,
                 () => {
-                  properties.template.RedrawView();
+                  properties.template.redrawView();
                   forceUpdate();
                 },
               );
@@ -46,17 +46,17 @@ export function FontSelectorUI(properties: FontSelectorUIProps) {
         data={
           properties.allowCustomFontUpload
             ? [
-                ...properties.fontSelector.GetList(),
+                ...properties.fontSelector.getList(),
                 { value: 'new', label: 'Neue Importieren' },
               ]
-            : properties.fontSelector.GetList()
+            : properties.fontSelector.getList()
         }
         searchable
-        value={properties.fontSelector.Family()}
+        value={properties.fontSelector.family()}
         onChange={(value) => {
           if (value !== 'new') {
-            properties.fontSelector.Set(value || 'Arial');
-            properties.template.RedrawView();
+            properties.fontSelector.set(value || 'Arial');
+            properties.template.redrawView();
             forceUpdate();
           } else {
             if (fileUpload) {
@@ -74,7 +74,7 @@ export function FontSelectorUI(properties: FontSelectorUIProps) {
             </Group>
           </>
         )}
-        styles={{ input: { fontFamily: properties.fontSelector.Family() } }}
+        styles={{ input: { fontFamily: properties.fontSelector.family() } }}
       />
     </>
   );
