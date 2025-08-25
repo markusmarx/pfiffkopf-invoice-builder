@@ -1,20 +1,20 @@
-import { createRoot } from "react-dom/client";
-import { FontStorage, Template, WebFont } from "../types";
+import { createRoot } from 'react-dom/client';
+import { FontStorage, Template, WebFont } from '../templates/types';
 import {
   PDFDocument,
   PDFKitTextOptions,
   PDFKitCellOptions,
   PDFKitDocumentConstructorOptions,
-} from "../pdf";
-import { ReactNode } from "react";
+} from '../pdf';
+import { ReactNode } from 'react';
 import {
   cssColorToPDFColor,
   cssFontSizeToPostScriptSize,
   cssPixelToPostScriptPoint,
   cssScaleToPostScriptPoint,
   fetchBuffer,
-} from "../../util";
-import { parsePositionFromHTML } from "./htmlPositionParser";
+} from '../utils/util';
+import { parsePositionFromHTML } from './htmlPositionParser';
 
 abstract class DrawCommand {
   childs: DrawCommand[];
@@ -52,8 +52,8 @@ class DrawTextCommand extends DrawCommand {
     super();
     this.text = text;
     this.fontSize = 11;
-    this.font = "Arial";
-    this.color = "black";
+    this.font = 'Arial';
+    this.color = 'black';
     this.style = {};
   }
 }
@@ -108,7 +108,7 @@ class StartDrawTableCommand extends GroupCommand {
         //extract text
         const text = cell.childs.find((x) => x instanceof DrawTextCommand);
         row.push({
-          text: text?.text || "Error, was unable to find text to render!",
+          text: text?.text || 'Error, was unable to find text to render!',
           ...cell.cellStyle,
           textOptions: text?.style,
         });
@@ -156,7 +156,7 @@ async function generateTextCommandFromCSS(
   pdf: PDFDocument,
   storage: FontStorage,
 ): Promise<DrawTextCommand> {
-  const command = new DrawTextCommand(text || "Error");
+  const command = new DrawTextCommand(text || 'Error');
   const textOptions = await generateTextStyleFromCSS(style, storage, pdf);
   command.style = textOptions.style;
   command.color = style.color;
@@ -187,8 +187,8 @@ async function drawCellCommandFromStyle(
     },
     backgroundColor: cssColorToPDFColor(style.backgroundColor),
     align: {
-      x: style.textAlign.replace("middle", "center"),
-      y: style.verticalAlign.replace("middle", "center"),
+      x: style.textAlign.replace('middle', 'center'),
+      y: style.verticalAlign.replace('middle', 'center'),
     },
     textStroke: 0.4,
     textStrokeColor: style.color,
@@ -211,10 +211,10 @@ async function generateTextStyleFromCSS(
 ): Promise<{ style: PDFKitTextOptions; fontFamily: string }> {
   const family = storage.getByFamily(style.fontFamily);
   let oblique =
-    style.fontStyle.includes("italic") || style.fontStyle.includes("oblique");
-  let bold = style.fontWeight === "bold" || Number(style.fontWeight) >= 700;
+    style.fontStyle.includes('italic') || style.fontStyle.includes('oblique');
+  let bold = style.fontWeight === 'bold' || Number(style.fontWeight) >= 700;
 
-  let font = family?.value || "Helvetica";
+  let font = family?.value || 'Helvetica';
   if (family) {
     if (family.boldItalic && bold && oblique) {
       await checkWebFont(family.boldItalic, pdf);
@@ -236,26 +236,26 @@ async function generateTextStyleFromCSS(
   }
   return {
     style: {
-      underline: style.textDecoration.includes("underline"),
-      strike: style.textDecoration.includes("line-through"),
+      underline: style.textDecoration.includes('underline'),
+      strike: style.textDecoration.includes('line-through'),
       stroke: bold,
       oblique: oblique,
       wordSpacing: cssPixelToPostScriptPoint(style.wordSpacing),
-      characterSpacing: style.letterSpacing.includes("normal")
+      characterSpacing: style.letterSpacing.includes('normal')
         ? undefined
         : cssPixelToPostScriptPoint(style.letterSpacing),
       lineGap:
         cssPixelToPostScriptPoint(style.lineHeight) -
         cssPixelToPostScriptPoint(style.fontSize),
-      lineBreak: !style.whiteSpace.includes("nowrap"),
+      lineBreak: !style.whiteSpace.includes('nowrap'),
       baseline: style.alignmentBaseline
         ? style.alignmentBaseline
-            .replace("mathematical", "baseline")
-            .replace("central", "baseline")
-            .replace("text-top", "top")
-            .replace("text-bottom", "bottom")
-        : "baseline",
-      align: style.textAlign.replace("start", "left").replace("end", "right"),
+            .replace('mathematical', 'baseline')
+            .replace('central', 'baseline')
+            .replace('text-top', 'top')
+            .replace('text-bottom', 'bottom')
+        : 'baseline',
+      align: style.textAlign.replace('start', 'left').replace('end', 'right'),
       fill: true,
     },
     fontFamily: font,
@@ -268,11 +268,11 @@ export async function renderToPDF(options: {
   pdfCreationOptions?: PDFKitDocumentConstructorOptions;
   onFinishPDFCreation?: (pdfFile: Uint8Array[]) => unknown;
 }) {
-  const container: HTMLDivElement = document.createElement("div");
-  container.className = "pdf_render_node";
-  container.style.position = "absolute";
+  const container: HTMLDivElement = document.createElement('div');
+  container.className = 'pdf_render_node';
+  container.style.position = 'absolute';
   document.body.appendChild(container);
-  const observer = new MutationObserver(async (mutations) => {
+  const observer = new MutationObserver(async () => {
     //setup pdf document
     const doc = new PDFDocument({
       ...options.pdfCreationOptions,
@@ -280,8 +280,8 @@ export async function renderToPDF(options: {
     });
     const chunks: Uint8Array[] = [];
     //setup writing to buffer
-    doc.on("data", (chunk: Uint8Array<ArrayBufferLike>) => chunks.push(chunk));
-    doc.on("end", () => {
+    doc.on('data', (chunk: Uint8Array<ArrayBufferLike>) => chunks.push(chunk));
+    doc.on('end', () => {
       if (options.onFinishPDFCreation) {
         options.onFinishPDFCreation(chunks);
       }
@@ -309,7 +309,7 @@ export async function renderToPDF(options: {
   const root = createRoot(container);
 
   const renderTemplate = options.template.DrawPaper({
-    currentTab: "RENDER_PDF",
+    currentTab: 'RENDER_PDF',
     pdfRenderer: true,
   });
   root.render(
@@ -324,9 +324,9 @@ export async function renderToPDF(options: {
   ): Promise<boolean> {
     if (searchElement === null) {
       return false;
-    } 
-    
-    if (searchElement.id === "real_paper") {
+    }
+
+    if (searchElement.id === 'real_paper') {
       //start rendering pages
       let basePage: HTMLElement = searchElement as HTMLElement;
       const pageDescriptor = {
@@ -340,7 +340,7 @@ export async function renderToPDF(options: {
       for (let i = index; i < (parrent?.children.length || 0); i++) {
         const element = parrent?.children[i] as HTMLElement;
         if (element) {
-          if (element.id === "real_paper") {
+          if (element.id === 'real_paper') {
             basePage = parrent?.children[i] as HTMLElement;
             pageDescriptor.width =
               cssScaleToPostScriptPoint(basePage.style.width) || 1;
@@ -356,7 +356,7 @@ export async function renderToPDF(options: {
             let counter = i + 1;
             while (counter < (parrent?.children.length || 0)) {
               const n_element = parrent?.children[counter] as HTMLElement;
-              if (n_element.id === "real_paper") {
+              if (n_element.id === 'real_paper') {
                 break;
               }
               counter++;
@@ -375,7 +375,7 @@ export async function renderToPDF(options: {
               pageDescriptor.height * (drawAreaPagesCover + add) -
               pageDescriptor.margin_top -
               drawAreaHeight;
-          } else if (element.id !== "paper-container-expand") {
+          } else if (element.id !== 'paper-container-expand') {
             i++;
             continue;
           }
@@ -399,7 +399,7 @@ export async function renderToPDF(options: {
           for (let i = 0; i < containerElement.childNodes.length; i++) {
             const childNode = containerElement.childNodes.item(i);
             let childElement = undefined;
-            if (childNode.nodeName !== "#text") {
+            if (childNode.nodeName !== '#text') {
               childElement = containerElement.children[elementCounter];
               elementCounter++;
               //just render text as child
@@ -421,7 +421,7 @@ export async function renderToPDF(options: {
             }
           }
           textGroup.draw(pdfDoc, textGroup.childs);
-          console.log("Finished Rendering a page");
+          console.log('Finished Rendering a page');
         } else {
           break;
         }
@@ -506,7 +506,7 @@ export async function renderToPDF(options: {
       } else if (element instanceof HTMLTableRowElement) {
         command = new DrawRowCommand(position.height);
       } else if (element instanceof HTMLTableColElement) {
-        console.error("collumn elements are currently not supported!");
+        console.error('collumn elements are currently not supported!');
       } else if (element instanceof HTMLTableCellElement) {
         command = await drawCellCommandFromStyle(
           computedStyle,
@@ -521,7 +521,7 @@ export async function renderToPDF(options: {
       for (let i = 0; i < element.childNodes.length; i++) {
         const childNode = element.childNodes.item(i);
         let childElement = undefined;
-        if (childNode.nodeName !== "#text") {
+        if (childNode.nodeName !== '#text') {
           childElement = element.children[elementCounter];
           elementCounter++;
         }
@@ -540,7 +540,7 @@ export async function renderToPDF(options: {
         command.childs.push(childCommand);
       }
     } else {
-      if (node.nodeName === "#text") {
+      if (node.nodeName === '#text') {
         //draw a text
         return await generateTextCommandFromCSS(
           getComputedStyle(parrent),

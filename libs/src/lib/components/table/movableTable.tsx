@@ -1,15 +1,24 @@
-import { RenderableBlockParams, Template, TemplateTab } from "../types";
-import { Text, Table } from "@mantine/core";
-import { BaseMovableBox } from "../movable/baseMovable";
-import { useEffect, useRef, useState } from "react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import {
+  RenderableBlockParams,
+  Template,
+  TemplateTab,
+} from '../../templates/types';
+import { Table } from '@mantine/core';
+import { BaseMovableBox } from '../baseMovable';
+import { useState } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 export interface MovableTableParams extends RenderableBlockParams {
   header: (Collumn | null)[];
   rows: TableRow[];
   headerStyle?: React.CSSProperties;
   cellStyle?: React.CSSProperties;
-  onTableResize?: (delta : number, accesor: string, template?: Template, tab?: TemplateTab) => void;
+  onTableResize?: (
+    delta: number,
+    accesor: string,
+    template?: Template,
+    tab?: TemplateTab,
+  ) => void;
 }
 
 interface ResizableColumnHeaderProps {
@@ -19,9 +28,6 @@ interface ResizableColumnHeaderProps {
   style?: React.CSSProperties;
   dragging: boolean;
 }
-interface ResizableCellProps extends ResizableColumnHeaderProps {
-  value: string;
-}
 
 export interface Collumn {
   accessor: string;
@@ -29,7 +35,7 @@ export interface Collumn {
   style?: React.CSSProperties;
   width?: number;
 }
-export interface TableRow{
+export interface TableRow {
   accessorControlled: boolean;
   elements: Cell[];
 }
@@ -42,7 +48,7 @@ export interface Cell {
 function handleResize(
   e: React.MouseEvent<HTMLDivElement, MouseEvent>,
   accessor: string,
-  onResize: (accesor: string, delta: number) => void
+  onResize: (accesor: string, delta: number) => void,
 ) {
   let startX = e.clientX;
   const handleMouseMove = (event: MouseEvent) => {
@@ -51,11 +57,11 @@ function handleResize(
     onResize(accessor, delta);
   };
   const handleMouseUp = () => {
-    document.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", handleMouseUp);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
   };
-  document.addEventListener("mousemove", handleMouseMove);
-  document.addEventListener("mouseup", handleMouseUp);
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
 }
 
 function ResizableColumnHeader(props: ResizableColumnHeaderProps) {
@@ -64,10 +70,10 @@ function ResizableColumnHeader(props: ResizableColumnHeaderProps) {
       style={Object.assign(
         {
           width: `${props.width}px`,
-          position: "relative",
+          position: 'relative',
         },
         props.style,
-        props.col.style
+        props.col.style,
       )}
     >
       {props.col.label}
@@ -75,12 +81,12 @@ function ResizableColumnHeader(props: ResizableColumnHeaderProps) {
         <div
           className="child_drag"
           style={{
-            position: "absolute",
+            position: 'absolute',
             right: 0,
             top: 0,
-            height: "100%",
-            width: "5px",
-            cursor: "ew-resize",
+            height: '100%',
+            width: '5px',
+            cursor: 'ew-resize',
           }}
           onMouseDown={(e) =>
             handleResize(e, props.col.accessor, props.onResize)
@@ -91,68 +97,46 @@ function ResizableColumnHeader(props: ResizableColumnHeaderProps) {
         <div
           className="child_drag"
           style={{
-            position: "absolute",
+            position: 'absolute',
             right: 0,
             top: 0,
-            height: "100%",
-            width: "5px",
+            height: '100%',
+            width: '5px',
           }}
         />
       )}
     </th>
   );
 }
-function CellBox(props: ResizableCellProps) {
-  return (
-    <td
-      style={{
-        width: `${props.width}px`,
-        position: "relative",
-        border: "3px solid",
-      }}
-    >
-      {props.value}
-      <div
-        className="child_drag"
-        style={{
-          position: "absolute",
-          right: 0,
-          top: 0,
-          height: "100%",
-          width: "5px",
-          cursor: "ew-resize",
-        }}
-        onMouseDown={(e) => handleResize(e, props.col.accessor, props.onResize)}
-      />
-    </td>
-  );
-}
 
 export function MovableTable(properties: MovableTableParams) {
   const [colWidths, setColWidths] = useState<{ [Key: string]: number }>(
     properties.header.reduce(
-      (acc, col, index) => (
-        {
+      (acc, col, index) => ({
         ...acc,
         [col?.accessor || index]: col?.width || 150,
       }),
-      {}
-    )
+      {},
+    ),
   );
   function handleResize(col: string, delta: number) {
-    if(properties.onTableResize){
-      properties.onTableResize(delta, col, properties.template, properties.templateTab);
-    }else{
+    if (properties.onTableResize) {
+      properties.onTableResize(
+        delta,
+        col,
+        properties.template,
+        properties.templateTab,
+      );
+    } else {
       setColWidths((prev) => ({
         ...prev,
         [col]: prev[col] + delta,
       }));
     }
-
   }
-  function findAccesorControlledEntry(accesor: string, row: TableRow){
-    for(let i = 0; i < row.elements.length; i++){
-      if(row.elements[i].accessor === accesor){
+  function findAccesorControlledEntry(accesor: string, row: TableRow) {
+    for (let i = 0; i < row.elements.length; i++) {
+      if (row.elements[i].accessor === accesor) {
         return row.elements[i];
       }
     }
@@ -182,10 +166,10 @@ export function MovableTable(properties: MovableTableParams) {
       <div
         id={properties.id}
         style={{
-          width: "100%",
-          height: "100%",
-          minHeight: "100%",
-          maxHeight: "100%",
+          width: '100%',
+          height: '100%',
+          minHeight: '100%',
+          maxHeight: '100%',
         }}
       >
         <DndProvider backend={HTML5Backend}>
@@ -194,8 +178,8 @@ export function MovableTable(properties: MovableTableParams) {
               <thead>
                 <tr>
                   {properties.header.map((value, idx) => {
-                    if(value === null){
-                      return "";
+                    if (value === null) {
+                      return '';
                     }
                     return (
                       <ResizableColumnHeader
@@ -204,7 +188,12 @@ export function MovableTable(properties: MovableTableParams) {
                         col={value}
                         onResize={handleResize}
                         style={properties.headerStyle}
-                        dragging={idx !== properties.header.length && (properties.enabled !== undefined ? properties.enabled : true)}
+                        dragging={
+                          idx !== properties.header.length &&
+                          (properties.enabled !== undefined
+                            ? properties.enabled
+                            : true)
+                        }
                       />
                     );
                   })}
@@ -212,7 +201,7 @@ export function MovableTable(properties: MovableTableParams) {
               </thead>
               <tbody>
                 {properties.rows.map((row) => {
-                  if(!row.accessorControlled){
+                  if (!row.accessorControlled) {
                     return (
                       <tr>
                         {row.elements.map((cell) => {
@@ -220,10 +209,10 @@ export function MovableTable(properties: MovableTableParams) {
                             <td
                               style={Object.assign(
                                 {
-                                  position: "relative",
+                                  position: 'relative',
                                 },
                                 properties.cellStyle,
-                                cell.style
+                                cell.style,
                               )}
                             >
                               {cell.label}
@@ -232,37 +221,37 @@ export function MovableTable(properties: MovableTableParams) {
                         })}
                       </tr>
                     );
-                  }else{
-                    return(
+                  } else {
+                    return (
                       <tr>
-                        {
-                          properties.header.map((element, idx) => {
-                            if(element === null){
-                              return "";
-                            }
-                            const cell = findAccesorControlledEntry(element?.accessor, row);
-                            if(!cell){
-                              return <td></td>;
-                            }
-                            return(
-                              <td
+                        {properties.header.map((element) => {
+                          if (element === null) {
+                            return '';
+                          }
+                          const cell = findAccesorControlledEntry(
+                            element?.accessor,
+                            row,
+                          );
+                          if (!cell) {
+                            return <td></td>;
+                          }
+                          return (
+                            <td
                               style={Object.assign(
                                 {
-                                  position: "relative",
+                                  position: 'relative',
                                 },
                                 properties.cellStyle,
-                                cell.style
+                                cell.style,
                               )}
                             >
                               {cell.label}
                             </td>
-                            );
-                          })
-                        }
+                          );
+                        })}
                       </tr>
-                    )
+                    );
                   }
-                  
                 })}
               </tbody>
             </Table>

@@ -1,17 +1,6 @@
 import {FileInput, Group, Stack, Text, TextInput, Title} from "@mantine/core";
-import {
-  DragVector,
-  FontSelector,
-  TableData,
-  Template,
-  TemplateDrawProperties,
-  TemplateTab,
-  TemplateTabDrawProperties,
-} from "./editor/types";
+import {Template, TemplateTab, FontSelector, TemplateDrawProperties, TemplateTabDrawProperties, DragVector, TableData, MovableTable, Page, PageFormat, MovableBox} from "@pfiffkopf-webapp-office/pfk-pdf";
 import React, { JSX } from "react";
-import { MovableBox } from "./editor/movable/movableBox";
-import { Page, PageFormat } from "./editor/page/page";
-import { MovableTable } from "./editor/movableTable/movableTable";
 import DragVectorInput, {
   DragVectorDisplayType,
 } from "./editor/dragVectorInput/dragVectorInput";

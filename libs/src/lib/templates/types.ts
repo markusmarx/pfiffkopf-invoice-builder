@@ -1,4 +1,4 @@
-import { JSX, ReactNode } from "react";
+import { JSX, ReactNode } from 'react';
 
 export interface TemplateDrawProperties {
   currentTab: string;
@@ -14,7 +14,7 @@ export interface TemplateTabDrawProperties {
 
 export abstract class Template {
   fontStorage: FontStorage;
-  constructor(){
+  constructor() {
     this.fontStorage = new FontStorage();
   }
 
@@ -25,7 +25,7 @@ export abstract class Template {
     prop: TemplateDrawProperties,
   ): JSX.Element | Array<JSX.Element>;
 
-  public GetFontStorage(){
+  public GetFontStorage() {
     return this.fontStorage;
   }
 
@@ -199,7 +199,7 @@ export class DragVector {
     };
   }
 }
-export interface WebFont{
+export interface WebFont {
   name: string;
   url: string;
   file?: ArrayBuffer;
@@ -226,12 +226,18 @@ export class FontSelector {
   public Set(font: string) {
     this.fontFace = font;
   }
-  public TryUpload(file: File, displayName?: string, id?: string, onSucces?: (fontName: string) => void, onFail?: (error: Error) => void) {
+  public TryUpload(
+    file: File,
+    displayName?: string,
+    id?: string,
+    onSucces?: (fontName: string) => void,
+    onFail?: (error: Error) => void,
+  ) {
     const promise = this.storage.LoadCustomFontFromFile(file, displayName, id);
     promise.then(
       (value) => {
         this.fontFace = value;
-        if(onSucces){
+        if (onSucces) {
           onSucces(this.fontFace);
         }
       },
@@ -246,7 +252,7 @@ export class FontSelector {
     return this.storage.List();
   }
 }
-const SYSTEM_FONT = "Helvetica";
+const SYSTEM_FONT = 'Helvetica';
 export class FontStorage {
   private fontFace: string;
   private customFont: null | FontFace;
@@ -255,43 +261,44 @@ export class FontStorage {
     this.customFont = null;
     this.fontFace = SYSTEM_FONT;
     this.fonts = Array<FontStorageEntry>();
-    const testFontUrl = "https://raw.githubusercontent.com/coderiver/cubitssuperlanding/master/css/fonts/Helvetica-Regular.ttf";
+    const testFontUrl =
+      'https://raw.githubusercontent.com/coderiver/cubitssuperlanding/master/css/fonts/Helvetica-Regular.ttf';
     //(window as any).queryLocalFonts().then((v) => console.log("loaded fonts"));
     this.fonts.push({
-      value: "Courier",
-      label: "Courier",
+      value: 'Courier',
+      label: 'Courier',
       regular: {
-        name: "Courier",
+        name: 'Courier',
         url: testFontUrl,
-      }
+      },
       /*postScriptName: "Courier",
       boldVersion: "Courier-Bold",
       italicVersion: "Courier-Oblique",
       boldItalicVersion: "Courier-BoldOblique",*/
     });
     this.fonts.push({
-      value: "Helvetica",
-      label: "Helvetica",
+      value: 'Helvetica',
+      label: 'Helvetica',
       regular: {
-        name: "Helvetica",
+        name: 'Helvetica',
         url: testFontUrl,
       },
       bold: {
-        name: "Helvetica-Bold",
+        name: 'Helvetica-Bold',
         url: testFontUrl,
-      }
+      },
       /*postScriptName: "Helvetica",
       boldVersion: "Helvetica-Bold",
       italicVersion: "Helvetica-Oblique",
       boldItalicVersion: "Helvetica-BoldOblique",*/
     });
     this.fonts.push({
-      value: "Times-Roman",
-      label: "Times-Roman",
+      value: 'Times-Roman',
+      label: 'Times-Roman',
       regular: {
-        name: "Times-Roman",
+        name: 'Times-Roman',
         url: testFontUrl,
-      }
+      },
       /*
       boldVersion: "Times-Bold",
       italicVersion: "Times-Italic",
@@ -306,19 +313,27 @@ export class FontStorage {
   public List() {
     return this.fonts;
   }
-  public async CrawlFromURL(fontURL: string, displayName: string, id: string): Promise<string> {
-    if(this.fonts.find(x => x.value === id)){
-      return Promise.reject("Font already upploaded");
+  public async CrawlFromURL(
+    fontURL: string,
+    displayName: string,
+    id: string,
+  ): Promise<string> {
+    if (this.fonts.find((x) => x.value === id)) {
+      return Promise.reject('Font already upploaded');
     }
 
     const fontFace = new FontFace(displayName, `url(${fontURL})`);
     try {
       await fontFace.load();
       await (document.fonts as any).add(fontFace);
-      this.fonts.push({ value: id, label: displayName, regular: {name: id, url: fontURL} });
+      this.fonts.push({
+        value: id,
+        label: displayName,
+        regular: { name: id, url: fontURL },
+      });
       return Promise.resolve(id);
     } catch (error) {
-      console.error("An error is occured loading a font!");
+      console.error('An error is occured loading a font!');
       this.fontFace = SYSTEM_FONT;
       return Promise.reject(error);
     }
@@ -329,13 +344,21 @@ export class FontStorage {
       (document.fonts as any).delete(this.customFont);
     }
   }
-  public getByFamily(family: string){
-    return this.fonts.find(x => x.value === family);
+  public getByFamily(family: string) {
+    return this.fonts.find((x) => x.value === family);
   }
 
-  public LoadCustomFontFromFile(file: File, displayName?: string, id?: string): Promise<string> {
+  public LoadCustomFontFromFile(
+    file: File,
+    displayName?: string,
+    id?: string,
+  ): Promise<string> {
     const fontURL = URL.createObjectURL(file);
-    return this.CrawlFromURL(fontURL, displayName || file.name, id || file.name);
+    return this.CrawlFromURL(
+      fontURL,
+      displayName || file.name,
+      id || file.name,
+    );
   }
 }
 

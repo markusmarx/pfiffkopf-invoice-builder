@@ -1,7 +1,6 @@
-import { ReactElement, useReducer, useState } from "react";
-import { Propertys } from "./properties/property";
-import { ViewProperties, Template } from "./types";
-import { DefaultView } from "./view/view";
+import { ReactElement, useReducer, useState } from 'react';
+import { Propertys } from './properties/property';
+import { DefaultView } from './view/view';
 import {
   AppShell,
   Button,
@@ -15,7 +14,7 @@ import {
   Divider,
   Title,
   MantineProvider,
-} from "@mantine/core";
+} from '@mantine/core';
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -23,10 +22,15 @@ import {
   IconChevronsRight,
   IconFileTypePdf,
   IconPalette,
-} from "@tabler/icons-react";
-import { renderToPDF } from "./pdf_renderer/renderer";
-import { PDFKitPDFSubset, PDFKitPDFVersion } from "./pdf";
-import saveAs from "file-saver";
+} from '@tabler/icons-react';
+import {
+  renderToPDF,
+  Template,
+  PDFKitPDFVersion,
+  PDFKitPDFSubset,
+  ViewProperties,
+} from '@pfiffkopf-webapp-office/pfk-pdf';
+import saveAs from 'file-saver';
 
 export interface EditorPropertys {
   view?: ReactElement<ViewProperties>;
@@ -36,12 +40,12 @@ export interface EditorPropertys {
 export function Editor(properties: EditorPropertys) {
   const [currentPropertiesTab, setCurrentPropertiesTab] = useState<
     string | null
-  >("");
+  >('');
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [currentPage, setCurrentPage] = useState(1);
 
   const pages = properties.template.DrawPaper({
-    currentTab: "",
+    currentTab: '',
     pdfRenderer: false,
   });
   const maxPages = pages instanceof Array ? pages.length : 1;
@@ -49,10 +53,10 @@ export function Editor(properties: EditorPropertys) {
   return (
     <AppShell
       header={{ height: 70 }}
-      navbar={{ width: 520, breakpoint: "sm" }}
+      navbar={{ width: 520, breakpoint: 'sm' }}
       styles={{
         main: {
-          backgroundColor: "var(--mantine-color-gray-0)",
+          backgroundColor: 'var(--mantine-color-gray-0)',
         },
       }}
     >
@@ -99,9 +103,9 @@ export function Editor(properties: EditorPropertys) {
                     <NumberInput
                       styles={{
                         input: {
-                          textAlign: "center",
+                          textAlign: 'center',
                           width: 60,
-                          borderRadius: "var(--mantine-radius-sm)",
+                          borderRadius: 'var(--mantine-radius-sm)',
                         },
                       }}
                       variant="filled"
@@ -150,15 +154,21 @@ export function Editor(properties: EditorPropertys) {
                   wrapper: (template) => {
                     return <MantineProvider>{template}</MantineProvider>;
                   },
-                  pdfCreationOptions: {subset: PDFKitPDFSubset.pdfA_oneA, pdfVersion: PDFKitPDFVersion.oneDFour, tagged: true},
+                  pdfCreationOptions: {
+                    subset: PDFKitPDFSubset.pdfA_oneA,
+                    pdfVersion: PDFKitPDFVersion.oneDFour,
+                    tagged: true,
+                  },
                   onFinishPDFCreation: (chunks) => {
-                    const blob = new Blob(chunks as BlobPart[], { type: "application/pdf" });
-                    saveAs(blob, "generierte Rechnung.pdf");
-                  }
+                    const blob = new Blob(chunks as BlobPart[], {
+                      type: 'application/pdf',
+                    });
+                    saveAs(blob, 'generierte Rechnung.pdf');
+                  },
                 })
               }
               variant="gradient"
-              gradient={{ from: "primary", to: "accent", deg: 45 }}
+              gradient={{ from: 'primary', to: 'accent', deg: 45 }}
               size="sm"
               radius="md"
             >

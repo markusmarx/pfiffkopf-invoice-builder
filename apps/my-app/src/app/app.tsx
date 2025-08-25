@@ -4,11 +4,10 @@ import {
   LetterpaperSection,
   PositionsSection,
   PfkInvoiceTemplate,
-  InvoiceParamSection
+  InvoiceParamSection,
 } from './pfkInvoiceTemplate';
 
 export function App() {
-
   const template = new PfkInvoiceTemplate();
 
   template.letterpaper = new LetterpaperSection(template);
@@ -22,9 +21,7 @@ export function App() {
   template.positions.size.x = 718;
   template.positions.size.y = 100;
 
-  return (
-    <Editor template={template} />
-  );
+  return <Editor template={template} />;
 }
 
 export default App;

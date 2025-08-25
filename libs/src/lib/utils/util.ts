@@ -6,34 +6,34 @@ export async function fetchBuffer(url: string) {
   return buffer;
 }
 export function cssColorToPDFColor(color: string): string | undefined {
-  if (color.startsWith("#")) {
+  if (color.startsWith('#')) {
     return color;
-  } else if (color.startsWith("rgb")) {
+  } else if (color.startsWith('rgb')) {
     const rgba = color
-      .substring(color.indexOf("(") + 1, color.lastIndexOf(")"))
-      .split(",");
-    const redHex = Number(rgba[0]).toString(16).padStart(2, "0");
-    const greenHex = Number(rgba[1]).toString(16).padStart(2, "0");
-    const blueHex = Number(rgba[2]).toString(16).padStart(2, "0");
+      .substring(color.indexOf('(') + 1, color.lastIndexOf(')'))
+      .split(',');
+    const redHex = Number(rgba[0]).toString(16).padStart(2, '0');
+    const greenHex = Number(rgba[1]).toString(16).padStart(2, '0');
+    const blueHex = Number(rgba[2]).toString(16).padStart(2, '0');
     if (rgba.length === 4) {
       const alpha = Number(rgba[3]);
       return alpha > 0.5 ? `${redHex}${greenHex}${blueHex}` : undefined;
     } else {
       return `${redHex}${greenHex}${blueHex}`;
     }
-  } else if (color.startsWith("hsl")) {
+  } else if (color.startsWith('hsl')) {
     return undefined;
-  } else if (color.startsWith("hsla")) {
+  } else if (color.startsWith('hsla')) {
     return undefined;
   }
   return color;
 }
 
 function getCmInPixels(): number {
-  const div = document.createElement("div");
-  div.style.width = "1cm";
-  div.style.position = "absolute";
-  div.style.visibility = "hidden";
+  const div = document.createElement('div');
+  div.style.width = '1cm';
+  div.style.position = 'absolute';
+  div.style.visibility = 'hidden';
   document.body.appendChild(div);
 
   const pixels = div.getBoundingClientRect().width;
@@ -64,35 +64,35 @@ export function cssScaleToPostScriptPointWithCallback(
   const without_unit = value.substring(0, value.length - 2);
   if (!value) {
     return null;
-  } else if (value.endsWith("cm")) {
+  } else if (value.endsWith('cm')) {
     const cmNumber = Number(without_unit);
     return Number(
       (cmNumber * 5.6692857142857142857142857142857 * 5).toFixed(2),
     );
-  } else if (value.endsWith("mm")) {
+  } else if (value.endsWith('mm')) {
     const mmNumber = Number(without_unit);
     return Number(
       ((mmNumber * 5.6692857142857142857142857142857 * 5) / 100).toFixed(2),
     );
-  } else if (value.endsWith("in")) {
+  } else if (value.endsWith('in')) {
     const inchNumber = Number(without_unit);
     return Number(
       (inchNumber * 143.99984905143705330020367170284 * 5).toFixed(2),
     );
-  } else if (value.endsWith("pt")) {
+  } else if (value.endsWith('pt')) {
     const ptNumber = Number(without_unit);
     return Number(
       ((ptNumber * 143.99984905143705330020367170284 * 5) / 72).toFixed(2),
     );
-  } else if (value.endsWith("pc")) {
+  } else if (value.endsWith('pc')) {
     const pcNumber = Number(without_unit);
     return Number(
       ((pcNumber * 143.99984905143705330020367170284 * 5) / 6).toFixed(2),
     );
-  } else if (value.endsWith("px")) {
+  } else if (value.endsWith('px')) {
     const pxNumber = Number(without_unit);
-    return cssScaleToPostScriptPoint((pxNumber / cmToPixels).toFixed(2) + "cm");
-  } else if (value.endsWith("%")) {
+    return cssScaleToPostScriptPoint((pxNumber / cmToPixels).toFixed(2) + 'cm');
+  } else if (value.endsWith('%')) {
     if (self && getParrentSize) return getParrentSize(self, value);
     else return null;
   }
@@ -119,6 +119,6 @@ export function cssScaleToPostScriptPoint(
 
   return cssScaleToPostScriptPointWithCallback(value, self, percentRecursive);
 }
-export function cssFontSizeToPostScriptSize(value: string) : number{
-   return Number(value.substring(0, value.length - 2)) * (72 / 96);
+export function cssFontSizeToPostScriptSize(value: string): number {
+  return Number(value.substring(0, value.length - 2)) * (72 / 96);
 }

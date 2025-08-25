@@ -1,4 +1,7 @@
-import { cssPixelNumberToPostScriptPoint, cssScaleToPostScriptPoint } from "../../util";
+import {
+  cssPixelNumberToPostScriptPoint,
+  cssScaleToPostScriptPoint,
+} from '../utils/util';
 
 export interface PostScriptTransform {
   left?: number;
@@ -14,7 +17,7 @@ function readTransformValue(
   }
   return transform.substring(
     operationIndex + transformOp.length + 1,
-    transform.indexOf(")", operationIndex),
+    transform.indexOf(')', operationIndex),
   );
 }
 export function convertCSSTransformToPostScriptTransform(
@@ -22,9 +25,9 @@ export function convertCSSTransformToPostScriptTransform(
 ): PostScriptTransform {
   const ret: PostScriptTransform = {};
 
-  const translate = readTransformValue(node.style.transform, "translate");
+  const translate = readTransformValue(node.style.transform, 'translate');
   if (translate) {
-    const splitTransform = translate.split(",");
+    const splitTransform = translate.split(',');
     const left = cssScaleToPostScriptPoint(splitTransform[0]);
     const top = cssScaleToPostScriptPoint(splitTransform[1]);
 
@@ -34,22 +37,29 @@ export function convertCSSTransformToPostScriptTransform(
   return ret;
 }
 
-export function parsePositionFromHTML(element: HTMLElement, computedStyle: CSSStyleDeclaration, xOffset: number, yOffset: number, paddingLeft: number, paddingTop: number){
+export function parsePositionFromHTML(
+  element: HTMLElement,
+  computedStyle: CSSStyleDeclaration,
+  xOffset: number,
+  yOffset: number,
+  paddingLeft: number,
+  paddingTop: number,
+) {
   let x = cssPixelNumberToPostScriptPoint(element.offsetLeft) + xOffset;
   let y = cssPixelNumberToPostScriptPoint(element.offsetTop) + yOffset;
 
   const transform = convertCSSTransformToPostScriptTransform(element);
 
-  const positionCss = computedStyle.getPropertyValue("position");
+  const positionCss = computedStyle.getPropertyValue('position');
   switch (positionCss) {
-    case "static":
+    case 'static':
       break;
-    case "absolute":
+    case 'absolute':
       x =
-        cssScaleToPostScriptPoint(element.style.left, element, "left") ||
+        cssScaleToPostScriptPoint(element.style.left, element, 'left') ||
         0 + xOffset + paddingLeft;
       y =
-        cssScaleToPostScriptPoint(element.style.top, element, "top") ||
+        cssScaleToPostScriptPoint(element.style.top, element, 'top') ||
         0 + yOffset + paddingTop;
       if (transform.left && transform.top) {
         x += transform.left - paddingLeft;
@@ -58,12 +68,12 @@ export function parsePositionFromHTML(element: HTMLElement, computedStyle: CSSSt
       xOffset = x;
       yOffset = y;
       break;
-    case "relative":
+    case 'relative':
       x +=
-        cssScaleToPostScriptPoint(computedStyle.left, element, "left") ||
+        cssScaleToPostScriptPoint(computedStyle.left, element, 'left') ||
         0 + (transform.left || 0);
       y +=
-        cssScaleToPostScriptPoint(computedStyle.top, element, "top") ||
+        cssScaleToPostScriptPoint(computedStyle.top, element, 'top') ||
         0 + (transform.left || 0);
       break;
     default:
@@ -71,11 +81,11 @@ export function parsePositionFromHTML(element: HTMLElement, computedStyle: CSSSt
       break;
   }
   return {
-    width:  cssPixelNumberToPostScriptPoint(element.offsetWidth),
+    width: cssPixelNumberToPostScriptPoint(element.offsetWidth),
     height: cssPixelNumberToPostScriptPoint(element.offsetHeight),
     x,
     y,
     xOffset,
-    yOffset
+    yOffset,
   };
 }

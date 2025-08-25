@@ -8,10 +8,10 @@ import {
   Group,
   ActionIcon,
   Tooltip,
-} from "@mantine/core";
-import { IconSettings, IconX } from "@tabler/icons-react";
-import { Template, TemplateTab } from "../types";
-import { useEffect, useReducer, useState } from "react";
+} from '@mantine/core';
+import { IconSettings, IconX } from '@tabler/icons-react';
+import { Template, TemplateTab } from '@pfiffkopf-webapp-office/pfk-pdf';
+import { useEffect, useReducer, useState } from 'react';
 
 export interface PropertysProperty {
   template: Template;
@@ -33,11 +33,11 @@ function PropertiesTab(props: {
 
   return props.tab.drawUI
     ? props.tab.drawUI({
-      template: props.template,
-      currentTab: props.currentTab,
-      edited: false,
-    })
-    : "";
+        template: props.template,
+        currentTab: props.currentTab,
+        edited: false,
+      })
+    : '';
 }
 
 export function Propertys(properties: PropertysProperty) {
@@ -53,7 +53,11 @@ export function Propertys(properties: PropertysProperty) {
 
   function findFirstTab(): string {
     for (let i = 0; i < tabs.length; i++) {
-      if (typeof values[i] === "object" && values[i] !== null && values[i] instanceof TemplateTab) {
+      if (
+        typeof values[i] === 'object' &&
+        values[i] !== null &&
+        values[i] instanceof TemplateTab
+      ) {
         const pages = (values[i] as TemplateTab).PageNumbers();
         if (
           (pages instanceof Array &&
@@ -66,11 +70,15 @@ export function Propertys(properties: PropertysProperty) {
         }
       }
     }
-    return "undefined";
+    return 'undefined';
   }
 
   function isTabVisible(idx: number): boolean {
-    if (typeof values[idx] !== "object" || values[idx] === null|| !(values[idx] instanceof TemplateTab)) {
+    if (
+      typeof values[idx] !== 'object' ||
+      values[idx] === null ||
+      !(values[idx] instanceof TemplateTab)
+    ) {
       return false;
     }
     const pages = (values[idx] as TemplateTab).PageNumbers();
@@ -89,18 +97,18 @@ export function Propertys(properties: PropertysProperty) {
       radius="md"
       withBorder
       style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "var(--mantine-color-gray-0)",
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--mantine-color-gray-0)',
       }}
     >
       {/* Header */}
       <Box
         p="md"
         style={{
-          borderBottom: "1px solid var(--mantine-color-gray-3)",
-          backgroundColor: "var(--mantine-color-white)",
+          borderBottom: '1px solid var(--mantine-color-gray-3)',
+          backgroundColor: 'var(--mantine-color-white)',
         }}
       >
         <Group justify="space-between" align="center">
@@ -126,50 +134,50 @@ export function Propertys(properties: PropertysProperty) {
       </Box>
 
       {/* Tabs */}
-      <Box style={{ flex: 1, overflow: "hidden" }}>
+      <Box style={{ flex: 1, overflow: 'hidden' }}>
         <Tabs
           orientation="vertical"
           defaultValue={firstTab}
           value={currentTab}
           onChange={(name) => {
             if (properties.onTabChanges) {
-              setCurrentTab(name !== null ? name : "");
+              setCurrentTab(name !== null ? name : '');
               properties.onTabChanges(name);
             }
           }}
           styles={{
             root: {
-              height: "100%",
-              display: "flex",
+              height: '100%',
+              display: 'flex',
             },
             list: {
-              backgroundColor: "var(--mantine-color-gray-1)",
-              borderRight: "1px solid var(--mantine-color-gray-3)",
-              padding: "var(--mantine-spacing-sm)",
-              minWidth: "140px",
-              maxWidth: "180px",
+              backgroundColor: 'var(--mantine-color-gray-1)',
+              borderRight: '1px solid var(--mantine-color-gray-3)',
+              padding: 'var(--mantine-spacing-sm)',
+              minWidth: '140px',
+              maxWidth: '180px',
             },
             tab: {
-              borderRadius: "var(--mantine-radius-sm)",
-              marginBottom: "var(--mantine-spacing-xs)",
-              padding: "var(--mantine-spacing-sm)",
-              fontSize: "var(--mantine-font-size-sm)",
+              borderRadius: 'var(--mantine-radius-sm)',
+              marginBottom: 'var(--mantine-spacing-xs)',
+              padding: 'var(--mantine-spacing-sm)',
+              fontSize: 'var(--mantine-font-size-sm)',
               fontWeight: 500,
-              "&[data-active]": {
-                backgroundColor: "var(--mantine-color-blue-6)",
-                color: "white",
-                borderColor: "var(--mantine-color-blue-6)",
+              '&[data-active]': {
+                backgroundColor: 'var(--mantine-color-blue-6)',
+                color: 'white',
+                borderColor: 'var(--mantine-color-blue-6)',
               },
-              "&:hover:not([data-active])": {
-                backgroundColor: "var(--mantine-color-gray-2)",
+              '&:hover:not([data-active])': {
+                backgroundColor: 'var(--mantine-color-gray-2)',
               },
             },
             panel: {
               flex: 1,
-              height: "100%",
+              height: '100%',
               padding: 0,
-              display: "flex",
-              flexDirection: "column",
+              display: 'flex',
+              flexDirection: 'column',
             },
           }}
         >
@@ -197,8 +205,8 @@ export function Propertys(properties: PropertysProperty) {
                 <Box
                   p="md"
                   style={{
-                    borderBottom: "1px solid var(--mantine-color-gray-2)",
-                    backgroundColor: "var(--mantine-color-white)",
+                    borderBottom: '1px solid var(--mantine-color-gray-2)',
+                    backgroundColor: 'var(--mantine-color-white)',
                   }}
                 >
                   <Title order={5} c="gray.7">
