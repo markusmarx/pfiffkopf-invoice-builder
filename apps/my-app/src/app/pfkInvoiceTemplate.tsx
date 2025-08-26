@@ -27,10 +27,16 @@ import {
 import React, { JSX } from 'react';
 import DragVectorInput, {
   DragVectorDisplayType,
-} from './editor/dragVectorInput/dragVectorInput';
-import { TableDataInput } from './editor/tableDataInput/tableDataInput';
-import { FontSelectorUI } from './editor/fontSelector/fontSelector';
-import { IconFile, IconPalette, IconPencil, IconTransform, IconVector } from '@tabler/icons-react';
+} from './template_components/dragVectorInput/dragVectorInput';
+import { TableDataInput } from './template_components/tableDataInput/tableDataInput';
+import { FontSelectorUI } from './template_components/fontSelector/fontSelector';
+import {
+  IconFile,
+  IconPalette,
+  IconPencil,
+  IconTransform,
+  IconVector,
+} from '@tabler/icons-react';
 
 export class DocumentSection extends TemplateTab {
   font: FontSelector;
@@ -313,12 +319,6 @@ export class PositionsSection extends TemplateTab {
       const spacing = properties.isMobile ? 'sm' : 'lg';
       return (
         <Stack gap={spacing} p={properties.isMobile ? 'sm' : 'md'}>
-          <DragVectorInput
-            template={properties.template}
-            isMobile={properties.isMobile}
-            positionVector={this.pos}
-            sizeVector={this.size}
-          />
           <TableDataInput
             tableData={this.table}
             template={properties.template}
@@ -327,7 +327,6 @@ export class PositionsSection extends TemplateTab {
             enableEditing={true}
             widthEditing={true}
             reorderEditing={true}
-            
           />
         </Stack>
       );
@@ -342,6 +341,7 @@ export class PfkInvoiceTemplate extends Template {
   invoice?: InvoiceParamSection;
 
   drawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
+    const fontSize = `${(this.letterpaper?.fontSize || 1) * (4/3)}px`
     return Array<JSX.Element>(
       <Page
         format={PageFormat.A4}
@@ -354,8 +354,7 @@ export class PfkInvoiceTemplate extends Template {
         landscape={false}
         style={{
           fontFamily: this.letterpaper?.font.family(),
-          color: this.letterpaper?.fontColor,
-          fontSize: `${this.letterpaper?.fontSize}pt`, //TODO: Size Conversion and broken?
+          color: this.letterpaper?.fontColor
         }}
       >
         <MovableBox
@@ -368,16 +367,16 @@ export class PfkInvoiceTemplate extends Template {
           heigth={150}
           id="recipient"
         >
-          <Text>
+          <Text style={{fontSize: fontSize}}>
             <b>Musterfirma</b>
           </Text>
-          <Text>
+          <Text style={{fontSize: fontSize}}>
             <b>Etage 0815</b>
           </Text>
-          <Text>Maxime Muster</Text>
-          <Text>Musterstraße 16</Text>
-          <Text> - Zusatz - </Text>
-          <Text>01234 Musterhausen</Text>
+          <Text style={{fontSize: fontSize}}>Maxime Muster</Text>
+          <Text style={{fontSize: fontSize}}>Musterstraße 16</Text>
+          <Text style={{fontSize: fontSize}}> - Zusatz - </Text>
+          <Text style={{fontSize: fontSize}}>01234 Musterhausen</Text>
         </MovableBox>
         <MovableBox
           className="adress"
@@ -392,29 +391,29 @@ export class PfkInvoiceTemplate extends Template {
           <Stack align={'flex-end'} gap={0}>
             <Title
               order={3}
-              style={{ fontFamily: this.letterpaper?.font.family() }}
+              style={{ fontFamily: this.letterpaper?.font.family(), fontSize: fontSize }}
             >
               Rechnung
             </Title>
             <Group justify={'space-between'}>
               <Stack align={'flex-end'} gap={0}>
-                <Text>Rechnungnr.:</Text>
-                <Text>Datum:</Text>
-                <Text>Leistungszeitraum:</Text>
-                <Text>&nbsp;</Text>
+                <Text style={{fontSize: fontSize}}>Rechnungnr.:</Text>
+                <Text style={{fontSize: fontSize}}>Datum:</Text>
+                <Text style={{fontSize: fontSize}}>Leistungszeitraum:</Text>
+                <Text style={{fontSize: fontSize}}>&nbsp;</Text>
               </Stack>
               <Stack align={'flex-end'} gap={0}>
-                <Text>R2025-0001</Text>
-                <Text>31.01.2025</Text>
-                <Text>01.01.2025</Text>
-                <Text>bis 31.01.2025</Text>
+                <Text style={{fontSize: fontSize}}>R2025-0001</Text>
+                <Text style={{fontSize: fontSize}}>31.01.2025</Text>
+                <Text style={{fontSize: fontSize}}>01.01.2025</Text>
+                <Text style={{fontSize: fontSize}}>bis 31.01.2025</Text>
               </Stack>
             </Group>
           </Stack>
         </MovableBox>
         <MovableBox id={'salutation'} x={0} y={300} width={700} heigth={100}>
-          <Text fw={700}>Hallo Maxim Mustermann,</Text>
-          <Text>
+          <Text style={{fontSize: fontSize}} fw={700}>Hallo Maxim Mustermann,</Text>
+          <Text style={{fontSize: fontSize}}>
             ich erlaube mir eine Rechnung für folgende Leistungen zu stellen.
           </Text>
         </MovableBox>
@@ -429,8 +428,8 @@ export class PfkInvoiceTemplate extends Template {
           heigth={this.table?.size.y}
           id="table"
           enableResizing={false}
-          cellStyle={{ border: '3px solid' }}
-          headerStyle={{ border: '3px solid' }}
+          cellStyle={{ border: '3px solid', fontSize: fontSize}}
+          headerStyle={{ border: '3px solid', fontSize: fontSize }}
           disableMovement={true}
           {...(this.table?.table.dynamicTable() || { header: [] })}
           rows={[
@@ -448,7 +447,7 @@ export class PfkInvoiceTemplate extends Template {
           ]}
         />
         <MovableBox id={'salutation'} x={0} y={600} width={700} heigth={100}>
-          <Text>Vielen Dank für die gute Zusammenarbeit!</Text>
+          <Text style={{fontSize: fontSize}}>Vielen Dank für die gute Zusammenarbeit!</Text>
         </MovableBox>
       </Page>,
     );

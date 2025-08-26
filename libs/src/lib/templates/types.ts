@@ -127,8 +127,11 @@ export class TableData {
     };
   }
 }
-
-export class DragVector {
+export interface Vector{
+  x: number;
+  y: number;
+}
+export class DragVector implements Vector {
   public x = 0;
   public y = 0;
 
@@ -155,7 +158,8 @@ export class DragVector {
         tab?.redrawProperties();
         template?.redrawView();
       },
-      posVector: this,
+      x: this.x,
+      y: this.y
     };
   }
 
@@ -197,7 +201,8 @@ export class DragVector {
         tab?.redrawProperties();
         template?.redrawView();
       },
-      sizeVector: this,
+      width: this.x,
+      heigth: this.y
     };
   }
 }
@@ -264,7 +269,6 @@ export class FontStorage {
     this.fonts = Array<FontStorageEntry>();
     const testFontUrl =
       'https://raw.githubusercontent.com/coderiver/cubitssuperlanding/master/css/fonts/Helvetica-Regular.ttf';
-    //(window as any).queryLocalFonts().then((v) => console.log("loaded fonts"));
     this.fonts.push({
       value: 'Courier',
       label: 'Courier',
@@ -374,7 +378,6 @@ export interface RenderableBlockParams {
   width?: number;
   heigth?: number;
   renderingBlocks?: Array<number>;
-  sizeVector?: DragVector;
   enableResizing?: boolean;
   autoBreakOverMultiplePages?: boolean;
   onResize?: (xSize: number, ySize: number, tab?: TemplateTab) => void;
@@ -387,7 +390,6 @@ export interface RenderableBlockParams {
   //position
   x?: number;
   y?: number;
-  posVector?: DragVector;
   disableMovement?: boolean;
   onDrag?: (xPos: number, yPos: number, tab?: TemplateTab) => void;
   onSubmitPositionChange?: (

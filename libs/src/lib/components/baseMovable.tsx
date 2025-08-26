@@ -10,12 +10,12 @@ export function BaseMovableBox(properties: RenderableBlockParams) {
         properties.className + (properties.enabled ? ' moving-box' : '')
       }
       size={{
-        width: `${properties.sizeVector ? properties.sizeVector.x : properties.width || 100}px`,
-        height: `${properties.sizeVector ? properties.sizeVector.y : properties.heigth || 100}px`,
+        width: `${properties.width || 100}px`,
+        height: `${properties.heigth || 100}px`,
       }}
       position={{
-        x: properties.posVector ? properties.posVector.x : properties.x || 0,
-        y: properties.posVector ? properties.posVector.y : properties.y || 0,
+        x: properties.x || 0,
+        y: properties.y || 0,
       }}
       disableDragging={!properties.enabled || properties.disableMovement}
       enableResizing={

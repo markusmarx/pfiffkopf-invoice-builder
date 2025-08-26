@@ -1,17 +1,11 @@
 import { ReactElement, useReducer, useState } from 'react';
-import {
-  AppShell,
-  Burger,
-} from '@mantine/core';
+import { AppShell, Burger } from '@mantine/core';
 
-import {
-  Template,
-  ViewProperties,
-} from '@pfiffkopf-webapp-office/pfk-pdf';
+import { Template, ViewProperties } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import Header from './header';
-import Sidebar from '../sidebar';
-import MainCanvas from '../main_canvas';
+import Sidebar from './sidebar';
+import MainCanvas from './main_canvas';
 
 export interface EditorPropertys {
   view?: ReactElement<ViewProperties>;
@@ -32,7 +26,6 @@ export function Editor(properties: EditorPropertys) {
   const [currentPropertiesTab, setCurrentPropertiesTab] = useState<
     string | null
   >('');
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [currentPage, setCurrentPage] = useState(1);
 
   const pages = properties.template.drawPaper({
@@ -46,28 +39,27 @@ export function Editor(properties: EditorPropertys) {
       navbar={{
         width: getSidebarWidth(),
         breakpoint: 'md',
-        collapsed: { mobile: !opened, desktop: false }
+        collapsed: { mobile: !opened, desktop: false },
       }}
       header={{ height: { base: 60, md: 70 } }}
       padding={0}
       styles={{
         main: {
           height: '100vh',
-          overflow: 'hidden'
-        }
+          overflow: 'hidden',
+        },
       }}
     >
       <AppShell.Header>
-          <Header
-            burger={<Burger opened={opened} onClick={toggle} hiddenFrom="md" />}
-            isMobile={isMobile}
-            currentPage={currentPage}
-            maxPages={maxPages}
-            setCurrentPage={setCurrentPage}
-            template={properties.template}
-          />
+        <Header
+          burger={<Burger opened={opened} onClick={toggle} hiddenFrom="md" />}
+          isMobile={isMobile}
+          currentPage={currentPage}
+          maxPages={maxPages}
+          setCurrentPage={setCurrentPage}
+          template={properties.template}
+        />
       </AppShell.Header>
-
       <AppShell.Navbar>
         <Sidebar
           onClose={close}
@@ -87,7 +79,7 @@ export function Editor(properties: EditorPropertys) {
           isMobile={isMobile}
           isTablet={isTablet}
           template={properties.template}
-          currentSelectedPropertiesTab={currentPropertiesTab || ""}
+          currentSelectedPropertiesTab={currentPropertiesTab || ''}
           currentPage={currentPage}
         />
       </AppShell.Main>

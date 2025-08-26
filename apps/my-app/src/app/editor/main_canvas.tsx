@@ -65,7 +65,7 @@ const MainCanvas: React.FC<MainCanvasProps> = ({
       {/* Canvas Area */}
       <ScrollArea 
         viewportProps={{style: { flex: 1, height: "100%" }}}
-        style={{background: '#f1f5f9',}}
+        style={{background: '#f1f5f9', userSelect: "none"}}
       >
         <Box
           p={isMobile ? 10 : isTablet ? 20 : 40}

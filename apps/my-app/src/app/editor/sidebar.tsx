@@ -76,13 +76,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     tab: TemplateTab | null;
     template: Template;
   }) {
-    const [, forceUpdate] = useReducer((x) => x + 1, 0);
-
-    useEffect(() => {
-      if (props.tab) {
-        props.tab.setDataProperties(forceUpdate);
-      }
-    }, [props.tab]);
+    if (props.tab) {
+      props.tab.setDataProperties(() =>{
+         forceUpdate();
+      });
+    }
 
     return props.tab && props.tab.drawUI
       ? props.tab.drawUI({
@@ -112,8 +110,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     if ((isMobile || isTablet) && !isAnimating) {
       setIsAnimating(true);
       setCurrentTab(category);
-      
-
       // Kleine Verzögerung für visuellen Feedback
       setTimeout(() => {
         setShowSettings(true);

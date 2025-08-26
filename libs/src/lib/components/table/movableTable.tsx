@@ -152,14 +152,12 @@ export function MovableTable(properties: MovableTableParams) {
       enableResizing={properties.enableResizing}
       width={properties.width}
       heigth={properties.heigth}
-      sizeVector={properties.sizeVector}
       autoBreakOverMultiplePages={properties.autoBreakOverMultiplePages}
       onResize={properties.onResize}
       onSubmitSizeChange={properties.onSubmitSizeChange}
       disableMovement={properties.disableMovement}
       x={properties.x}
       y={properties.y}
-      posVector={properties.posVector}
       onSubmitPositionChange={properties.onSubmitPositionChange}
       onDrag={properties.onDrag}
     >
