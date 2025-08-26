@@ -30,7 +30,7 @@ import DragVectorInput, {
 } from './editor/dragVectorInput/dragVectorInput';
 import { TableDataInput } from './editor/tableDataInput/tableDataInput';
 import { FontSelectorUI } from './editor/fontSelector/fontSelector';
-import { IconFile, IconPalette, IconPencil } from '@tabler/icons-react';
+import { IconFile, IconPalette, IconPencil, IconTransform, IconVector } from '@tabler/icons-react';
 
 export class DocumentSection extends TemplateTab {
   font: FontSelector;
@@ -47,7 +47,7 @@ export class DocumentSection extends TemplateTab {
     this.pagePaddingLeft = 10;
     this.pagePaddingRight = 10;
     this.pagePaddingTop = 10;
-    this.fontColor = "#1a1a1a";
+    this.fontColor = '#1a1a1a';
     this.font = new FontSelector(template.getFontStorage());
     this.drawUI = (properties: TemplateTabDrawProperties) => {
       const spacing = properties.isMobile ? 'sm' : 'lg';
@@ -75,7 +75,10 @@ export class DocumentSection extends TemplateTab {
                   min={0}
                   max={50}
                   defaultValue={this.pagePaddingTop}
-                  onChange={(size) =>{this.pagePaddingTop = Number(size); properties.template.redrawView();}}
+                  onChange={(size) => {
+                    this.pagePaddingTop = Number(size);
+                    properties.template.redrawView();
+                  }}
                 />
                 <NumberInput
                   label="Rand unten"
@@ -85,7 +88,10 @@ export class DocumentSection extends TemplateTab {
                   min={0}
                   max={50}
                   defaultValue={this.pagePaddingBottom}
-                  onChange={(size) =>{this.pagePaddingBottom = Number(size); properties.template.redrawView();}}
+                  onChange={(size) => {
+                    this.pagePaddingBottom = Number(size);
+                    properties.template.redrawView();
+                  }}
                 />
                 <NumberInput
                   label="Rand links"
@@ -95,7 +101,10 @@ export class DocumentSection extends TemplateTab {
                   min={0}
                   max={50}
                   defaultValue={this.pagePaddingLeft}
-                  onChange={(size) =>{this.pagePaddingLeft = Number(size); properties.template.redrawView();}}
+                  onChange={(size) => {
+                    this.pagePaddingLeft = Number(size);
+                    properties.template.redrawView();
+                  }}
                 />
                 <NumberInput
                   label="Rand rechts"
@@ -105,63 +114,81 @@ export class DocumentSection extends TemplateTab {
                   min={0}
                   max={50}
                   defaultValue={this.pagePaddingRight}
-                  onChange={(size) =>{this.pagePaddingRight = Number(size); properties.template.redrawView();}}
+                  onChange={(size) => {
+                    this.pagePaddingRight = Number(size);
+                    properties.template.redrawView();
+                  }}
                 />
               </SimpleGrid>
             </Stack>
           </Paper>
           {/* Schriftart Section */}
-      <Paper p={paperPadding} shadow="xs" radius="md">
-        <Group gap="md" mb="md">
-          <IconPencil size={20} style={{ color: 'var(--mantine-color-green-6)' }} />
-          <Text size={properties.isMobile ? "sm" : "md"} fw={600} c="dark">
-            Schriftart
-          </Text>
-        </Group>
-
-        <Stack gap={properties.isMobile ? "sm" : "md"}>
-          <FontSelectorUI
-            allowCustomFontUpload={false}
-            fontSelector={this.font}
-            template={properties.template}
-          />
-
-          <Grid>
-            <Grid.Col span={properties.isMobile ? 12 : 6}>
-              <NumberInput
-                label="Schriftgröße"
-                placeholder="12"
-                suffix=" pt"
-                size={properties.isMobile ? "sm" : "md"}
-                min={8}
-                max={24}
-                defaultValue={this.fontSize}
-                onChange={(size) =>{this.fontSize = Number(size); properties.template.redrawView();}}
+          <Paper p={paperPadding} shadow="xs" radius="md">
+            <Group gap="md" mb="md">
+              <IconPencil
+                size={20}
+                style={{ color: 'var(--mantine-color-green-6)' }}
               />
-            </Grid.Col>
-          </Grid>
-        </Stack>
-      </Paper>
-      {/* Farben Section */}
-      <Paper p={paperPadding} shadow="xs" radius="md">
-        <Group gap="md" mb="md">
-          <IconPalette size={20} style={{ color: 'var(--mantine-color-orange-6)' }} />
-          <Text size={properties.isMobile ? "sm" : "md"} fw={600} c="dark">
-            Farben
-          </Text>
-        </Group>
+              <Text size={properties.isMobile ? 'sm' : 'md'} fw={600} c="dark">
+                Schriftart
+              </Text>
+            </Group>
 
-        <SimpleGrid cols={properties.isMobile ? 1 : 2} spacing={properties.isMobile ? "sm" : "md"}>
-          <ColorInput
-            label="Textfarbe"
-            placeholder="Wählen Sie eine Farbe"
-            size={properties.isMobile ? "sm" : "md"}
-            defaultValue={this.fontColor}
-            onChange={(color) =>{this.fontColor = color; properties.template.redrawView();}}
-            format="hex"
-          />
-        </SimpleGrid>
-      </Paper>
+            <Stack gap={properties.isMobile ? 'sm' : 'md'}>
+              <FontSelectorUI
+                allowCustomFontUpload={false}
+                fontSelector={this.font}
+                template={properties.template}
+              />
+
+              <Grid>
+                <Grid.Col span={properties.isMobile ? 12 : 6}>
+                  <NumberInput
+                    label="Schriftgröße"
+                    placeholder="12"
+                    suffix=" pt"
+                    size={properties.isMobile ? 'sm' : 'md'}
+                    min={8}
+                    max={24}
+                    defaultValue={this.fontSize}
+                    onChange={(size) => {
+                      this.fontSize = Number(size);
+                      properties.template.redrawView();
+                    }}
+                  />
+                </Grid.Col>
+              </Grid>
+            </Stack>
+          </Paper>
+          {/* Farben Section */}
+          <Paper p={paperPadding} shadow="xs" radius="md">
+            <Group gap="md" mb="md">
+              <IconPalette
+                size={20}
+                style={{ color: 'var(--mantine-color-orange-6)' }}
+              />
+              <Text size={properties.isMobile ? 'sm' : 'md'} fw={600} c="dark">
+                Farben
+              </Text>
+            </Group>
+
+            <SimpleGrid
+              cols={properties.isMobile ? 1 : 2}
+              spacing={properties.isMobile ? 'sm' : 'md'}
+            >
+              <ColorInput
+                label="Textfarbe"
+                placeholder="Wählen Sie eine Farbe"
+                size={properties.isMobile ? 'sm' : 'md'}
+                defaultValue={this.fontColor}
+                onChange={(color) => {
+                  this.fontColor = color;
+                  properties.template.redrawView();
+                }}
+                format="hex"
+              />
+            </SimpleGrid>
+          </Paper>
         </Stack>
       );
     };
@@ -188,12 +215,15 @@ export class RecipentSection extends TemplateTab {
   public constructor() {
     super();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
+      const spacing = properties.isMobile ? 'sm' : 'lg';
       return (
-        <DragVectorInput
-          template={properties.template}
-          dragVector={this.pos}
-          displayType={DragVectorDisplayType.Position}
-        />
+        <Stack gap={spacing} p={properties.isMobile ? 'sm' : 'md'}>
+          <DragVectorInput
+            template={properties.template}
+            isMobile={properties.isMobile}
+            positionVector={this.pos}
+          />
+        </Stack>
       );
     };
   }
@@ -219,12 +249,15 @@ export class InvoiceParamSection extends TemplateTab {
   public constructor() {
     super();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
+      const spacing = properties.isMobile ? 'sm' : 'lg';
       return (
-        <DragVectorInput
-          template={properties.template}
-          dragVector={this.pos}
-          displayType={DragVectorDisplayType.Position}
-        />
+        <Stack gap={spacing} p={properties.isMobile ? 'sm' : 'md'}>
+          <DragVectorInput
+            template={properties.template}
+            isMobile={properties.isMobile}
+            positionVector={this.pos}
+          />
+        </Stack>
       );
     };
   }
@@ -277,27 +310,26 @@ export class PositionsSection extends TemplateTab {
   public constructor() {
     super();
     this.drawUI = (properties: TemplateTabDrawProperties) => {
+      const spacing = properties.isMobile ? 'sm' : 'lg';
       return (
-        <>
+        <Stack gap={spacing} p={properties.isMobile ? 'sm' : 'md'}>
           <DragVectorInput
             template={properties.template}
-            dragVector={this.pos}
-            displayType={DragVectorDisplayType.Position}
-          />
-          <DragVectorInput
-            template={properties.template}
-            dragVector={this.size}
-            displayType={DragVectorDisplayType.Size}
+            isMobile={properties.isMobile}
+            positionVector={this.pos}
+            sizeVector={this.size}
           />
           <TableDataInput
-            template={properties.template}
             tableData={this.table}
+            template={properties.template}
+            isMobile={properties.isMobile}
             labelEditing={true}
             enableEditing={true}
             widthEditing={true}
             reorderEditing={true}
+            
           />
-        </>
+        </Stack>
       );
     };
   }
@@ -320,9 +352,10 @@ export class PfkInvoiceTemplate extends Template {
         autoExpand={prop.pdfRenderer}
         alwaysBreakToNewPage={false}
         landscape={false}
-        style={{ fontFamily: this.letterpaper?.font.family(), 
+        style={{
+          fontFamily: this.letterpaper?.font.family(),
           color: this.letterpaper?.fontColor,
-          fontSize: `${this.letterpaper?.fontSize}pt`,//TODO: Size Conversion and broken?
+          fontSize: `${this.letterpaper?.fontSize}pt`, //TODO: Size Conversion and broken?
         }}
       >
         <MovableBox

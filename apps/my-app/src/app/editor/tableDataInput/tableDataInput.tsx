@@ -1,11 +1,20 @@
-import { Checkbox, NumberInput, Table, TextInput } from '@mantine/core';
+import {
+  Checkbox,
+  Group,
+  NumberInput,
+  Paper,
+  Table,
+  TextInput,
+  Text,
+  Stack,
+} from '@mantine/core';
 import {
   TableData,
   TableEntry,
   Template,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { IconGripVertical } from '@tabler/icons-react';
+import { IconGripVertical, IconTable } from '@tabler/icons-react';
 import classes from './tableDataInput.module.css';
 import { useReducer } from 'react';
 
@@ -16,11 +25,13 @@ export interface TableDataInputProps {
   enableEditing?: boolean;
   widthEditing?: boolean;
   reorderEditing?: boolean;
+  isMobile: boolean;
 }
 
 export function TableDataInput(props: TableDataInputProps) {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
+  const paperPadding = props.isMobile ? 'md' : 'lg';
   function TableRowContent(propserties: { item: TableEntry; index: number }) {
     return (
       <>
@@ -76,20 +87,47 @@ export function TableDataInput(props: TableDataInputProps) {
       )}
     </Draggable>
   ));
-  if (props.reorderEditing) {
-    return (
-      <DragDropContext
-        onDragEnd={({ destination, source }) => {
-          const sourceIndex = source.index;
-          const destIndex = destination?.index || 0;
-          const dest = props.tableData.tableEntries[destIndex];
-          props.tableData.tableEntries[destIndex] =
-            props.tableData.tableEntries[sourceIndex];
-          props.tableData.tableEntries[sourceIndex] = dest;
-          props.template.redrawView();
-          forceUpdate();
-        }}
-      >
+
+  const content = () => {
+    if (props.reorderEditing) {
+      return (
+        <DragDropContext
+          onDragEnd={({ destination, source }) => {
+            const sourceIndex = source.index;
+            const destIndex = destination?.index || 0;
+            const dest = props.tableData.tableEntries[destIndex];
+            props.tableData.tableEntries[destIndex] =
+              props.tableData.tableEntries[sourceIndex];
+            props.tableData.tableEntries[sourceIndex] = dest;
+            props.template.redrawView();
+            forceUpdate();
+          }}
+        >
+          <Table>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th w={10}></Table.Th>
+                <Table.Th w={80}>Name</Table.Th>
+                <Table.Th w={10}>Aktiviert</Table.Th>
+                <Table.Th w={80}>Breite</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Droppable droppableId="dnd-list" direction="vertical">
+              {(provided) => (
+                <Table.Tbody
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                >
+                  {items}
+                  {provided.placeholder}
+                </Table.Tbody>
+              )}
+            </Droppable>
+          </Table>
+        </DragDropContext>
+      );
+    } else {
+      return (
         <Table>
           <Table.Thead>
             <Table.Tr>
@@ -99,46 +137,42 @@ export function TableDataInput(props: TableDataInputProps) {
               <Table.Th w={80}>Breite</Table.Th>
             </Table.Tr>
           </Table.Thead>
-          <Droppable droppableId="dnd-list" direction="vertical">
-            {(provided) => (
-              <Table.Tbody {...provided.droppableProps} ref={provided.innerRef}>
-                {items}
-                {provided.placeholder}
-              </Table.Tbody>
-            )}
-          </Droppable>
+          <Table.Tbody>
+            {props.tableData.tableEntries.map((value, index) => {
+              return (
+                <Table.Tr>
+                  <Table.Td w={10}>
+                    <div
+                      className={classes.dragHandle}
+                      style={{ color: 'rgba(1,1,1,0)' }}
+                    >
+                      <IconGripVertical size={18} stroke={1.5} />
+                    </div>
+                  </Table.Td>
+                  <TableRowContent index={index} item={value} />
+                </Table.Tr>
+              );
+            })}
+          </Table.Tbody>
         </Table>
-      </DragDropContext>
-    );
-  } else {
-    return (
-      <Table>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th w={10}></Table.Th>
-            <Table.Th w={80}>Name</Table.Th>
-            <Table.Th w={10}>Aktiviert</Table.Th>
-            <Table.Th w={80}>Breite</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {props.tableData.tableEntries.map((value, index) => {
-            return (
-              <Table.Tr>
-                <Table.Td w={10}>
-                  <div
-                    className={classes.dragHandle}
-                    style={{ color: 'rgba(1,1,1,0)' }}
-                  >
-                    <IconGripVertical size={18} stroke={1.5} />
-                  </div>
-                </Table.Td>
-                <TableRowContent index={index} item={value} />
-              </Table.Tr>
-            );
-          })}
-        </Table.Tbody>
-      </Table>
-    );
-  }
+      );
+    }
+  };
+
+  return (
+    <Paper p={paperPadding} shadow="xs" radius="md">
+      <Group gap="md" mb="md">
+        <IconTable
+          size={20}
+          style={{ color: 'var(--mantine-color-green-6)' }}
+        />
+        <Text size={props.isMobile ? 'sm' : 'md'} fw={600} c="dark">
+          Tabelle
+        </Text>
+      </Group>
+      <Stack gap={props.isMobile ? 'sm' : 'md'}>
+        {content()}
+      </Stack>
+    </Paper>
+  );
 }
