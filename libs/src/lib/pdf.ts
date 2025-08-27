@@ -93,8 +93,9 @@ export interface PDFKitCellFontOptions {
 }
 export interface PDFKitTableOptions {
   position?: { x: number; y: number };
-  columnStyles: number | number[] | ((collumn: number) => any);
-  rowStyles: number | number[] | ((row: number) => any);
+  maxWidth?: number;
+  columnStyles?: number | number[] | ((collumn: number) => any);
+  rowStyles?: number | number[] | ((row: number) => any);
   data: string[][] | PDFKitCellOptions[][];
 }
 export interface PDFKitSetFontProps {
@@ -130,31 +131,38 @@ export class PDFDocument {
   }
   public on(event: string, action: unknown) {
     this.doc.on(event, action);
+    return this;
   }
   public end() {
     this.doc.end();
+    return this;
   }
   public addPage(props?: PDFKitAddPageProps) {
     this.doc.addPage(props);
+    return this;
   }
   public moveTo(x: number, y: number) {
     this.doc.moveTo(x, y);
+    return this;
   }
   //shapes
   public lineWidth(width: number) {
     this.doc.lineWidth(width);
+    return this;
   }
   public rect(x: number, y: number, width: number, height: number) {
     this.doc.rect(x, y, width, height);
+    return this;
   }
   public stroke() {
     this.doc.stroke();
+    return this;
   }
   //font
   public embedFont(id: string, file: string | BufferSource, fontName?: string) {
     this.doc.registerFont(id, file, fontName);
     this.registeredFonts.push(id);
-    console.log(`Registered font with name ${id}`);
+    return this;
   }
 
   public isFontRegistered(fontFamily: string) {
@@ -163,6 +171,7 @@ export class PDFDocument {
   //text
   public fontSize(size: number) {
     this.doc.fontSize(size);
+    return this;
   }
   public font(options: PDFKitSetFontProps) {
     if (options.fontFile) {
@@ -170,13 +179,16 @@ export class PDFDocument {
     } else {
       this.doc.font(options.fontName);
     }
+    return this;
   }
   public text(options?: PFFKitTextProps) {
     this.doc.text(options?.text, options?.x, options?.y, options?.options);
+    return this;
   }
 
   //tables
   public table(options?: PDFKitTableOptions) {
     this.doc.table(options);
+    return this;
   }
 }

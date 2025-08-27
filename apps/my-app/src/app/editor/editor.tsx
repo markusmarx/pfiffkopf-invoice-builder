@@ -1,4 +1,4 @@
-import { ReactElement, useReducer, useState } from 'react';
+import { ReactElement, useState } from 'react';
 import { AppShell, Burger } from '@mantine/core';
 
 import { Template, ViewProperties } from '@pfiffkopf-webapp-office/pfk-pdf';

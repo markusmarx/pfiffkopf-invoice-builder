@@ -1,6 +1,7 @@
 import { Rnd } from 'react-rnd';
 import { RenderableBlockParams } from '../templates/types';
 import { useRef } from 'react';
+import React from 'react';
 export function BaseMovableBox(properties: RenderableBlockParams) {
   const rnd = useRef<Rnd>(null);
   return (

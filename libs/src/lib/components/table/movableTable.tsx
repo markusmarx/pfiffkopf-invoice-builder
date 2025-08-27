@@ -8,6 +8,7 @@ import { BaseMovableBox } from '../baseMovable';
 import { useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import React from 'react';
 export interface MovableTableParams extends RenderableBlockParams {
   header: (Collumn | null)[];
   rows: TableRow[];

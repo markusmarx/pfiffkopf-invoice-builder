@@ -24,15 +24,25 @@ export function convertCSSTransformToPostScriptTransform(
   node: HTMLElement,
 ): PostScriptTransform {
   const ret: PostScriptTransform = {};
-
   const translate = readTransformValue(node.style.transform, 'translate');
-  if (translate) {
+  if (translate && translate !== "0px") {
     const splitTransform = translate.split(',');
-    const left = cssScaleToPostScriptPoint(splitTransform[0]);
-    const top = cssScaleToPostScriptPoint(splitTransform[1]);
-
-    ret.left = left || 0;
-    ret.top = top || 0;
+    if(splitTransform.length === 2){
+      const left = cssScaleToPostScriptPoint(splitTransform[0]);
+      const top = cssScaleToPostScriptPoint(splitTransform[1]);
+      ret.left = left || 0;
+      ret.top = top || 0;
+    }
+  }
+  const matrix = readTransformValue(node.style.transform, "matrix");
+  if(matrix){
+    const splitMatrix = matrix.split(",");
+    if(splitMatrix.length === 6){
+      const xMatrix = cssPixelNumberToPostScriptPoint(Number(splitMatrix[4]));
+      const yMatrix = cssPixelNumberToPostScriptPoint(Number(splitMatrix[4]));
+      ret.left = xMatrix || 0;
+      ret.top = yMatrix || 0;
+    }
   }
   return ret;
 }
@@ -69,12 +79,27 @@ export function parsePositionFromHTML(
       yOffset = y;
       break;
     case 'relative':
-      x +=
+
+      /*x +=
         cssScaleToPostScriptPoint(computedStyle.left, element, 'left') ||
-        0 + (transform.left || 0);
+        0 + (transform.left || 0) + paddingLeft;
       y +=
         cssScaleToPostScriptPoint(computedStyle.top, element, 'top') ||
-        0 + (transform.left || 0);
+        0 + (transform.left || 0) + paddingTop;*/
+      if (transform.left !== undefined && transform.top !== undefined) {
+        x += transform.left;
+        y += transform.top;
+      }
+      xOffset = x;
+      yOffset = y;
+      /*x +=
+        cssScaleToPostScriptPoint(computedStyle.left, element, 'left') ||
+        0 + (transform.left || 0) + paddingLeft;
+      y +=
+        cssScaleToPostScriptPoint(computedStyle.top, element, 'top') ||
+        0 + (transform.left || 0) + paddingTop;*/
+      /**/
+
       break;
     default:
       console.log(`Unsuported position ${positionCss}`);

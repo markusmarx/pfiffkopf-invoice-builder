@@ -15,6 +15,7 @@ import {
   fetchBuffer,
 } from '../utils/util';
 import { parsePositionFromHTML } from './htmlPositionParser';
+import { count } from 'console';
 
 abstract class DrawCommand {
   childs: DrawCommand[];
@@ -123,6 +124,7 @@ class StartDrawTableCommand extends GroupCommand {
       columnStyles: collumnSize,
       rowStyles: rowSizes,
       data: table,
+      maxWidth: this.width
     });
   }
   override shouldKeep(command: DrawCommand): boolean {
@@ -337,11 +339,12 @@ export async function renderToPDF(options: {
         margin_left: 0,
         margin_right: 0,
       };
-      for (let i = index; i < (parrent?.children.length || 0); i++) {
-        const element = parrent?.children[i] as HTMLElement;
+      let pageGroupIndex = 0;
+      for (let childIndex = index; childIndex < (parrent?.children.length || 0); childIndex++) {
+        const element = parrent?.children[childIndex] as HTMLElement;
         if (element) {
           if (element.id === 'real_paper') {
-            basePage = parrent?.children[i] as HTMLElement;
+            basePage = parrent?.children[childIndex] as HTMLElement;
             pageDescriptor.width =
               cssScaleToPostScriptPoint(basePage.style.width) || 1;
             pageDescriptor.height =
@@ -353,7 +356,7 @@ export async function renderToPDF(options: {
             pageDescriptor.margin_top =
               cssScaleToPostScriptPoint(basePage.style.paddingTop) || 0;
             //Reconstruct margin bottom
-            let counter = i + 1;
+            let counter = childIndex + 1;
             while (counter < (parrent?.children.length || 0)) {
               const n_element = parrent?.children[counter] as HTMLElement;
               if (n_element.id === 'real_paper') {
@@ -361,7 +364,7 @@ export async function renderToPDF(options: {
               }
               counter++;
             }
-            const drawAreaPagesCover = counter - i;
+            const drawAreaPagesCover = counter - childIndex;
             const drawAreaHeight =
               cssScaleToPostScriptPoint(
                 (basePage.children[0] as HTMLElement).style.height,
@@ -370,13 +373,14 @@ export async function renderToPDF(options: {
               drawAreaHeight + pageDescriptor.margin_top <=
               drawAreaPagesCover * pageDescriptor.height
                 ? 0
-                : 1;
+                : 0.1;
             pageDescriptor.margin_bottom =
               pageDescriptor.height * (drawAreaPagesCover + add) -
               pageDescriptor.margin_top -
               drawAreaHeight;
+            pageGroupIndex = 0;
           } else if (element.id !== 'paper-container-expand') {
-            i++;
+            childIndex++;
             continue;
           }
           pdfDoc.addPage({
@@ -408,6 +412,7 @@ export async function renderToPDF(options: {
               pdfDoc,
               options.template.getFontStorage(),
               basePage,
+              pageGroupIndex * pageDescriptor.height,
               0,
               0,
               pageDescriptor.margin_left,
@@ -421,6 +426,7 @@ export async function renderToPDF(options: {
             }
           }
           textGroup.draw(pdfDoc, textGroup.childs);
+          pageGroupIndex++;
           console.log('Finished Rendering a page');
         } else {
           break;
@@ -448,6 +454,7 @@ export async function renderToPDF(options: {
     pdf: PDFDocument,
     storage: FontStorage,
     page: HTMLElement,
+    pageIndex: number,
     xOffset: number,
     yOffset: number,
     paddingLeft: number,
@@ -476,21 +483,21 @@ export async function renderToPDF(options: {
       if (element instanceof HTMLParagraphElement) {
         command = new StartDrawTextCommand(
           position.x,
-          position.y,
+          position.y - pageIndex,
           position.width,
           position.height,
         );
       } else if (element instanceof HTMLHeadingElement) {
         command = new StartDrawTextCommand(
           position.x,
-          position.y,
+          position.y - pageIndex,
           position.width,
           position.height,
         );
       } else if (element instanceof HTMLAnchorElement) {
         command = new StartDrawTextCommand(
           position.x,
-          position.y,
+          position.y - pageIndex,
           position.width,
           position.height,
         );
@@ -499,7 +506,7 @@ export async function renderToPDF(options: {
       } else if (element instanceof HTMLTableElement) {
         command = new StartDrawTableCommand(
           position.x,
-          position.y,
+          position.y - pageIndex,
           position.width,
           position.height,
         );
@@ -529,6 +536,7 @@ export async function renderToPDF(options: {
           pdf,
           storage,
           page,
+          pageIndex,
           xOffset,
           yOffset,
           0,
