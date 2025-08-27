@@ -288,6 +288,7 @@ export class FontStorage {
         name: 'Helvetica',
         url: testFontUrl,
       },
+      
       bold: {
         name: 'Helvetica-Bold',
         url: testFontUrl,

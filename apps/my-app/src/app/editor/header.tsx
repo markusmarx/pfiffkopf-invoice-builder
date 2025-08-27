@@ -196,8 +196,8 @@ const Header: React.FC<HeaderProps> = ({ burger, isMobile, currentPage, maxPages
                     return <MantineProvider>{template}</MantineProvider>;
                   },
                   pdfCreationOptions: {
-                    subset: PDFKitPDFSubset.pdfA_oneA,
-                    pdfVersion: PDFKitPDFVersion.oneDFour,
+                    subset: PDFKitPDFSubset.pdfA_threeA,
+                    pdfVersion: PDFKitPDFVersion.oneDSeven,
                     tagged: true,
                   },
                   onFinishPDFCreation: (chunks) => {

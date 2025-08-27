@@ -199,11 +199,11 @@ async function drawCellCommandFromStyle(
   return cell;
 }
 async function checkWebFont(font: WebFont, doc: PDFDocument) {
-  if (!doc.isFontRegistered(font.name)) {
+  if (!doc.isFontRegistered(font.name+"Embed")) {
     if (!font.file) {
       font.file = await fetchBuffer(font.url);
     }
-    doc.embedFont(font.name, font.file);
+    doc.embedFont(font.name+"Embed", font.file);
   }
 }
 async function generateTextStyleFromCSS(
@@ -220,19 +220,19 @@ async function generateTextStyleFromCSS(
   if (family) {
     if (family.boldItalic && bold && oblique) {
       await checkWebFont(family.boldItalic, pdf);
-      font = family.boldItalic.name;
+      font = family.boldItalic.name+"Embed";
       oblique = false;
       bold = false;
     } else if (family.bold && bold && !oblique) {
       await checkWebFont(family.bold, pdf);
-      font = family.bold.name;
+      font = family.bold.name+"Embed";
       bold = false;
     } else if (family.italic && !bold && oblique) {
       await checkWebFont(family.italic, pdf);
-      font = family.italic.name;
+      font = family.italic.name+"Embed";
       oblique = false;
     } else {
-      font = family.regular.name;
+      font = family.regular.name+"Embed";
       await checkWebFont(family.regular, pdf);
     }
   }

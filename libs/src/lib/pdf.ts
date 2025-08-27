@@ -174,6 +174,7 @@ export class PDFDocument {
     return this;
   }
   public font(options: PDFKitSetFontProps) {
+    console.log(options);
     if (options.fontFile) {
       this.doc.font(options.fontFile, options.fontName);
     } else {
@@ -182,6 +183,7 @@ export class PDFDocument {
     return this;
   }
   public text(options?: PFFKitTextProps) {
+    console.log(options);
     this.doc.text(options?.text, options?.x, options?.y, options?.options);
     return this;
   }
