@@ -1,10 +1,16 @@
 import {
+  Button,
+  Center,
   ColorInput,
   FileInput,
+  Flex,
   Grid,
   Group,
+  Modal,
+  ModalHeader,
   NumberInput,
   Paper,
+  ScrollArea,
   SimpleGrid,
   Stack,
   Text,
@@ -24,20 +30,189 @@ import {
   PageFormat,
   MovableBox,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
-import React, { JSX } from 'react';
-import DragVectorInput, {
-  DragVectorDisplayType,
-} from './template_components/dragVectorInput/dragVectorInput';
+import React, { JSX, useState } from 'react';
+import DragVectorInput from './template_components/dragVectorInput/dragVectorInput';
 import { TableDataInput } from './template_components/tableDataInput/tableDataInput';
 import { FontSelectorUI } from './template_components/fontSelector/fontSelector';
 import {
   IconFile,
+  IconMail,
   IconPalette,
   IconPencil,
-  IconTransform,
-  IconVector,
 } from '@tabler/icons-react';
+import * as pdfjsLib from 'pdfjs-dist';
 
+function LogoUI(properties: {
+  properties: TemplateTabDrawProperties;
+  this: LogoSection;
+}) {
+  const spacing = properties.properties.isMobile ? 'sm' : 'lg';
+  const paperPadding = properties.properties.isMobile ? 'md' : 'lg';
+  const [isLoading, setIsLoading] = useState(false);
+  const [imgagesToChoseFrom, setImagesToChoseFrom] = useState<string[]| undefined>();
+  const [imageSelection, setImageSelection] = useState(-1);
+  return (
+    <Stack gap={spacing} p={properties.properties.isMobile ? 'sm' : 'md'}>
+      {/*Background selection*/}
+      <Modal
+        opened={(imgagesToChoseFrom || []).length > 0}
+        onClose={() => {
+          //
+        }}
+        size={"100%"}
+      >
+        <Stack>
+          <Center>
+            <Title>Briefpapier</Title>
+          </Center>
+            <Center><Text>Wähle eine Seite als Briefpapier aus.</Text></Center>
+            <ScrollArea>
+              <Flex>
+              {
+                imgagesToChoseFrom?.map((img, idx) => {
+                  return(
+                    <Stack>
+                      <img src={img} alt={`Seite ${idx+1}`} onClick={() => {
+                        setImageSelection(idx);
+                      }}/>
+                      <Center><Text>Seite {idx+1}</Text></Center>
+                    </Stack>
+                  );
+                })
+              }</Flex>
+            </ScrollArea>
+            <Flex justify={"end"}><Button disabled={imageSelection === -1} onClick={() => {
+              //send event that the 
+            }}>Bestättigen {imageSelection !== -1 && 
+              <>Seite {imageSelection+1}</>
+            }</Button></Flex>
+        </Stack>
+      </Modal>
+      {/* Briefpapier Section */}
+      <Paper p={paperPadding} shadow="xs" radius="md">
+        <Group gap="md" mb="md">
+          <IconMail
+            size={20}
+            style={{ color: 'var(--mantine-color-orange-6)' }}
+          />
+          <Text
+            size={properties.properties.isMobile ? 'sm' : 'md'}
+            fw={600}
+            c="dark"
+          >
+            Briefpapier
+          </Text>
+        </Group>
+
+        <SimpleGrid
+          cols={properties.properties.isMobile ? 1 : 2}
+          spacing={properties.properties.isMobile ? 'sm' : 'md'}
+        >
+          <FileInput
+            label="Briefpapier hochladen"
+            placeholder="PDF auswählen"
+            accept="application/pdf"
+            clearable
+            defaultValue={properties.this.doc}
+            onChange={(file: File | null) => {
+              if (file) {
+                const img = properties.this.convertPDFToImage(file, (imgs) => {
+                  setImageSelection(-1);
+                  setImagesToChoseFrom(imgs);
+                  return Promise.reject(undefined);
+                });
+                img.then((value) => {
+                  properties.this.docAsImage = value;
+                  properties.properties.template.redrawView();
+                }, (er) => {
+                  if(er instanceof String){
+                    alert(er);
+                  }
+                })
+                properties.this.doc = file;
+              } else {
+                properties.this.doc = null;
+                properties.this.docAsImage = null;
+                properties.properties.template.redrawView();
+              }
+            }}
+          />
+        </SimpleGrid>
+      </Paper>
+    </Stack>
+  );
+}
+
+export class LogoSection extends TemplateTab {
+  public get id(): string {
+    return 'logo';
+  }
+  public get displayName(): string {
+    return 'Logo & Briefpapier';
+  }
+  public get shortDisplayName(): string {
+    return 'Logo & Briefpapier';
+  }
+  public get description(): string {
+    return 'Corporate Layout';
+  }
+  public get pageNumbers(): number | number[] {
+    return [0, 1, 2, 3];
+  }
+  doc: null | File;
+  docAsImage: null | string;
+  async convertPDFToImage(pdf: File, showSelection: (imgs: string[]) => Promise<number>) : Promise<string> {
+    const buffer = await pdf.arrayBuffer();
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `./pdf.worker.min.js`;
+    }
+    const doc = await pdfjsLib.getDocument({
+      data: buffer,
+      useSystemFonts: true,
+    }).promise;
+    if(doc.numPages === 0){
+      return Promise.reject("Nicht genug Seiten, das PDF Dokument benötigt mindestens 1 Seite.");
+    }else{
+    const images : string[] = [];
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if(context){
+      for(let i = 1; i < doc.numPages; i++){
+        const page = await doc.getPage(i);
+        const viewport = page.getViewport({scale: 1});
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        context.clearRect(0,0, canvas.width, canvas.height);
+        await page.render({canvasContext: context, canvas, viewport}).promise;
+        images.push(canvas.toDataURL());
+      }
+    }else{
+      Promise.reject("Javascript Fehler");
+    }
+
+      if(doc.numPages > 1){
+        //show page selection menu
+        const select = await showSelection(images).catch((reason) => {
+          return -1;
+        });
+        if(select === -1){
+          return Promise.reject();
+        }else{
+          return Promise.resolve(images[select]);
+        }
+      }else{
+        //directly set it
+        return Promise.resolve(images[0]);
+      }
+    }
+  }
+  public constructor() {
+    super();
+    this.doc = null;
+    this.docAsImage = null;
+    this.drawUI = (prop) => <LogoUI properties={prop} this={this} />;
+  }
+}
 export class DocumentSection extends TemplateTab {
   font: FontSelector;
   fontSize: number;
@@ -339,9 +514,10 @@ export class PfkInvoiceTemplate extends Template {
   address?: RecipentSection;
   table?: PositionsSection;
   invoice?: InvoiceParamSection;
+  logo?: LogoSection;
 
   drawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
-    const fontSize = `${(this.letterpaper?.fontSize || 1) * (4/3)}px`
+    const fontSize = `${(this.letterpaper?.fontSize || 1) * (4 / 3)}px`;
     return Array<JSX.Element>(
       <Page
         format={PageFormat.A4}
@@ -354,7 +530,7 @@ export class PfkInvoiceTemplate extends Template {
         landscape={false}
         style={{
           fontFamily: this.letterpaper?.font.family(),
-          color: this.letterpaper?.fontColor
+          color: this.letterpaper?.fontColor,
         }}
       >
         <MovableBox
@@ -367,16 +543,16 @@ export class PfkInvoiceTemplate extends Template {
           heigth={150}
           id="recipient"
         >
-          <Text style={{fontSize: fontSize}}>
+          <Text style={{ fontSize: fontSize }}>
             <b>Musterfirma</b>
           </Text>
-          <Text style={{fontSize: fontSize}}>
+          <Text style={{ fontSize: fontSize }}>
             <b>Etage 0815</b>
           </Text>
-          <Text style={{fontSize: fontSize}}>Maxime Muster</Text>
-          <Text style={{fontSize: fontSize}}>Musterstraße 16</Text>
-          <Text style={{fontSize: fontSize}}> - Zusatz - </Text>
-          <Text style={{fontSize: fontSize}}>01234 Musterhausen</Text>
+          <Text style={{ fontSize: fontSize }}>Maxime Muster</Text>
+          <Text style={{ fontSize: fontSize }}>Musterstraße 16</Text>
+          <Text style={{ fontSize: fontSize }}> - Zusatz - </Text>
+          <Text style={{ fontSize: fontSize }}>01234 Musterhausen</Text>
         </MovableBox>
         <MovableBox
           className="adress"
@@ -391,29 +567,34 @@ export class PfkInvoiceTemplate extends Template {
           <Stack align={'flex-end'} gap={0}>
             <Title
               order={3}
-              style={{ fontFamily: this.letterpaper?.font.family(), fontSize: fontSize }}
+              style={{
+                fontFamily: this.letterpaper?.font.family(),
+                fontSize: fontSize,
+              }}
             >
               Rechnung
             </Title>
             <Group justify={'space-between'}>
               <Stack align={'flex-end'} gap={0}>
-                <Text style={{fontSize: fontSize}}>Rechnungnr.:</Text>
-                <Text style={{fontSize: fontSize}}>Datum:</Text>
-                <Text style={{fontSize: fontSize}}>Leistungszeitraum:</Text>
-                <Text style={{fontSize: fontSize}}>&nbsp;</Text>
+                <Text style={{ fontSize: fontSize }}>Rechnungnr.:</Text>
+                <Text style={{ fontSize: fontSize }}>Datum:</Text>
+                <Text style={{ fontSize: fontSize }}>Leistungszeitraum:</Text>
+                <Text style={{ fontSize: fontSize }}>&nbsp;</Text>
               </Stack>
               <Stack align={'flex-end'} gap={0}>
-                <Text style={{fontSize: fontSize}}>R2025-0001</Text>
-                <Text style={{fontSize: fontSize}}>31.01.2025</Text>
-                <Text style={{fontSize: fontSize}}>01.01.2025</Text>
-                <Text style={{fontSize: fontSize}}>bis 31.01.2025</Text>
+                <Text style={{ fontSize: fontSize }}>R2025-0001</Text>
+                <Text style={{ fontSize: fontSize }}>31.01.2025</Text>
+                <Text style={{ fontSize: fontSize }}>01.01.2025</Text>
+                <Text style={{ fontSize: fontSize }}>bis 31.01.2025</Text>
               </Stack>
             </Group>
           </Stack>
         </MovableBox>
         <MovableBox id={'salutation'} x={0} y={300} width={700} heigth={100}>
-          <Text style={{fontSize: fontSize}} fw={700}>Hallo Maxim Mustermann,</Text>
-          <Text style={{fontSize: fontSize}}>
+          <Text style={{ fontSize: fontSize }} fw={700}>
+            Hallo Maxim Mustermann,
+          </Text>
+          <Text style={{ fontSize: fontSize }}>
             ich erlaube mir eine Rechnung für folgende Leistungen zu stellen.
           </Text>
         </MovableBox>
@@ -428,7 +609,7 @@ export class PfkInvoiceTemplate extends Template {
           heigth={this.table?.size.y}
           id="table"
           enableResizing={false}
-          cellStyle={{ border: '3px solid', fontSize: fontSize}}
+          cellStyle={{ border: '3px solid', fontSize: fontSize }}
           headerStyle={{ border: '3px solid', fontSize: fontSize }}
           disableMovement={true}
           {...(this.table?.table.dynamicTable() || { header: [] })}
@@ -447,7 +628,9 @@ export class PfkInvoiceTemplate extends Template {
           ]}
         />
         <MovableBox id={'salutation'} x={0} y={600} width={700} heigth={100}>
-          <Text style={{fontSize: fontSize}}>Vielen Dank für die gute Zusammenarbeit!</Text>
+          <Text style={{ fontSize: fontSize }}>
+            Vielen Dank für die gute Zusammenarbeit!
+          </Text>
         </MovableBox>
       </Page>,
     );

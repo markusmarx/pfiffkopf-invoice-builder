@@ -5,6 +5,7 @@ import {
   PositionsSection,
   PfkInvoiceTemplate,
   InvoiceParamSection,
+  LogoSection,
 } from './pfkInvoiceTemplate';
 
 export function App() {
@@ -20,6 +21,7 @@ export function App() {
   template.table.pos.y = 400;
   template.table.size.x = 718;
   template.table.size.y = 100;
+  template.logo = new LogoSection();
 
   return <Editor template={template} />;
 }
