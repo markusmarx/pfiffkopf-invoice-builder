@@ -26,6 +26,7 @@ interface PageProperties {
   borderTop?: number;
   borderBottom?: number;
   style?: React.CSSProperties;
+  backgroundImage?: string;
 }
 
 export function Page(properties: PageProperties) {
@@ -43,7 +44,7 @@ export function Page(properties: PageProperties) {
 
   const [pagesExpandCount, setPageExpandCount] = useState<number>(1);
   const containerRef = useRef<HTMLDivElement>(null);
-
+      console.log(properties.backgroundImage);
   useLayoutEffect(() => {
     if (!containerRef.current) return;
     //first, reposition and split content
@@ -55,7 +56,7 @@ export function Page(properties: PageProperties) {
         (element) => {
           const movableBox = element.props as RenderableBlockParams;
           if (movableBox) {
-            const positionY = movableBox.posVector?.y || movableBox.y;
+            const positionY = movableBox.y;
             let elementHeight = movableBox.heigth || 0;
 
             const elementReference = document.getElementById(movableBox.id);
@@ -77,7 +78,7 @@ export function Page(properties: PageProperties) {
                 (positionY + elementHeight > threshold &&
                   !movableBox.autoBreakOverMultiplePages)
               ) {
-                if (movableBox.posVector && movableBox.onSubmitPositionChange) {
+                if (movableBox.onSubmitPositionChange) {
                   const newPos =
                     !properties.alwaysBreakToNewPage &&
                     (currentPage * height - (properties.borderTop || 0)) *
@@ -91,7 +92,7 @@ export function Page(properties: PageProperties) {
                         1 //break up
                       : currentPage * height * cmToPixels; //break down
                   movableBox.onSubmitPositionChange(
-                    movableBox.posVector.x,
+                    movableBox.x || 0,
                     Math.ceil(newPos),
                     movableBox.template,
                     movableBox.templateTab,
@@ -116,8 +117,8 @@ export function Page(properties: PageProperties) {
       properties.children.forEach((element) => {
         const movableBox = element.props as RenderableBlockParams;
         if (movableBox) {
-          const top = movableBox.posVector?.y || movableBox.y || 0;
-          const elementHeight = movableBox.heigth || 0;
+          const top = movableBox.y || 0;
+          const elementHeight = movableBox.heigth || 100;
           pagesRequired = Math.max(
             (top + elementHeight) /
               (cmToPixels * (height ? height : Number.EPSILON)),
@@ -169,6 +170,8 @@ export function Page(properties: PageProperties) {
             paddingTop: `${properties.borderTop || 0}cm`,
             paddingLeft: `${properties.borderLeft || 0}cm`,
             paddingRight: `${properties.borderRight || 0}cm`,
+            backgroundImage: properties.backgroundImage ? `url(${properties.backgroundImage})` : undefined,
+            backgroundSize: 'contain'
           },
           properties.style,
         )}
@@ -197,6 +200,8 @@ export function Page(properties: PageProperties) {
               width: `${width}cm`,
               backgroundColor: 'white',
               borderTop: 'dashed black',
+              backgroundImage: properties.backgroundImage ? `url(${properties.backgroundImage})` : undefined,
+              backgroundSize: 'contain'
             }}
           ></div>
         );

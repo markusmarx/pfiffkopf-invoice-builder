@@ -18,6 +18,12 @@ import {
 import { useState } from 'react';
 import { IconMail } from '@tabler/icons-react';
 import * as pdfjsLib from 'pdfjs-dist';
+interface PDFPageData{
+    img: string,
+    //page: PDFPAge,
+    pageNumber: number,
+    aspectRatio: number
+}
 export function LogoCategory(properties: {
   properties: TemplateTabDrawProperties;
   self: LogoSection;
@@ -29,9 +35,10 @@ export function LogoCategory(properties: {
   const paperPadding = properties.properties.isMobile ? 'md' : 'lg';
   interface PageSelectionData{
     display: boolean,
-    images: string[],
+    images: PDFPageData[],
     step2?: boolean
   }
+
   const [pageSelectionUI, setPageSelectionUI] = useState<PageSelectionData>({
     display: false,
     images: []
@@ -68,18 +75,18 @@ export function LogoCategory(properties: {
             </Center>
             <ScrollArea>
               <Flex>
-                {pageSelectionUI.images.map((img, idx) => {
+                {pageSelectionUI.images.map((page, idx) => {
                   return (
                     <Stack>
                       <img
-                        src={img}
-                        alt={`Seite ${idx + 1}`}
+                        src={page.img}
+                        alt={`Seite ${page.pageNumber}`}
                         onClick={() => {
                           setImageSelection(idx);
                         }}
                       />
                       <Center>
-                        <Text>Seite {idx + 1}</Text>
+                        <Text>Seite {page.pageNumber}</Text>
                       </Center>
                     </Stack>
                   );
@@ -90,8 +97,25 @@ export function LogoCategory(properties: {
               <Button
                 disabled={imageSelection === -1}
                 onClick={() => {
-                  //send event that the
-                  
+                  //check if the page has the a4 dimension
+                  const a4dimension = 210 / 297;
+                  const aspect = pageSelectionUI.images[imageSelection].aspectRatio;
+                  if(a4dimension < aspect + 0.01 && a4dimension > aspect - 0.01){
+                    //render single page to pdf
+                    setPageSelectionUI({
+                      display: false,
+                      images: []
+                    });
+                    properties.self.docAsImage = pageSelectionUI.images[imageSelection].img;
+                    properties.properties.template.redrawView();
+                  }else{
+                    //show crop ui
+                    setPageSelectionUI({
+                      display: true,
+                      images: pageSelectionUI.images,
+                      step2: true
+                    })
+                  }
                 }}
               >
                 Bestättigen{' '}
@@ -134,11 +158,11 @@ export function LogoCategory(properties: {
                 setPageSelectionUI({display: true, images: []});
                 convertPFDToImageArray(file).then(
                   (imgs) => {
-                    setPageSelectionUI({display: true, images: imgs});
+                    setPageSelectionUI({display: true, images: imgs, step2: false});
                   },
                   (err) => {
                     alert(err);
-                    setPageSelectionUI({display: true, images: []});
+                    setPageSelectionUI({display: false, images: []});
                   },
                 );
               } else {
@@ -153,7 +177,7 @@ export function LogoCategory(properties: {
     </Stack>
   );
 }
-async function convertPFDToImageArray(pdf: File): Promise<string[]> {
+async function convertPFDToImageArray(pdf: File): Promise<PDFPageData[]> {
   const buffer = await pdf.arrayBuffer();
   if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = `./pdf.worker.min.js`;
@@ -167,7 +191,7 @@ async function convertPFDToImageArray(pdf: File): Promise<string[]> {
       'Nicht genug Seiten, das PDF Dokument benötigt mindestens 1 Seite.',
     );
   } else {
-    const images: string[] = [];
+    const images: PDFPageData[] = [];
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     if (context) {
@@ -178,7 +202,11 @@ async function convertPFDToImageArray(pdf: File): Promise<string[]> {
         canvas.height = viewport.height;
         context.clearRect(0, 0, canvas.width, canvas.height);
         await page.render({ canvasContext: context, canvas, viewport }).promise;
-        images.push(canvas.toDataURL());
+        images.push({
+          img: canvas.toDataURL(),
+          pageNumber: page.pageNumber,
+          aspectRatio: canvas.width /canvas.height
+        });
       }
       return Promise.resolve(images);
     } else {

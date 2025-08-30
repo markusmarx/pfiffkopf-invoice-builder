@@ -188,8 +188,9 @@ export class PfkInvoiceTemplate extends Template {
         landscape={false}
         style={{
           fontFamily: this.letterpaper?.font.family(),
-          color: this.letterpaper?.fontColor,
+          color: this.letterpaper?.fontColor
         }}
+        backgroundImage={this.logo?.docAsImage ? this.logo?.docAsImage : undefined}
       >
         <MovableBox
           className="adress"
