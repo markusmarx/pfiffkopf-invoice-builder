@@ -400,3 +400,15 @@ export interface RenderableBlockParams {
     tab?: TemplateTab,
   ) => void;
 }
+export class BackgroundPDF{
+  doc: null | File;
+  docAsImage: null | string;
+  pdfArea: {x: number, y: number, width: number, height: number};
+  imgArea: {x: number, y: number, width: number, height: number};
+  constructor(){
+    this.doc = null;
+    this.docAsImage = null;
+    this.pdfArea = {x: 0, y: 0, height: 0, width: 0};
+    this.imgArea = {x: 0, y: 0, height: 0, width: 0};
+  }
+}

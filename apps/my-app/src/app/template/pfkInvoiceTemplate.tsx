@@ -11,6 +11,7 @@ import {
   Page,
   PageFormat,
   MovableBox,
+  BackgroundPDF,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { JSX } from 'react';
 import { DocumentCategory } from './documentCategory';
@@ -20,10 +21,7 @@ import { TableCategory } from './tableCategory';
 import { LogoCategory } from './logoCategory';
 
 export class LogoSection extends TemplateTab {
-  doc: null | File;
-  docAsImage: null | string;
-  pdfArea: {x: number, y: number, width: number, height: number};
-  imgArea: {x: number, y: number, width: number, height: number};;
+  letterpaper: BackgroundPDF;
   public get id(): string {
     return 'logo';
   }
@@ -41,10 +39,7 @@ export class LogoSection extends TemplateTab {
   }
   public constructor() {
     super();
-    this.doc = null;
-    this.docAsImage = null;
-    this.pdfArea = {x: 0, y: 0, height: 0, width: 0};
-    this.imgArea = {x: 0, y: 0, height: 0, width: 0};
+    this.letterpaper = new BackgroundPDF();
     this.drawUI = (properties) => (
       <LogoCategory self={this} properties={properties} />
     );
@@ -194,7 +189,7 @@ export class PfkInvoiceTemplate extends Template {
           fontFamily: this.letterpaper?.font.family(),
           color: this.letterpaper?.fontColor
         }}
-        backgroundImage={this.logo?.docAsImage ? this.logo?.docAsImage : undefined}
+        background={this.logo?.letterpaper.docAsImage ? this.logo.letterpaper : undefined}
       >
         <MovableBox
           className="adress"

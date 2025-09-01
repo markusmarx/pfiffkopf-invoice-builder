@@ -1,5 +1,5 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from 'react';
-import { RenderableBlockParams } from '../../templates/types';
+import { BackgroundPDF, RenderableBlockParams } from '../../templates/types';
 import { cmToPixels } from '../../utils/util';
 
 export enum PageFormat {
@@ -26,7 +26,7 @@ interface PageProperties {
   borderTop?: number;
   borderBottom?: number;
   style?: React.CSSProperties;
-  backgroundImage?: string;
+  background?: BackgroundPDF;
 }
 
 export function Page(properties: PageProperties) {
@@ -169,8 +169,8 @@ export function Page(properties: PageProperties) {
             paddingTop: `${properties.borderTop || 0}cm`,
             paddingLeft: `${properties.borderLeft || 0}cm`,
             paddingRight: `${properties.borderRight || 0}cm`,
-            backgroundImage: properties.backgroundImage
-              ? `url(${properties.backgroundImage})`
+            backgroundImage: properties.background?.docAsImage
+              ? `url(${properties.background.docAsImage})`
               : undefined,
               backgroundSize: 'contain',
               backgroundRepeat: "no-repeat"
@@ -202,8 +202,8 @@ export function Page(properties: PageProperties) {
               width: `${width}cm`,
               backgroundColor: 'white',
               borderTop: 'dashed black',
-              backgroundImage: properties.backgroundImage
-                ? `url(${properties.backgroundImage})`
+              backgroundImage: properties.background?.docAsImage
+                ? `url(${properties.background.docAsImage})`
                 : undefined,
               backgroundSize: 'contain',
               backgroundRepeat: "no-repeat"
