@@ -1,4 +1,7 @@
 /* eslint-disable no-loss-of-precision */
+
+import { PageFormat } from '../templates/types';
+
 //generic utils
 export async function fetchBuffer(url: string) {
   const response = await fetch(url);
@@ -54,7 +57,11 @@ export function cssPixelNumberToPostScriptPoint(value: number): number {
     ((value / cmToPixels) * 5.6692857142857142857142857142857 * 5).toFixed(2),
   );
 }
-
+export function cssCMToPostScriptPoint(cmNumber: number | undefined) {
+  return cmNumber
+    ? Number((cmNumber * 5.6692857142857142857142857142857 * 5).toFixed(2))
+    : 0;
+}
 //any unit to psp
 export function cssScaleToPostScriptPointWithCallback(
   value: string,
@@ -121,4 +128,17 @@ export function cssScaleToPostScriptPoint(
 }
 export function cssFontSizeToPostScriptSize(value: string): number {
   return Number(value.substring(0, value.length - 2)) * (72 / 96);
+}
+export function calculatePageHeight(
+  format: PageFormat,
+  landscape?: boolean,
+  customWidthInCm?: number,
+  customHeigthInCm?: number,
+): [width: number, height: number] {
+  const widths = [customWidthInCm, 59.5, 42, 29.7, 21, 14.8, 10.5];
+  const heights = [customHeigthInCm, 84.1, 59.4, 42, 29.7, 21, 14.8];
+
+  const width = (landscape ? heights[format] : widths[format]) || 1;
+  const height = (landscape ? widths[format] : heights[format]) || 1;
+  return [width, height];
 }

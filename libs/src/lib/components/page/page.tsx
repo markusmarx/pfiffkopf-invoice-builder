@@ -1,46 +1,14 @@
-import { ReactElement, useLayoutEffect, useRef, useState } from 'react';
-import { BackgroundPDF, RenderableBlockParams } from '../../templates/types';
-import { cmToPixels } from '../../utils/util';
-
-export enum PageFormat {
-  Custom = 0,
-  A1 = 1,
-  A2 = 2,
-  A3 = 3,
-  A4 = 4,
-  A5 = 5,
-  A6 = 6,
-}
-
-interface PageProperties {
-  autoExpand?: boolean;
-  alwaysBreakToNewPage?: boolean;
-  format: PageFormat;
-  landscape?: boolean;
-  customWidthInCm?: number;
-  customHeigthInCm?: number;
-  children?: ReactElement | ReactElement[];
-  render?: boolean;
-  borderLeft?: number;
-  borderRight?: number;
-  borderTop?: number;
-  borderBottom?: number;
-  style?: React.CSSProperties;
-  background?: BackgroundPDF;
-}
+import { useLayoutEffect, useRef, useState } from 'react';
+import { PageProperties, RenderableBlockParams } from '../../templates/types';
+import { calculatePageHeight, cmToPixels } from '../../utils/util';
 
 export function Page(properties: PageProperties) {
-  const widths = [properties.customWidthInCm, 59.5, 42, 29.7, 21, 14.8, 10.5];
-  const heights = [properties.customHeigthInCm, 84.1, 59.4, 42, 29.7, 21, 14.8];
-
-  const width =
-    (properties.landscape
-      ? heights[properties.format]
-      : widths[properties.format]) || 1;
-  const height =
-    (properties.landscape
-      ? widths[properties.format]
-      : heights[properties.format]) || 1;
+  const [width, height] = calculatePageHeight(
+    properties.format,
+    properties.landscape,
+    properties.customWidthInCm,
+    properties.customHeigthInCm,
+  );
 
   const [pagesExpandCount, setPageExpandCount] = useState<number>(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -172,8 +140,8 @@ export function Page(properties: PageProperties) {
             backgroundImage: properties.background?.docAsImage
               ? `url(${properties.background.docAsImage})`
               : undefined,
-              backgroundSize: 'contain',
-              backgroundRepeat: "no-repeat"
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
           },
           properties.style,
         )}
@@ -206,7 +174,7 @@ export function Page(properties: PageProperties) {
                 ? `url(${properties.background.docAsImage})`
                 : undefined,
               backgroundSize: 'contain',
-              backgroundRepeat: "no-repeat"
+              backgroundRepeat: 'no-repeat',
             }}
           ></div>
         );

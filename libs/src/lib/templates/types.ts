@@ -1,4 +1,4 @@
-import { JSX, ReactNode } from 'react';
+import { JSX, ReactElement, ReactNode } from 'react';
 
 export interface TemplateDrawProperties {
   currentTab: string;
@@ -53,10 +53,10 @@ export abstract class Template {
 export abstract class TemplateTab {
   public drawUI?: (properties: TemplateTabDrawProperties) => JSX.Element;
 
-  public abstract get id() : string;
-  public abstract get displayName() : string;
-  public abstract get shortDisplayName() : string;
-  public abstract get description() : string;
+  public abstract get id(): string;
+  public abstract get displayName(): string;
+  public abstract get shortDisplayName(): string;
+  public abstract get description(): string;
   public abstract get pageNumbers(): number | number[];
 
   private refreshUI?: () => void;
@@ -127,7 +127,7 @@ export class TableData {
     };
   }
 }
-export interface Vector{
+export interface Vector {
   x: number;
   y: number;
 }
@@ -159,7 +159,7 @@ export class DragVector implements Vector {
         template?.redrawView();
       },
       x: this.x,
-      y: this.y
+      y: this.y,
     };
   }
 
@@ -202,7 +202,7 @@ export class DragVector implements Vector {
         template?.redrawView();
       },
       width: this.x,
-      heigth: this.y
+      heigth: this.y,
     };
   }
 }
@@ -288,7 +288,7 @@ export class FontStorage {
         name: 'Helvetica',
         url: testFontUrl,
       },
-      
+
       bold: {
         name: 'Helvetica-Bold',
         url: testFontUrl,
@@ -400,15 +400,40 @@ export interface RenderableBlockParams {
     tab?: TemplateTab,
   ) => void;
 }
-export class BackgroundPDF{
+export class BackgroundPDF {
   doc: null | File;
   docAsImage: null | string;
-  pdfArea: {x: number, y: number, width: number, height: number};
-  imgArea: {x: number, y: number, width: number, height: number};
-  constructor(){
+  pdfArea: { x: number; y: number; width: number; height: number };
+  imgArea: { x: number; y: number; width: number; height: number };
+  constructor() {
     this.doc = null;
     this.docAsImage = null;
-    this.pdfArea = {x: 0, y: 0, height: 0, width: 0};
-    this.imgArea = {x: 0, y: 0, height: 0, width: 0};
+    this.pdfArea = { x: 0, y: 0, height: 0, width: 0 };
+    this.imgArea = { x: 0, y: 0, height: 0, width: 0 };
   }
+}
+export enum PageFormat {
+  Custom = 0,
+  A1 = 1,
+  A2 = 2,
+  A3 = 3,
+  A4 = 4,
+  A5 = 5,
+  A6 = 6,
+}
+export interface PageProperties {
+  autoExpand?: boolean;
+  alwaysBreakToNewPage?: boolean;
+  format: PageFormat;
+  landscape?: boolean;
+  customWidthInCm?: number;
+  customHeigthInCm?: number;
+  children?: ReactElement | ReactElement[];
+  render?: boolean;
+  borderLeft?: number;
+  borderRight?: number;
+  borderTop?: number;
+  borderBottom?: number;
+  style?: React.CSSProperties;
+  background?: BackgroundPDF;
 }

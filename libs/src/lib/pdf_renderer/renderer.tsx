@@ -1,5 +1,10 @@
 import { createRoot } from 'react-dom/client';
-import { FontStorage, Template, WebFont } from '../templates/types';
+import {
+  FontStorage,
+  Template,
+  WebFont,
+  PageProperties,
+} from '../templates/types';
 import {
   PDFDocument,
   PDFKitTextOptions,
@@ -8,6 +13,8 @@ import {
 } from '../pdf';
 import { ReactNode } from 'react';
 import {
+  calculatePageHeight,
+  cssCMToPostScriptPoint,
   cssColorToPDFColor,
   cssFontSizeToPostScriptSize,
   cssPixelToPostScriptPoint,
@@ -15,7 +22,8 @@ import {
   fetchBuffer,
 } from '../utils/util';
 import { parsePositionFromHTML } from './htmlPositionParser';
-import { count } from 'console';
+import { JSX } from 'react/jsx-runtime';
+import React from 'react';
 
 abstract class DrawCommand {
   childs: DrawCommand[];
@@ -124,7 +132,7 @@ class StartDrawTableCommand extends GroupCommand {
       columnStyles: collumnSize,
       rowStyles: rowSizes,
       data: table,
-      maxWidth: this.width
+      maxWidth: this.width,
     });
   }
   override shouldKeep(command: DrawCommand): boolean {
@@ -199,11 +207,11 @@ async function drawCellCommandFromStyle(
   return cell;
 }
 async function checkWebFont(font: WebFont, doc: PDFDocument) {
-  if (!doc.isFontRegistered(font.name+"Embed")) {
+  if (!doc.isFontRegistered(font.name + 'Embed')) {
     if (!font.file) {
       font.file = await fetchBuffer(font.url);
     }
-    doc.embedFont(font.name+"Embed", font.file);
+    doc.embedFont(font.name + 'Embed', font.file);
   }
 }
 async function generateTextStyleFromCSS(
@@ -220,19 +228,19 @@ async function generateTextStyleFromCSS(
   if (family) {
     if (family.boldItalic && bold && oblique) {
       await checkWebFont(family.boldItalic, pdf);
-      font = family.boldItalic.name+"Embed";
+      font = family.boldItalic.name + 'Embed';
       oblique = false;
       bold = false;
     } else if (family.bold && bold && !oblique) {
       await checkWebFont(family.bold, pdf);
-      font = family.bold.name+"Embed";
+      font = family.bold.name + 'Embed';
       bold = false;
     } else if (family.italic && !bold && oblique) {
       await checkWebFont(family.italic, pdf);
-      font = family.italic.name+"Embed";
+      font = family.italic.name + 'Embed';
       oblique = false;
     } else {
-      font = family.regular.name+"Embed";
+      font = family.regular.name + 'Embed';
       await checkWebFont(family.regular, pdf);
     }
   }
@@ -270,186 +278,136 @@ export async function renderToPDF(options: {
   pdfCreationOptions?: PDFKitDocumentConstructorOptions;
   onFinishPDFCreation?: (pdfFile: Uint8Array[]) => unknown;
 }) {
-  const container: HTMLDivElement = document.createElement('div');
-  container.className = 'pdf_render_node';
-  container.style.position = 'absolute';
-  document.body.appendChild(container);
-  const observer = new MutationObserver(async () => {
-    //setup pdf document
-    const doc = new PDFDocument({
-      ...options.pdfCreationOptions,
-      autoFirstPage: false,
-    });
-    const chunks: Uint8Array[] = [];
-    //setup writing to buffer
-    doc.on('data', (chunk: Uint8Array<ArrayBufferLike>) => chunks.push(chunk));
-    doc.on('end', () => {
-      if (options.onFinishPDFCreation) {
-        options.onFinishPDFCreation(chunks);
-      }
-    });
-    //render html to pdf
-    for (let i = 0; i < container.children.length; i++) {
-      if (
-        await recursiveFindRotAndCreatePages(
-          container.children.item(i),
-          container,
-          i,
-          doc,
-        )
-      ) {
-        break;
-      }
-    }
-    doc.end();
-    observer.disconnect();
-    container.remove();
-
-    return doc;
+  //general data
+  const fontStorage = options.template.fontStorage;
+  //setup pdf document
+  const doc = new PDFDocument({
+    ...options.pdfCreationOptions,
+    autoFirstPage: false,
   });
-  observer.observe(container, { childList: true });
-  const root = createRoot(container);
-
+  const chunks: Uint8Array[] = [];
+  //setup writing to buffer
+  doc.on('data', (chunk: Uint8Array<ArrayBufferLike>) => chunks.push(chunk));
+  doc.on('end', () => {
+    if (options.onFinishPDFCreation) {
+      options.onFinishPDFCreation(chunks);
+    }
+  });
+  //get jsx elements from template and find pages
   const renderTemplate = options.template.drawPaper({
     currentTab: 'RENDER_PDF',
     pdfRenderer: true,
   });
-  root.render(
-    options.wrapper ? options.wrapper(renderTemplate) : renderTemplate,
-  );
-
-  async function recursiveFindRotAndCreatePages(
-    searchElement: Element | null,
-    parrent: Element | null,
-    index: number,
-    pdfDoc: PDFDocument,
-  ): Promise<boolean> {
-    if (searchElement === null) {
-      return false;
-    }
-
-    if (searchElement.id === 'real_paper') {
-      //start rendering pages
-      let basePage: HTMLElement = searchElement as HTMLElement;
+  let expectedObservers = 0;
+  let calledObservers = 0;
+  const pages =
+    renderTemplate instanceof Array
+      ? (renderTemplate as JSX.Element[])
+      : new Array<JSX.Element>(renderTemplate as JSX.Element);
+  pages.forEach((page) => {
+    const pageProperties = page.props as PageProperties;
+    if (pageProperties) {
+      expectedObservers++;
+      //extract size, margins, ...
+      const [width, height] = calculatePageHeight(
+        pageProperties.format,
+        pageProperties.landscape,
+        pageProperties.customWidthInCm,
+        pageProperties.customHeigthInCm,
+      );
       const pageDescriptor = {
-        width: 0,
-        height: 0,
-        margin_bottom: 0,
-        margin_top: 0,
-        margin_left: 0,
-        margin_right: 0,
+        width: cssCMToPostScriptPoint(width),
+        height: cssCMToPostScriptPoint(height),
+        margin_bottom: cssCMToPostScriptPoint(pageProperties.borderBottom),
+        margin_top: cssCMToPostScriptPoint(pageProperties.borderTop),
+        margin_left: cssCMToPostScriptPoint(pageProperties.borderLeft),
+        margin_right: cssCMToPostScriptPoint(pageProperties.borderRight),
       };
-      let pageGroupIndex = 0;
-      for (let childIndex = index; childIndex < (parrent?.children.length || 0); childIndex++) {
-        const element = parrent?.children[childIndex] as HTMLElement;
-        if (element) {
-          if (element.id === 'real_paper') {
-            basePage = parrent?.children[childIndex] as HTMLElement;
-            pageDescriptor.width =
-              cssScaleToPostScriptPoint(basePage.style.width) || 1;
-            pageDescriptor.height =
-              cssScaleToPostScriptPoint(basePage.style.height) || 1;
-            pageDescriptor.margin_left =
-              cssScaleToPostScriptPoint(basePage.style.paddingLeft) || 0;
-            pageDescriptor.margin_right =
-              cssScaleToPostScriptPoint(basePage.style.paddingRight) || 0;
-            pageDescriptor.margin_top =
-              cssScaleToPostScriptPoint(basePage.style.paddingTop) || 0;
-            //Reconstruct margin bottom
-            let counter = childIndex + 1;
-            while (counter < (parrent?.children.length || 0)) {
-              const n_element = parrent?.children[counter] as HTMLElement;
-              if (n_element.id === 'real_paper') {
-                break;
+      //render page as html
+      const container: HTMLDivElement = document.createElement('div');
+      container.className = 'pdf_render_node';
+      container.style.position = 'absolute';
+      document.body.appendChild(container);
+      const observer = new MutationObserver(async () => {
+        //render html to pdf
+        function findRoot(element: Element): Node | null {
+          if (element.id === 'pageIsolator') {
+            return element;
+          } else {
+            for (let i = 0; i < element.children.length; i++) {
+              const el = findRoot(element.children[i]);
+              if (el) {
+                return el;
               }
-              counter++;
-            }
-            const drawAreaPagesCover = counter - childIndex;
-            const drawAreaHeight =
-              cssScaleToPostScriptPoint(
-                (basePage.children[0] as HTMLElement).style.height,
-              ) || 0;
-            const add =
-              drawAreaHeight + pageDescriptor.margin_top <=
-              drawAreaPagesCover * pageDescriptor.height
-                ? 0
-                : 0.1;
-            pageDescriptor.margin_bottom =
-              pageDescriptor.height * (drawAreaPagesCover + add) -
-              pageDescriptor.margin_top -
-              drawAreaHeight;
-            pageGroupIndex = 0;
-          } else if (element.id !== 'paper-container-expand') {
-            childIndex++;
-            continue;
-          }
-          pdfDoc.addPage({
-            size: [pageDescriptor.width, pageDescriptor.height],
-            margins: {
-              top: pageDescriptor.margin_top,
-              bottom: pageDescriptor.margin_bottom,
-              left: pageDescriptor.margin_left,
-              right: pageDescriptor.margin_right,
-            },
-          });
-          let elementCounter = 0;
-          const containerElement = basePage.children[0];
-          const textGroup = new StartDrawTextCommand(
-            pageDescriptor.margin_left,
-            pageDescriptor.margin_top,
-            pageDescriptor.width,
-            pageDescriptor.height,
-          );
-          for (let i = 0; i < containerElement.childNodes.length; i++) {
-            const childNode = containerElement.childNodes.item(i);
-            let childElement = undefined;
-            if (childNode.nodeName !== '#text') {
-              childElement = containerElement.children[elementCounter];
-              elementCounter++;
-              //just render text as child
-            }
-            const node = await renderHTMLNodeRecursive(
-              pdfDoc,
-              options.template.getFontStorage(),
-              basePage,
-              pageGroupIndex * pageDescriptor.height,
-              0,
-              0,
-              pageDescriptor.margin_left,
-              pageDescriptor.margin_top,
-              childNode,
-              containerElement.children[i] as HTMLElement,
-              childElement as HTMLElement,
-            );
-            if (node instanceof DrawTextCommand) {
-              textGroup.childs.push(node);
             }
           }
-          textGroup.draw(pdfDoc, textGroup.childs);
-          pageGroupIndex++;
-          console.log('Finished Rendering a page');
+          return null;
+        }
+        const page = findRoot(container);
+        if (page) {
+          const pageCount = page.childNodes.length || 0;
+          const pageContainer = (page as HTMLElement)
+            .children[0] as HTMLElement;
+          for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+            doc.addPage({
+              size: [pageDescriptor.width, pageDescriptor.height],
+              margins: {
+                bottom: pageDescriptor.margin_bottom,
+                left: pageDescriptor.margin_left,
+                right: pageDescriptor.margin_right,
+                top: pageDescriptor.margin_top,
+              },
+            });
+            //render html to pdf nodes
+            let elementIndex = 0;
+            for (
+              let nodeIndex = 0;
+              nodeIndex < pageContainer.childNodes.length;
+              nodeIndex++
+            ) {
+              const node = pageContainer.childNodes[nodeIndex];
+              let htmlNode = undefined;
+              if (node instanceof HTMLElement) {
+                htmlNode = pageContainer.children[elementIndex] as HTMLElement;
+                elementIndex++;
+              }
+              await renderHTMLNodeRecursive(
+                doc,
+                fontStorage,
+                pageContainer,
+                pageIndex * pageDescriptor.height,
+                0,
+                0,
+                pageDescriptor.margin_left,
+                pageDescriptor.margin_top,
+                node,
+                pageContainer,
+                htmlNode,
+              );
+            }
+          }
         } else {
-          break;
+          throw 'Critical Error, was not able to find a page beginn inside the html structure!';
         }
-      }
-      return true;
-    } else {
-      for (let i = 0; i < searchElement.children.length; i++) {
-        if (
-          await recursiveFindRotAndCreatePages(
-            searchElement.children.item(i),
-            searchElement,
-            i,
-            pdfDoc,
-          )
-        ) {
-          return true;
+        observer.disconnect();
+        container.remove();
+        calledObservers++;
+        if (calledObservers === expectedObservers) {
+          doc.end();
         }
-      }
+      });
+      observer.observe(container, { childList: true });
+      const root = createRoot(container);
+      root.render(
+        options.wrapper ? (
+          options.wrapper(<div id="pageIsolator">{page}</div>)
+        ) : (
+          <div id="pageIsolator">{page}</div>
+        ),
+      );
     }
-    return false;
-  }
-
+  });
+  
   async function renderHTMLNodeRecursive(
     pdf: PDFDocument,
     storage: FontStorage,

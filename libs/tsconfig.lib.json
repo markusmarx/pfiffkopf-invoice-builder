@@ -5,5 +5,5 @@
     "declaration": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/lib/pdf_renderer/renderer.tsx"]
 }
