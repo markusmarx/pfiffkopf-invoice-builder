@@ -15,14 +15,16 @@ import {
   FileInput,
   LoadingOverlay,
 } from '@mantine/core';
-import { useState } from 'react';
+import { useReducer, useState } from 'react';
 import { IconMail } from '@tabler/icons-react';
 import * as pdfjsLib from 'pdfjs-dist';
-interface PDFPageData{
-    img: string,
-    //page: PDFPAge,
-    pageNumber: number,
-    aspectRatio: number
+import Cropper from 'react-easy-crop';
+
+interface PDFPageData {
+  img: string;
+  //page: PDFPAge,
+  pageNumber: number;
+  aspectRatio: number;
 }
 export function LogoCategory(properties: {
   properties: TemplateTabDrawProperties;
@@ -33,88 +35,143 @@ export function LogoCategory(properties: {
   const template = properties.properties.template;
   const spacing = isMobile ? 'sm' : 'lg';
   const paperPadding = properties.properties.isMobile ? 'md' : 'lg';
-  interface PageSelectionData{
-    display: boolean,
-    images: PDFPageData[],
-    step2?: boolean
+  interface PageSelectionData {
+    display: boolean;
+    images: PDFPageData[];
+    step2?: boolean;
   }
 
   const [pageSelectionUI, setPageSelectionUI] = useState<PageSelectionData>({
     display: false,
-    images: []
+    images: [],
   });
   const [imageSelection, setImageSelection] = useState(-1);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+
+  const a4dimension = 210 / 297;
   return (
     <Stack gap={spacing} p={properties.properties.isMobile ? 'sm' : 'md'}>
       {/*Background Page selection*/}
       <Modal
-        opened={pageSelectionUI.display || (pageSelectionUI.images || []).length > 0}
+        opened={
+          pageSelectionUI.display || (pageSelectionUI.images || []).length > 0
+        }
         onClose={() => {
           properties.self.doc = null;
           properties.self.docAsImage = null;
           setPageSelectionUI({
             display: false,
-            images: []
+            images: [],
           });
         }}
         fullScreen
       >
-        {pageSelectionUI.display && pageSelectionUI.images.length === 0 &&
-          <LoadingOverlay visible
-          zIndex={1000}
-          overlayProps={{ radius: 'sm', blur: 2 }}>
-
-          </LoadingOverlay>
-        } : {
+        {pageSelectionUI.display && pageSelectionUI.images.length === 0 && (
+          <LoadingOverlay
+            visible
+            zIndex={1000}
+            overlayProps={{ radius: 'sm', blur: 2 }}
+          ></LoadingOverlay>
+        )}{' '}
+        :{' '}
+        {
           <Stack>
             <Center>
               <Title>Briefpapier</Title>
             </Center>
             <Center>
-              <Text>{pageSelectionUI.step2 ? "Schneide die Seite zurecht" : "Wähle eine Seite als Briefpapier aus." }</Text>
+              <Text>
+                {pageSelectionUI.step2
+                  ? 'Schneide die Seite zurecht'
+                  : 'Wähle eine Seite als Briefpapier aus.'}
+              </Text>
             </Center>
-            <ScrollArea>
-              <Flex>
-                {pageSelectionUI.images.map((page, idx) => {
-                  return (
-                    <Stack>
-                      <img
-                        src={page.img}
-                        alt={`Seite ${page.pageNumber}`}
-                        onClick={() => {
-                          setImageSelection(idx);
-                        }}
-                      />
-                      <Center>
-                        <Text>Seite {page.pageNumber}</Text>
-                      </Center>
-                    </Stack>
-                  );
-                })}
-              </Flex>
-            </ScrollArea>
+            {!pageSelectionUI.step2 && (
+              <ScrollArea>
+                <Flex>
+                  {pageSelectionUI.images.map((page, idx) => {
+                    return (
+                      <Stack>
+                        <img
+                          src={page.img}
+                          alt={`Seite ${page.pageNumber}`}
+                          onClick={() => {
+                            setImageSelection(idx);
+                          }}
+                        />
+                        <Center>
+                          <Text>Seite {page.pageNumber}</Text>
+                        </Center>
+                      </Stack>
+                    );
+                  })}
+                </Flex>
+              </ScrollArea>
+            )}
+            {pageSelectionUI.step2 && (
+              <Cropper
+                image={pageSelectionUI.images[imageSelection].img}
+                crop={crop}
+                zoom={zoom}
+                aspect={a4dimension}
+                onCropChange={setCrop}
+                onCropComplete={(croppedArea, croppedAreaPixels) => {
+                  properties.self.imgArea = croppedAreaPixels;
+                  properties.self.pdfArea = croppedArea;
+                }}
+                onZoomChange={setZoom}
+              />
+            )}
             <Flex justify={'end'}>
               <Button
                 disabled={imageSelection === -1}
                 onClick={() => {
-                  //check if the page has the a4 dimension
-                  const a4dimension = 210 / 297;
-                  const aspect = pageSelectionUI.images[imageSelection].aspectRatio;
-                  if(a4dimension < aspect + 0.01 && a4dimension > aspect - 0.01){
-                    //render single page to pdf
-                    setPageSelectionUI({
-                      display: false,
-                      images: []
-                    });
-                    properties.self.docAsImage = pageSelectionUI.images[imageSelection].img;
-                    properties.properties.template.redrawView();
-                  }else{
-                    //show crop ui
-                    setPageSelectionUI({
-                      display: true,
-                      images: pageSelectionUI.images,
-                      step2: true
-                    })
+                  if (pageSelectionUI.step2) {
+                    //
+                    const canvas = document.createElement('canvas');
+                    canvas.width = self.imgArea.width;
+                    canvas.height = self.imgArea.height;
+                    const context = canvas.getContext('2d');
+                    if (context) {
+                      //
+                      const img = new Image();
+                      img.src = pageSelectionUI.images[imageSelection].img;
+                      img.decode().then(() => {
+                     context.drawImage(img, -self.imgArea.x, -self.imgArea.y);
+                      self.docAsImage = canvas.toDataURL();
+                      setPageSelectionUI({
+                        display: false,
+                        images: [],
+                      });
+                      template.redrawView();
+                      });
+                     
+                    }
+                  } else {
+                    //check if the page has the a4 dimension
+                    const aspect =
+                      pageSelectionUI.images[imageSelection].aspectRatio;
+                    if (
+                      a4dimension < aspect + 0.01 &&
+                      a4dimension > aspect - 0.01
+                    ) {
+                      //render single page to pdf
+                      setPageSelectionUI({
+                        display: false,
+                        images: [],
+                      });
+                      self.docAsImage =
+                        pageSelectionUI.images[imageSelection].img;
+                      template.redrawView();
+                    } else {
+                      //show crop ui
+                      setPageSelectionUI({
+                        display: true,
+                        images: pageSelectionUI.images,
+                        step2: true,
+                      });
+                    }
                   }
                 }}
               >
@@ -155,20 +212,25 @@ export function LogoCategory(properties: {
               if (file) {
                 properties.self.doc = file;
                 setImageSelection(-1);
-                setPageSelectionUI({display: true, images: []});
+                setPageSelectionUI({ display: true, images: [] });
                 convertPFDToImageArray(file).then(
                   (imgs) => {
-                    setPageSelectionUI({display: true, images: imgs, step2: false});
+                    setPageSelectionUI({
+                      display: true,
+                      images: imgs,
+                      step2: false,
+                    });
                   },
                   (err) => {
                     alert(err);
-                    setPageSelectionUI({display: false, images: []});
+                    setPageSelectionUI({ display: false, images: [] });
                   },
                 );
               } else {
                 properties.self.doc = null;
                 properties.self.docAsImage = null;
-                properties.properties.template.redrawView();
+                template.redrawView();
+                setPageSelectionUI({ display: false, images: [] });
               }
             }}
           />
@@ -205,7 +267,7 @@ async function convertPFDToImageArray(pdf: File): Promise<PDFPageData[]> {
         images.push({
           img: canvas.toDataURL(),
           pageNumber: page.pageNumber,
-          aspectRatio: canvas.width /canvas.height
+          aspectRatio: canvas.width / canvas.height,
         });
       }
       return Promise.resolve(images);

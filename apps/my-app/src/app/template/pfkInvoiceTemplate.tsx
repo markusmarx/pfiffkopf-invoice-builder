@@ -22,6 +22,8 @@ import { LogoCategory } from './logoCategory';
 export class LogoSection extends TemplateTab {
   doc: null | File;
   docAsImage: null | string;
+  pdfArea: {x: number, y: number, width: number, height: number};
+  imgArea: {x: number, y: number, width: number, height: number};;
   public get id(): string {
     return 'logo';
   }
@@ -41,6 +43,8 @@ export class LogoSection extends TemplateTab {
     super();
     this.doc = null;
     this.docAsImage = null;
+    this.pdfArea = {x: 0, y: 0, height: 0, width: 0};
+    this.imgArea = {x: 0, y: 0, height: 0, width: 0};
     this.drawUI = (properties) => (
       <LogoCategory self={this} properties={properties} />
     );

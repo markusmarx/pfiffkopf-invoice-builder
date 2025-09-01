@@ -44,7 +44,6 @@ export function Page(properties: PageProperties) {
 
   const [pagesExpandCount, setPageExpandCount] = useState<number>(1);
   const containerRef = useRef<HTMLDivElement>(null);
-      console.log(properties.backgroundImage);
   useLayoutEffect(() => {
     if (!containerRef.current) return;
     //first, reposition and split content
@@ -170,8 +169,11 @@ export function Page(properties: PageProperties) {
             paddingTop: `${properties.borderTop || 0}cm`,
             paddingLeft: `${properties.borderLeft || 0}cm`,
             paddingRight: `${properties.borderRight || 0}cm`,
-            backgroundImage: properties.backgroundImage ? `url(${properties.backgroundImage})` : undefined,
-            backgroundSize: 'contain'
+            backgroundImage: properties.backgroundImage
+              ? `url(${properties.backgroundImage})`
+              : undefined,
+              backgroundSize: 'contain',
+              backgroundRepeat: "no-repeat"
           },
           properties.style,
         )}
@@ -200,8 +202,11 @@ export function Page(properties: PageProperties) {
               width: `${width}cm`,
               backgroundColor: 'white',
               borderTop: 'dashed black',
-              backgroundImage: properties.backgroundImage ? `url(${properties.backgroundImage})` : undefined,
-              backgroundSize: 'contain'
+              backgroundImage: properties.backgroundImage
+                ? `url(${properties.backgroundImage})`
+                : undefined,
+              backgroundSize: 'contain',
+              backgroundRepeat: "no-repeat"
             }}
           ></div>
         );
