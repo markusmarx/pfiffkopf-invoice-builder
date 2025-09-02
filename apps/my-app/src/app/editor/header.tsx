@@ -201,7 +201,7 @@ const Header: React.FC<HeaderProps> = ({ burger, isMobile, currentPage, maxPages
                     tagged: true,
                   },
                   onFinishPDFCreation: (chunks) => {
-                    const blob = new Blob(chunks as BlobPart[], {
+                    const blob = new Blob([chunks] as BlobPart[], {
                       type: 'application/pdf',
                     });
                     saveAs(blob, 'generierte Rechnung.pdf');

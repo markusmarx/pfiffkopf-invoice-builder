@@ -138,6 +138,7 @@ export class PDFDocument {
     return this;
   }
   public addPage(props?: PDFKitAddPageProps) {
+    console.log(props);
     this.doc.addPage(props);
     return this;
   }
@@ -174,7 +175,6 @@ export class PDFDocument {
     return this;
   }
   public font(options: PDFKitSetFontProps) {
-    console.log(options);
     if (options.fontFile) {
       this.doc.font(options.fontFile, options.fontName);
     } else {

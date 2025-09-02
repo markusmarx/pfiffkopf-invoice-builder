@@ -24,6 +24,7 @@ import {
 import { parsePositionFromHTML } from './htmlPositionParser';
 import { JSX } from 'react/jsx-runtime';
 import React from 'react';
+import { PDFEmbeddedPage, PDFDocument as PDFLibDocument, StandardFonts, rgb } from 'pdf-lib';
 
 abstract class DrawCommand {
   childs: DrawCommand[];
@@ -271,43 +272,32 @@ async function generateTextStyleFromCSS(
     fontFamily: font,
   };
 }
-
 export async function renderToPDF(options: {
   template: Template;
   wrapper?: (template: ReactNode) => ReactNode;
   pdfCreationOptions?: PDFKitDocumentConstructorOptions;
-  onFinishPDFCreation?: (pdfFile: Uint8Array[]) => unknown;
+  onFinishPDFCreation?: (pdfFile: Uint8Array) => unknown;
 }) {
   //general data
   const fontStorage = options.template.fontStorage;
   //setup pdf document
-  const doc = new PDFDocument({
-    ...options.pdfCreationOptions,
-    autoFirstPage: false,
-  });
-  const chunks: Uint8Array[] = [];
-  //setup writing to buffer
-  doc.on('data', (chunk: Uint8Array<ArrayBufferLike>) => chunks.push(chunk));
-  doc.on('end', () => {
-    if (options.onFinishPDFCreation) {
-      options.onFinishPDFCreation(chunks);
-    }
-  });
+  const documentPDF = await PDFLibDocument.create({});
   //get jsx elements from template and find pages
   const renderTemplate = options.template.drawPaper({
     currentTab: 'RENDER_PDF',
     pdfRenderer: true,
   });
-  let expectedObservers = 0;
-  let calledObservers = 0;
+  let expectedPages = 0;
+  let addedPages = 0;
   const pages =
     renderTemplate instanceof Array
       ? (renderTemplate as JSX.Element[])
       : new Array<JSX.Element>(renderTemplate as JSX.Element);
-  pages.forEach((page) => {
+  for(let xyz = 0; xyz < pages.length; xyz++)
+  {
+    const page = pages[xyz];
     const pageProperties = page.props as PageProperties;
     if (pageProperties) {
-      expectedObservers++;
       //extract size, margins, ...
       const [width, height] = calculatePageHeight(
         pageProperties.format,
@@ -323,6 +313,12 @@ export async function renderToPDF(options: {
         margin_left: cssCMToPostScriptPoint(pageProperties.borderLeft),
         margin_right: cssCMToPostScriptPoint(pageProperties.borderRight),
       };
+      let backgroundPDF : null | PDFEmbeddedPage = null;
+      if(pageProperties.background && pageProperties.background.doc){
+        const pdfBackground = await PDFLibDocument.load(await pageProperties.background.doc.arrayBuffer());
+        backgroundPDF = await documentPDF.embedPage(pdfBackground.getPage(0));
+      }
+
       //render page as html
       const container: HTMLDivElement = document.createElement('div');
       container.className = 'pdf_render_node';
@@ -348,8 +344,50 @@ export async function renderToPDF(options: {
           const pageCount = page.childNodes.length || 0;
           const pageContainer = (page as HTMLElement)
             .children[0] as HTMLElement;
+          expectedPages += pageCount;
           for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-            doc.addPage({
+            const pdfPage = new PDFDocument({
+              ...options.pdfCreationOptions,
+              autoFirstPage: false,
+            });
+            const chunks: Uint8Array[] = [];
+            //setup writing to buffer
+            pdfPage.on('data', (chunk: Uint8Array<ArrayBufferLike>) =>
+              chunks.push(chunk),
+            );
+            pdfPage.on('end', () => {
+              //copy pdfkit array array buffer to buffer array/(flatten buffer)
+              let bufferSize = 0;
+              chunks.forEach((val) => {
+                bufferSize += val.byteLength;
+              });
+              const arrayData = new Uint8Array(bufferSize);
+              let index = 0;
+              chunks.forEach((val) => {
+                arrayData.set(val, index);
+                index += val.byteLength;
+              });
+              //on end is a non async function, so we need to use callbacks
+              //we can't do this directly after generating the page (and use async code), because the data is not directly written after the end call
+              PDFLibDocument.load(arrayData).then((load) => {
+                documentPDF.embedPage(load.getPage(0)).then((embed) => {
+                  const page = documentPDF.addPage([pageDescriptor.width,pageDescriptor.height]);
+                  if(backgroundPDF){
+                    page.drawPage(backgroundPDF);
+                  }
+                  page.drawPage(embed);
+                  addedPages++;
+                  if(addedPages === expectedPages){
+                    documentPDF.save().then((buffer) => {
+                      if(options.onFinishPDFCreation){
+                        options.onFinishPDFCreation(buffer);
+                      }
+                    }) 
+                  }
+                })
+               });
+            });
+            pdfPage.addPage({
               size: [pageDescriptor.width, pageDescriptor.height],
               margins: {
                 bottom: pageDescriptor.margin_bottom,
@@ -372,7 +410,7 @@ export async function renderToPDF(options: {
                 elementIndex++;
               }
               await renderHTMLNodeRecursive(
-                doc,
+                pdfPage,
                 fontStorage,
                 pageContainer,
                 pageIndex * pageDescriptor.height,
@@ -385,16 +423,13 @@ export async function renderToPDF(options: {
                 htmlNode,
               );
             }
+            pdfPage.end();
           }
         } else {
           throw 'Critical Error, was not able to find a page beginn inside the html structure!';
         }
         observer.disconnect();
         container.remove();
-        calledObservers++;
-        if (calledObservers === expectedObservers) {
-          doc.end();
-        }
       });
       observer.observe(container, { childList: true });
       const root = createRoot(container);
@@ -406,8 +441,8 @@ export async function renderToPDF(options: {
         ),
       );
     }
-  });
-  
+  }
+
   async function renderHTMLNodeRecursive(
     pdf: PDFDocument,
     storage: FontStorage,
