@@ -408,8 +408,8 @@ export class BackgroundPDF {
   constructor() {
     this.doc = null;
     this.docAsImage = null;
-    this.pdfArea = { x: 0, y: 0, height: 0, width: 0 };
-    this.imgArea = { x: 0, y: 0, height: 0, width: 0 };
+    this.pdfArea = { x: 0, y: 0, height: 100, width: 100 };
+    this.imgArea = { x: 0, y: 0, height: 100, width: 100 };
   }
 }
 export enum PageFormat {

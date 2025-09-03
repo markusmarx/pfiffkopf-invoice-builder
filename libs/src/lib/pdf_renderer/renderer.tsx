@@ -293,9 +293,9 @@ export async function renderToPDF(options: {
     renderTemplate instanceof Array
       ? (renderTemplate as JSX.Element[])
       : new Array<JSX.Element>(renderTemplate as JSX.Element);
-  for(let xyz = 0; xyz < pages.length; xyz++)
+  for(let pagesToRenderIndex = 0; pagesToRenderIndex < pages.length; pagesToRenderIndex++)
   {
-    const page = pages[xyz];
+    const page = pages[pagesToRenderIndex];
     const pageProperties = page.props as PageProperties;
     if (pageProperties) {
       //extract size, margins, ...
@@ -314,9 +314,28 @@ export async function renderToPDF(options: {
         margin_right: cssCMToPostScriptPoint(pageProperties.borderRight),
       };
       let backgroundPDF : null | PDFEmbeddedPage = null;
+      let backgroundOffset = {x: 0, y: 0, width: 100, height: 100}
+      //let backgroundDimensions = null;
       if(pageProperties.background && pageProperties.background.doc){
-        const pdfBackground = await PDFLibDocument.load(await pageProperties.background.doc.arrayBuffer());
-        backgroundPDF = await documentPDF.embedPage(pdfBackground.getPage(0));
+        const pdfBackground = (await PDFLibDocument.load(await pageProperties.background.doc.arrayBuffer())).getPage(0);
+        
+        let widthFactor = 1;
+        let heigthFactor = 1
+        if(pageProperties.background.pdfArea.width < 100){
+          widthFactor = 100 / pageProperties.background.pdfArea.width;
+        }
+        if(pageProperties.background.pdfArea.height < 100){
+          heigthFactor = 100 / pageProperties.background.pdfArea.height;
+        }
+        const transformedPageWidth = pageDescriptor.width * widthFactor;
+        const transformedPageHeigth = pageDescriptor.height * heigthFactor;
+        backgroundPDF = await documentPDF.embedPage(pdfBackground);
+        backgroundOffset = {
+          x: -(pageProperties.background.pdfArea.x / 100) * pageDescriptor.width * widthFactor, 
+          y: -(pageProperties.background.pdfArea.y / 100) * pageDescriptor.height * heigthFactor,
+          width: transformedPageWidth,
+          height: transformedPageHeigth
+        };
       }
 
       //render page as html
@@ -373,7 +392,13 @@ export async function renderToPDF(options: {
                 documentPDF.embedPage(load.getPage(0)).then((embed) => {
                   const page = documentPDF.addPage([pageDescriptor.width,pageDescriptor.height]);
                   if(backgroundPDF){
-                    page.drawPage(backgroundPDF);
+                    console.log(backgroundOffset);
+                    page.drawPage(backgroundPDF, {
+                      x: backgroundOffset.x,
+                      y: backgroundOffset.y,
+                      width: backgroundOffset.width,
+                      height: backgroundOffset.height
+                    });
                   }
                   page.drawPage(embed);
                   addedPages++;

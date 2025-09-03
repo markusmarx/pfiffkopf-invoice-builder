@@ -158,6 +158,8 @@ export function PDFBackgroundInput(properties: PDFBackgroundInputProps) {
                       a4dimension > aspect - 0.01
                     ) {
                       //render single page to pdf
+                      properties.background.imgArea = {x: 0, y: 0, width: 100, height: 100};
+                      properties.background.pdfArea = {x: 0, y: 0, width: 100, height: 100};
                       setPageSelectionUI({
                         display: false,
                         images: [],
@@ -238,7 +240,7 @@ async function convertPFDToImageArray(pdf: File): Promise<PDFPageData[]> {
     if (context) {
       for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);
-        const viewport = page.getViewport({ scale: 4 });
+        const viewport = page.getViewport({ scale: 1 });
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         context.clearRect(0, 0, canvas.width, canvas.height);

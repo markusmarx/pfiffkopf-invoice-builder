@@ -138,7 +138,6 @@ export class PDFDocument {
     return this;
   }
   public addPage(props?: PDFKitAddPageProps) {
-    console.log(props);
     this.doc.addPage(props);
     return this;
   }
@@ -183,7 +182,6 @@ export class PDFDocument {
     return this;
   }
   public text(options?: PFFKitTextProps) {
-    console.log(options);
     this.doc.text(options?.text, options?.x, options?.y, options?.options);
     return this;
   }
