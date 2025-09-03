@@ -6,7 +6,7 @@ import { pfkTheme } from './app/theme/theme';
 import '@mantine/core/styles.css';
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  document.getElementById('root') as HTMLElement,
 );
 
 root.render(
@@ -14,5 +14,5 @@ root.render(
     <MantineProvider theme={pfkTheme}>
       <App />
     </MantineProvider>
-  </StrictMode>
+  </StrictMode>,
 );

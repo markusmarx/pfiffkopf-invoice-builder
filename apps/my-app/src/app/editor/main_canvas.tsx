@@ -63,9 +63,9 @@ const MainCanvas: React.FC<MainCanvasProps> = ({
       </Paper>
 
       {/* Canvas Area */}
-      <ScrollArea 
-        viewportProps={{style: { flex: 1, height: "100%" }}}
-        style={{background: '#f1f5f9', userSelect: "none"}}
+      <ScrollArea
+        viewportProps={{ style: { flex: 1, height: '100%' } }}
+        style={{ background: '#f1f5f9', userSelect: 'none' }}
       >
         <Box
           p={isMobile ? 10 : isTablet ? 20 : 40}
@@ -74,16 +74,12 @@ const MainCanvas: React.FC<MainCanvasProps> = ({
             display: 'flex',
             justifyContent: 'center',
             minHeight: '100%',
-            minWidth: "100%"            
+            minWidth: '100%',
           }}
         >
-          <div>
-            {page}
-          </div>
+          <div>{page}</div>
         </Box>
       </ScrollArea>
-
-      
     </Box>
   );
 };

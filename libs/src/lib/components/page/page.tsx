@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { PageProperties, RenderableBlockParams } from '../../templates/types';
 import { calculatePageHeight, cmToPixels } from '../../utils/util';
+import React from 'react';
 
 export function Page(properties: PageProperties) {
   const [width, height] = calculatePageHeight(

@@ -77,8 +77,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     template: Template;
   }) {
     if (props.tab) {
-      props.tab.setDataProperties(() =>{
-         forceUpdate();
+      props.tab.setDataProperties(() => {
+        forceUpdate();
       });
     }
 
@@ -86,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       ? props.tab.drawUI({
           template: props.template,
           currentTab: props.tab.id,
-          isMobile: isMobile || false
+          isMobile: isMobile || false,
         })
       : '';
   }
@@ -118,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     } else {
       setCurrentTab(category);
     }
-    if(onTabChanges){
+    if (onTabChanges) {
       onTabChanges(category.id);
     }
   };
@@ -141,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     template.setDataProperties(forceUpdate);
   }, [template]);
-    const handleFinish = () => {
+  const handleFinish = () => {
     setShowSettings(false);
     onClose?.();
   };
@@ -351,7 +351,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       : 'none',
                   }}
                 >
-                    <PropertiesTab template={template} tab={currentCategory} />
+                  <PropertiesTab template={template} tab={currentCategory} />
                 </Box>
               </ScrollArea>
 

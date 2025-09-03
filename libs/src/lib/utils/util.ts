@@ -1,6 +1,7 @@
 /* eslint-disable no-loss-of-precision */
 
-import { PageFormat } from '../templates/types';
+import { PDFDocument } from '../pdf';
+import { PageFormat, WebFont } from '../templates/types';
 
 //generic utils
 export async function fetchBuffer(url: string) {
@@ -141,4 +142,12 @@ export function calculatePageHeight(
   const width = (landscape ? heights[format] : widths[format]) || 1;
   const height = (landscape ? widths[format] : heights[format]) || 1;
   return [width, height];
+}
+export async function checkWebFont(font: WebFont, doc: PDFDocument) {
+  if (!doc.isFontRegistered(font.name + 'Embed')) {
+    if (!font.file) {
+      font.file = await fetchBuffer(font.url);
+    }
+    doc.embedFont(font.name + 'Embed', font.file);
+  }
 }

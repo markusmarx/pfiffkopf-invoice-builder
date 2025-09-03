@@ -170,9 +170,7 @@ export function TableDataInput(props: TableDataInputProps) {
           Tabelle
         </Text>
       </Group>
-      <Stack gap={props.isMobile ? 'sm' : 'md'}>
-        {content()}
-      </Stack>
+      <Stack gap={props.isMobile ? 'sm' : 'md'}>{content()}</Stack>
     </Paper>
   );
 }

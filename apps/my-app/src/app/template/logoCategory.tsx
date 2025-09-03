@@ -1,15 +1,8 @@
 import { TemplateTabDrawProperties } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { LogoSection } from './pfkInvoiceTemplate';
-import {
-  Stack,
-  Text,
-  Paper,
-  Group,
-  SimpleGrid,
-} from '@mantine/core';
+import { Stack, Text, Paper, Group, SimpleGrid } from '@mantine/core';
 import { IconMail } from '@tabler/icons-react';
 import { PDFBackgroundInput } from '../template_components/pdfBackgroundInput/pdfBackgroundInput';
-
 
 export function LogoCategory(properties: {
   properties: TemplateTabDrawProperties;
@@ -22,7 +15,7 @@ export function LogoCategory(properties: {
   return (
     <Stack gap={spacing} p={properties.properties.isMobile ? 'sm' : 'md'}>
       {/*Background Page selection*/}
-      
+
       {/* Briefpapier Section */}
       <Paper p={paperPadding} shadow="xs" radius="md">
         <Group gap="md" mb="md">

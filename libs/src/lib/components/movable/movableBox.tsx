@@ -1,3 +1,4 @@
+import React from 'react';
 import { RenderableBlockParams } from '../../templates/types';
 import { BaseMovableBox } from '../baseMovable';
 
@@ -19,7 +20,7 @@ export function MovableBox(properties: RenderableBlockParams) {
       x={properties.x}
       y={properties.y}
       onSubmitPositionChange={properties.onSubmitPositionChange}
-      onDrag={properties.onDrag} 
+      onDrag={properties.onDrag}
     >
       <div
         id={properties.id}

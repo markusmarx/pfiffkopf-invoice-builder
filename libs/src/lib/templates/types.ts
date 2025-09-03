@@ -1,6 +1,6 @@
 import { JSX, ReactElement, ReactNode } from 'react';
 
-export interface DataSet{
+export interface DataSet {
   author?: string;
 }
 
@@ -336,6 +336,7 @@ export class FontStorage {
     const fontFace = new FontFace(displayName, `url(${fontURL})`);
     try {
       await fontFace.load();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (document.fonts as any).add(fontFace);
       this.fonts.push({
         value: id,
@@ -352,6 +353,7 @@ export class FontStorage {
   public setCSSFont(fontName: string) {
     this.fontFace = fontName;
     if (this.customFont) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (document.fonts as any).delete(this.customFont);
     }
   }
