@@ -205,19 +205,27 @@ export class PfkInvoiceTemplate extends Template {
     if (prop.dataset && prop.dataset instanceof InvoiceDataSet) {
       invoiceData = prop.dataset as InvoiceDataSet;
     }
-    let tableSum = invoiceData?.tableEntrys ? 0 : 100;      
-    const tableData : TableRow[] = invoiceData?.tableEntrys
-      ? 
-      invoiceData.tableEntrys.map((line) => {
+    let tableSum = invoiceData?.tableEntrys ? 0 : 100;
+    const tableData: TableRow[] = invoiceData?.tableEntrys
+      ? invoiceData.tableEntrys.map((line) => {
           tableSum += line.sum;
           return {
             elements: [
               { label: line.pos.toFixed(0), accessor: 'pos' },
               { label: line.description, accessor: 'description' },
               { label: line.time, accessor: 'time' },
-              { label: `${line.priceSingle.toFixed(2).replace(".", ",")}€`, accessor: 'single' },
-              { label: `${line.tax.toFixed(2).replace(".", ",")}%`, accessor: 'tax' },
-              { label: `${line.sum.toFixed(2).replace(".", ",")}€`, accessor: 'sum' },
+              {
+                label: `${line.priceSingle.toFixed(2).replace('.', ',')}€`,
+                accessor: 'single',
+              },
+              {
+                label: `${line.tax.toFixed(2).replace('.', ',')}%`,
+                accessor: 'tax',
+              },
+              {
+                label: `${line.sum.toFixed(2).replace('.', ',')}€`,
+                accessor: 'sum',
+              },
             ],
             accessorControlled: true,
           };
@@ -235,13 +243,13 @@ export class PfkInvoiceTemplate extends Template {
             accessorControlled: true,
           },
         ];
-    tableData.push({
+    /*tableData.push({
       elements: [
-        { label: `${tableSum.toFixed(2).replace(".", ",")}€`, accessor: 'sum' },
+        { label: `${tableSum.toFixed(2).replace('.', ',')}€`, accessor: 'sum' },
         { label: 'Gesamtbetrag', accessor: 'description' },
       ],
-      accessorControlled: true
-    })
+      accessorControlled: true,
+    });*/
 
     return Array<JSX.Element>(
       <Page
