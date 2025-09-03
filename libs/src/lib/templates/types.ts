@@ -1,9 +1,14 @@
 import { JSX, ReactElement, ReactNode } from 'react';
 
+export interface DataSet{
+  author?: string;
+}
+
 export interface TemplateDrawProperties {
   currentTab: string;
   pdfRenderer: boolean;
   templateValuesChanged?: () => void;
+  dataset?: DataSet;
 }
 
 export interface TemplateTabDrawProperties {

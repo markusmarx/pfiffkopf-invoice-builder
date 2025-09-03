@@ -24,7 +24,12 @@ import {
 import { parsePositionFromHTML } from './htmlPositionParser';
 import { JSX } from 'react/jsx-runtime';
 import React from 'react';
-import { PDFEmbeddedPage, PDFDocument as PDFLibDocument, StandardFonts, rgb } from 'pdf-lib';
+import {
+  PDFEmbeddedPage,
+  PDFDocument as PDFLibDocument,
+  StandardFonts,
+  rgb,
+} from 'pdf-lib';
 
 abstract class DrawCommand {
   childs: DrawCommand[];
@@ -293,8 +298,11 @@ export async function renderToPDF(options: {
     renderTemplate instanceof Array
       ? (renderTemplate as JSX.Element[])
       : new Array<JSX.Element>(renderTemplate as JSX.Element);
-  for(let pagesToRenderIndex = 0; pagesToRenderIndex < pages.length; pagesToRenderIndex++)
-  {
+  for (
+    let pagesToRenderIndex = 0;
+    pagesToRenderIndex < pages.length;
+    pagesToRenderIndex++
+  ) {
     const page = pages[pagesToRenderIndex];
     const pageProperties = page.props as PageProperties;
     if (pageProperties) {
@@ -313,28 +321,38 @@ export async function renderToPDF(options: {
         margin_left: cssCMToPostScriptPoint(pageProperties.borderLeft),
         margin_right: cssCMToPostScriptPoint(pageProperties.borderRight),
       };
-      let backgroundPDF : null | PDFEmbeddedPage = null;
-      let backgroundOffset = {x: 0, y: 0, width: 100, height: 100}
+      let backgroundPDF: null | PDFEmbeddedPage = null;
+      let backgroundOffset = { x: 0, y: 0, width: 100, height: 100 };
       //let backgroundDimensions = null;
-      if(pageProperties.background && pageProperties.background.doc){
-        const pdfBackground = (await PDFLibDocument.load(await pageProperties.background.doc.arrayBuffer())).getPage(0);
-        
+      if (pageProperties.background && pageProperties.background.doc) {
+        const pdfBackground = (
+          await PDFLibDocument.load(
+            await pageProperties.background.doc.arrayBuffer(),
+          )
+        ).getPage(0);
+
         let widthFactor = 1;
-        let heigthFactor = 1
-        if(pageProperties.background.pdfArea.width < 100){
+        let heigthFactor = 1;
+        if (pageProperties.background.pdfArea.width < 100) {
           widthFactor = 100 / pageProperties.background.pdfArea.width;
         }
-        if(pageProperties.background.pdfArea.height < 100){
+        if (pageProperties.background.pdfArea.height < 100) {
           heigthFactor = 100 / pageProperties.background.pdfArea.height;
         }
         const transformedPageWidth = pageDescriptor.width * widthFactor;
         const transformedPageHeigth = pageDescriptor.height * heigthFactor;
         backgroundPDF = await documentPDF.embedPage(pdfBackground);
         backgroundOffset = {
-          x: -(pageProperties.background.pdfArea.x / 100) * pageDescriptor.width * widthFactor, 
-          y: -(pageProperties.background.pdfArea.y / 100) * pageDescriptor.height * heigthFactor,
+          x:
+            -(pageProperties.background.pdfArea.x / 100) *
+            pageDescriptor.width *
+            widthFactor,
+          y:
+            -(pageProperties.background.pdfArea.y / 100) *
+            pageDescriptor.height *
+            heigthFactor,
           width: transformedPageWidth,
-          height: transformedPageHeigth
+          height: transformedPageHeigth,
         };
       }
 
@@ -387,30 +405,34 @@ export async function renderToPDF(options: {
                 index += val.byteLength;
               });
               //on end is a non async function, so we need to use callbacks
-              //we can't do this directly after generating the page (and use async code), because the data is not directly written after the end call
+              //we can't do this directly after generating the page (and use async code), 
+              // because the data is not directly written after the end call
               PDFLibDocument.load(arrayData).then((load) => {
                 documentPDF.embedPage(load.getPage(0)).then((embed) => {
-                  const page = documentPDF.addPage([pageDescriptor.width,pageDescriptor.height]);
-                  if(backgroundPDF){
+                  const page = documentPDF.addPage([
+                    pageDescriptor.width,
+                    pageDescriptor.height,
+                  ]);
+                  if (backgroundPDF) {
                     console.log(backgroundOffset);
                     page.drawPage(backgroundPDF, {
                       x: backgroundOffset.x,
                       y: backgroundOffset.y,
                       width: backgroundOffset.width,
-                      height: backgroundOffset.height
+                      height: backgroundOffset.height,
                     });
                   }
                   page.drawPage(embed);
                   addedPages++;
-                  if(addedPages === expectedPages){
+                  if (addedPages === expectedPages) {
                     documentPDF.save().then((buffer) => {
-                      if(options.onFinishPDFCreation){
+                      if (options.onFinishPDFCreation) {
                         options.onFinishPDFCreation(buffer);
                       }
-                    }) 
+                    });
                   }
-                })
-               });
+                });
+              });
             });
             pdfPage.addPage({
               size: [pageDescriptor.width, pageDescriptor.height],

@@ -12,6 +12,8 @@ import {
   PageFormat,
   MovableBox,
   BackgroundPDF,
+  DataSet,
+  TableRow,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { JSX } from 'react';
 import { DocumentCategory } from './documentCategory';
@@ -150,12 +152,12 @@ export class TableSection extends TemplateTab {
   public size = new DragVector(300, 100);
   public table = new TableData(
     [
-      { accessor: 't1', label: 'Pos' },
-      { accessor: 't2', label: 'Beschreibung' },
-      { accessor: 't3', label: 'Dauer' },
-      { accessor: 't4', label: 'Einzel' },
-      { accessor: 't5', label: 'Ust. %' },
-      { accessor: 't6', label: 'Gesamt' },
+      { accessor: 'pos', label: 'Pos' },
+      { accessor: 'description', label: 'Beschreibung' },
+      { accessor: 'time', label: 'Dauer' },
+      { accessor: 'single', label: 'Einzel' },
+      { accessor: 'tax', label: 'Ust. %' },
+      { accessor: 'sum', label: 'Gesamt' },
     ],
     300,
   );
@@ -166,6 +168,30 @@ export class TableSection extends TemplateTab {
     );
   }
 }
+export interface InvoiceLine {
+  pos: number;
+  description: string;
+  time: string;
+  priceSingle: number;
+  tax: number;
+  sum: number;
+}
+export class InvoiceDataSet implements DataSet {
+  author?: string;
+  //adress block
+  companyName?: string;
+  name?: string;
+  adressLine?: string;
+  additionalAdressLine?: string;
+  zip?: string;
+  city?: string;
+  //invoice
+  invoiceNr?: string;
+  invoiceDate?: string;
+  serviceDateBeginn?: string;
+  serviceDateEnd?: string;
+  tableEntrys?: InvoiceLine[];
+}
 export class PfkInvoiceTemplate extends Template {
   letterpaper?: DocumentSection;
   address?: RecipentSection;
@@ -175,6 +201,48 @@ export class PfkInvoiceTemplate extends Template {
 
   drawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
     const fontSize = `${(this.letterpaper?.fontSize || 1) * (4 / 3)}px`;
+    let invoiceData: undefined | InvoiceDataSet = undefined;
+    if (prop.dataset && prop.dataset instanceof InvoiceDataSet) {
+      invoiceData = prop.dataset as InvoiceDataSet;
+    }
+    let tableSum = invoiceData?.tableEntrys ? 0 : 100;      
+    const tableData : TableRow[] = invoiceData?.tableEntrys
+      ? 
+      invoiceData.tableEntrys.map((line) => {
+          tableSum += line.sum;
+          return {
+            elements: [
+              { label: line.pos.toFixed(0), accessor: 'pos' },
+              { label: line.description, accessor: 'description' },
+              { label: line.time, accessor: 'time' },
+              { label: `${line.priceSingle.toFixed(2).replace(".", ",")}€`, accessor: 'single' },
+              { label: `${line.tax.toFixed(2).replace(".", ",")}%`, accessor: 'tax' },
+              { label: `${line.sum.toFixed(2).replace(".", ",")}€`, accessor: 'sum' },
+            ],
+            accessorControlled: true,
+          };
+        })
+      : [
+          {
+            elements: [
+              { label: '1', accessor: 'pos' },
+              { label: 'Termin Beschreibung', accessor: 'description' },
+              { label: '2 x 45 min', accessor: 'time' },
+              { label: '50,00€', accessor: 'single' },
+              { label: '0,00%', accessor: 'tax' },
+              { label: '100,00€', accessor: 'sum' },
+            ],
+            accessorControlled: true,
+          },
+        ];
+    tableData.push({
+      elements: [
+        { label: `${tableSum.toFixed(2).replace(".", ",")}€`, accessor: 'sum' },
+        { label: 'Gesamtbetrag', accessor: 'description' },
+      ],
+      accessorControlled: true
+    })
+
     return Array<JSX.Element>(
       <Page
         format={PageFormat.A4}
@@ -187,9 +255,11 @@ export class PfkInvoiceTemplate extends Template {
         landscape={false}
         style={{
           fontFamily: this.letterpaper?.font.family(),
-          color: this.letterpaper?.fontColor
+          color: this.letterpaper?.fontColor,
         }}
-        background={this.logo?.letterpaper.docAsImage ? this.logo.letterpaper : undefined}
+        background={
+          this.logo?.letterpaper.docAsImage ? this.logo.letterpaper : undefined
+        }
       >
         <MovableBox
           className="adress"
@@ -202,15 +272,23 @@ export class PfkInvoiceTemplate extends Template {
           id="recipient"
         >
           <Text style={{ fontSize: fontSize }}>
-            <b>Musterfirma</b>
+            <b>{invoiceData?.companyName || 'Musterfirma'}</b>
           </Text>
           <Text style={{ fontSize: fontSize }}>
             <b>Etage 0815</b>
           </Text>
-          <Text style={{ fontSize: fontSize }}>Maxime Muster</Text>
-          <Text style={{ fontSize: fontSize }}>Musterstraße 16</Text>
-          <Text style={{ fontSize: fontSize }}> - Zusatz - </Text>
-          <Text style={{ fontSize: fontSize }}>01234 Musterhausen</Text>
+          <Text style={{ fontSize: fontSize }}>
+            {invoiceData?.name || 'Maxime Muster'}
+          </Text>
+          <Text style={{ fontSize: fontSize }}>
+            {invoiceData?.adressLine || 'Musterstraße 16'}
+          </Text>
+          <Text style={{ fontSize: fontSize }}>
+            {invoiceData?.additionalAdressLine || ' - Zusatz - '}
+          </Text>
+          <Text style={{ fontSize: fontSize }}>
+            {invoiceData?.zip || '01234'} {invoiceData?.city || 'Musterhausen'}
+          </Text>
         </MovableBox>
         <MovableBox
           className="adress"
@@ -240,17 +318,25 @@ export class PfkInvoiceTemplate extends Template {
                 <Text style={{ fontSize: fontSize }}>&nbsp;</Text>
               </Stack>
               <Stack align={'flex-end'} gap={0}>
-                <Text style={{ fontSize: fontSize }}>R2025-0001</Text>
-                <Text style={{ fontSize: fontSize }}>31.01.2025</Text>
-                <Text style={{ fontSize: fontSize }}>01.01.2025</Text>
-                <Text style={{ fontSize: fontSize }}>bis 31.01.2025</Text>
+                <Text style={{ fontSize: fontSize }}>
+                  {invoiceData?.invoiceNr || 'R2025-0001'}
+                </Text>
+                <Text style={{ fontSize: fontSize }}>
+                  {invoiceData?.invoiceDate || '31.01.2025'}
+                </Text>
+                <Text style={{ fontSize: fontSize }}>
+                  {invoiceData?.serviceDateBeginn || '01.01.2025'}
+                </Text>
+                <Text style={{ fontSize: fontSize }}>
+                  bis {invoiceData?.serviceDateEnd || '31.01.2025'}
+                </Text>
               </Stack>
             </Group>
           </Stack>
         </MovableBox>
         <MovableBox id={'salutation'} x={0} y={300} width={700} heigth={100}>
           <Text style={{ fontSize: fontSize }} fw={700}>
-            Hallo Maxim Mustermann,
+            Hallo {invoiceData?.name || 'Maxim Mustermann'},
           </Text>
           <Text style={{ fontSize: fontSize }}>
             ich erlaube mir eine Rechnung für folgende Leistungen zu stellen.
@@ -271,19 +357,7 @@ export class PfkInvoiceTemplate extends Template {
           headerStyle={{ border: '3px solid', fontSize: fontSize }}
           disableMovement={true}
           {...(this.table?.table.dynamicTable() || { header: [] })}
-          rows={[
-            {
-              elements: [
-                { label: '1', accessor: 't1' },
-                { label: 'Termin Beschreibung', accessor: 't2' },
-                { label: '2 x 45 min', accessor: 't3' },
-                { label: '50,00€', accessor: 't4' },
-                { label: '0,00%', accessor: 't5' },
-                { label: '100,00€', accessor: 't6' },
-              ],
-              accessorControlled: true,
-            },
-          ]}
+          rows={tableData}
         />
         <MovableBox id={'salutation'} x={0} y={600} width={700} heigth={100}>
           <Text style={{ fontSize: fontSize }}>
