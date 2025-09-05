@@ -92,7 +92,7 @@ export class StartDrawTableCommand extends GroupCommand {
         //extract text
         const text = cell.childs.find((x) => x instanceof DrawTextCommand);
         row.push({
-          text: text?.text || 'Error, was unable to find text to render!',
+          text: text?.text || '',
           ...cell.cellStyle,
           textOptions: text?.style,
         });

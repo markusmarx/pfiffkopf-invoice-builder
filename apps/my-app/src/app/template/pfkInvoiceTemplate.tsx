@@ -233,7 +233,7 @@ export class PfkInvoiceTemplate extends Template {
       : [
           {
             elements: [
-              { label: '1', accessor: 'pos' },
+              { label: '1', accessor: 'pos'},
               { label: 'Termin Beschreibung', accessor: 'description' },
               { label: '2 x 45 min', accessor: 'time' },
               { label: '50,00€', accessor: 'single' },
@@ -243,14 +243,19 @@ export class PfkInvoiceTemplate extends Template {
             accessorControlled: true,
           },
         ];
-    /*tableData.push({
+    tableData.push({
       elements: [
         { label: `${tableSum.toFixed(2).replace('.', ',')}€`, accessor: 'sum' },
         { label: 'Gesamtbetrag', accessor: 'description' },
+        { label: '', accessor: 'pos'},
+        { label: '', accessor: 'description' },
+        { label: '', accessor: 'time' },
+        { label: '', accessor: 'single' },
+        { label: '', accessor: 'tax' },
+        { label: '', accessor: 'sum' },
       ],
       accessorControlled: true,
-    });*/
-
+    });
     return Array<JSX.Element>(
       <Page
         format={PageFormat.A4}

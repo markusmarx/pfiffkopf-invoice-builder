@@ -25,7 +25,7 @@ const MainCanvas: React.FC<MainCanvasProps> = ({
       currentSelectedPropertiesTab !== undefined
         ? currentSelectedPropertiesTab
         : 'undefined',
-    pdfRenderer: true,
+    pdfRenderer: false,
     templateValuesChanged: () => {
       if (onValueChanged) {
         onValueChanged();
