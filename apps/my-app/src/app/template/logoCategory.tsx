@@ -39,6 +39,7 @@ export function LogoCategory(properties: {
           <PDFBackgroundInput
             background={properties.self.letterpaper}
             template={properties.properties.template}
+            isMobile={properties.properties.isMobile}
           />
         </SimpleGrid>
       </Paper>

@@ -361,8 +361,8 @@ export class PfkInvoiceTemplate extends Template {
           heigth={this.table?.size.y}
           id="table"
           enableResizing={false}
-          cellStyle={{ border: '3px solid', fontSize: fontSize }}
-          headerStyle={{ border: '3px solid', fontSize: fontSize }}
+          cellStyle={{ border: '1px solid', fontSize: fontSize }}
+          headerStyle={{ border: '1px solid', fontSize: fontSize }}
           disableMovement={true}
           {...(this.table?.table.dynamicTable() || { header: [] })}
           rows={tableData}
