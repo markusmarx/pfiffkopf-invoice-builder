@@ -76,6 +76,8 @@ export interface PFFKitTextProps {
 }
 export interface PDFKitCellOptions {
   text?: string;
+  colSpan?: number,
+  rowSpan?: number,
   padding?: PDFKitSide | sn;
   border?: PDFKitSide | sn; //pt
   borderColor?: string;
@@ -96,7 +98,7 @@ export interface PDFKitTableOptions {
   maxWidth?: number;
   columnStyles?: number | number[] | ((collumn: number) => any);
   rowStyles?: number | number[] | ((row: number) => any);
-  data: string[][] | PDFKitCellOptions[][];
+  data: (PDFKitCellOptions | string)[][];
 }
 export interface PDFKitSetFontProps {
   fontName: string;

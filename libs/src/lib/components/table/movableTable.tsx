@@ -44,6 +44,8 @@ export interface Cell {
   label: string;
   accessor?: string;
   style?: React.CSSProperties;
+  rowSpawn?: number,
+  colSpawn?: number
 }
 
 function handleResize(
@@ -205,13 +207,13 @@ export function MovableTable(properties: MovableTableParams) {
                       <tr>
                         {row.elements.map((cell) => {
                           return (
-                            <td
+                            <td rowSpan={cell.rowSpawn} colSpan={cell.colSpawn}
                               style={Object.assign(
                                 {
                                   position: 'relative',
                                 },
-                                properties.cellStyle,
                                 cell.style,
+                                properties.cellStyle,
                               )}
                             >
                               {cell.label}
@@ -235,13 +237,13 @@ export function MovableTable(properties: MovableTableParams) {
                             return <td></td>;
                           }
                           return (
-                            <td
+                            <td rowSpan={cell.rowSpawn} colSpan={cell.colSpawn}
                               style={Object.assign(
                                 {
                                   position: 'relative',
                                 },
-                                properties.cellStyle,
                                 cell.style,
+                                properties.cellStyle,
                               )}
                             >
                               {cell.label}

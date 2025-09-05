@@ -13,7 +13,6 @@ import {
   Group,
   rem,
   Space,
-  Grid,
 } from '@mantine/core';
 import { Template, BackgroundPDF } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { useState } from 'react';
@@ -181,7 +180,7 @@ export function PDFBackgroundInput(properties: PDFBackgroundInputProps) {
             <Center>
               <Title>
                 {pageSelectionUI.step2
-                  ? 'Schneiden Sie die Seite zurecht. Bestätigen Sie mit dem Button unten.'
+                  ? 'Die Seite passt nicht auf das A4 Format. Schneiden Sie die Seite zurecht. Bestätigen Sie mit dem Button unten.'
                   : 'Wählen Sie eine Seite als Briefpapier aus. Bestätigen Sie mit dem Button unten.'}
               </Title>
             </Center>

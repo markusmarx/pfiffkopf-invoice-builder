@@ -154,7 +154,8 @@ export class TableSection extends TemplateTab {
     [
       { accessor: 'pos', label: 'Pos' },
       { accessor: 'description', label: 'Beschreibung' },
-      { accessor: 'time', label: 'Dauer' },
+      { accessor: 'amount', label: 'Menge' },
+      { accessor: 'unit', label: 'Einheit' },
       { accessor: 'single', label: 'Einzel' },
       { accessor: 'tax', label: 'Ust. %' },
       { accessor: 'sum', label: 'Gesamt' },
@@ -245,7 +246,7 @@ export class PfkInvoiceTemplate extends Template {
         ];
     tableData.push({
       elements: [
-        { label: `${tableSum.toFixed(2).replace('.', ',')}€`, accessor: 'sum' },
+        { label: `${tableSum.toFixed(2).replace('.', ',')}€`, accessor: 'sum', },
         { label: 'Gesamtbetrag', accessor: 'description' },
         { label: '', accessor: 'pos'},
         { label: '', accessor: 'description' },
