@@ -246,16 +246,10 @@ export class PfkInvoiceTemplate extends Template {
         ];
     tableData.push({
       elements: [
-        { label: `${tableSum.toFixed(2).replace('.', ',')}€`, accessor: 'sum', },
-        { label: 'Gesamtbetrag', accessor: 'description' },
-        { label: '', accessor: 'pos'},
-        { label: '', accessor: 'description' },
-        { label: '', accessor: 'time' },
-        { label: '', accessor: 'single' },
-        { label: '', accessor: 'tax' },
-        { label: '', accessor: 'sum' },
+        {label: "Summe", colSpawn: (this.table?.table.visibleTableCells().length || 0)-1},
+        {label: `${tableSum.toFixed(2).replace('.', ',')}€`},
       ],
-      accessorControlled: true,
+      accessorControlled: false,
     });
     return Array<JSX.Element>(
       <Page

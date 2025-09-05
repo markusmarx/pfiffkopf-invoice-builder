@@ -24,13 +24,13 @@ export async function generateTextCommandFromCSS(
 }
 export async function drawCellCommandFromStyle(
   style: CSSStyleDeclaration,
+  htmlCell: HTMLTableCellElement,
   width: number,
   pdf: PDFDocument,
   storage: FontStorage,
 ): Promise<DrawCellCommand> {
   const cell = new DrawCellCommand(width);
   const textOptions = await generateTextStyleFromCSS(style, storage, pdf);
-  const rowSpan = style.getPropertyValue("rowSpan");
   cell.cellStyle = {
     textOptions: textOptions.style,
     border: {
@@ -51,8 +51,8 @@ export async function drawCellCommandFromStyle(
     },
     textStroke: 0.4,
     textStrokeColor: style.color,
-    rowSpan: rowSpan === "none" ? undefined : rowSpan === "all" ? 999 : Number(rowSpan),
-    colSpan: rowSpan === "none" ? undefined : rowSpan === "all" ? 999 : Number(rowSpan),
+    rowSpan: htmlCell.rowSpan,
+    colSpan: htmlCell.colSpan,
     //padding cuts of the text, so we can't support html padding for now
   };
   return cell;

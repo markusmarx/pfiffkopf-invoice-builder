@@ -85,8 +85,10 @@ async function renderHTMLNodeRecursive(
     } else if (element instanceof HTMLTableColElement) {
       console.error('collumn elements are currently not supported!');
     } else if (element instanceof HTMLTableCellElement) {
+      const cell = element as HTMLTableCellElement;
       command = await drawCellCommandFromStyle(
         computedStyle,
+        cell,
         position.width,
         pdf,
         storage,

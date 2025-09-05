@@ -101,7 +101,15 @@ export class TableData {
       element.width = width / this.tableEntries.length;
     });
   }
-
+  public visibleTableCells(){
+    const cells = [];
+    for(let i = 0; i < this.tableEntries.length; i++){
+      if(this.tableEntries[i].enabled){
+        cells.push(this.tableEntries[i]);
+      }
+    }
+    return cells;
+  }
   public dynamicTable() {
     return {
       header:

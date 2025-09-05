@@ -38,7 +38,7 @@ export interface Collumn {
 }
 export interface TableRow {
   accessorControlled: boolean;
-  elements: Cell[];
+  elements: (Cell | undefined)[];
 }
 export interface Cell {
   label: string;
@@ -139,7 +139,7 @@ export function MovableTable(properties: MovableTableParams) {
   }
   function findAccesorControlledEntry(accesor: string, row: TableRow) {
     for (let i = 0; i < row.elements.length; i++) {
-      if (row.elements[i].accessor === accesor) {
+      if (row.elements[i]?.accessor === accesor) {
         return row.elements[i];
       }
     }
@@ -206,6 +206,9 @@ export function MovableTable(properties: MovableTableParams) {
                     return (
                       <tr>
                         {row.elements.map((cell) => {
+                          if(!cell) {
+                            return "";
+                          }
                           return (
                             <td rowSpan={cell.rowSpawn} colSpan={cell.colSpawn}
                               style={Object.assign(
