@@ -9,9 +9,14 @@ import {
   Stack,
 } from '@mantine/core';
 import {
+  pxfromUnit,
+  pxToUnit,
+  RoundToTwo,
   TableData,
   TableEntry,
   Template,
+  Unit,
+  unityToGermanLanguageString,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { IconGripVertical, IconTable } from '@tabler/icons-react';
@@ -30,7 +35,7 @@ export interface TableDataInputProps {
 
 export function TableDataInput(props: TableDataInputProps) {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
-
+  const unit = Unit.cm;
   const paperPadding = props.isMobile ? 'md' : 'lg';
   function TableRowContent(propserties: { item: TableEntry; index: number }) {
     return (
@@ -60,11 +65,12 @@ export function TableDataInput(props: TableDataInputProps) {
         <Table.Td>
           {props.widthEditing && (
             <NumberInput
-              defaultValue={propserties.item.width}
+              defaultValue={RoundToTwo(pxToUnit(propserties.item.width || 0, unit))}
               onChange={(event) => {
-                propserties.item.width = Number(event);
+                propserties.item.width = pxfromUnit(Number(event), unit);
                 props.template.redrawView();
               }}
+              suffix={" " + unityToGermanLanguageString(unit)}
             />
           )}
           {!props.widthEditing && propserties.item.width}
