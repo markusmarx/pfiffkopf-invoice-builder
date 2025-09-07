@@ -1,5 +1,10 @@
 import { createRoot } from 'react-dom/client';
-import { FontStorage, Template, PageProperties } from '../templates/types';
+import {
+  FontStorage,
+  Template,
+  PageProperties,
+  DataSet,
+} from '../templates/types';
 import { PDFDocument, PDFKitDocumentConstructorOptions } from '../pdf';
 import { ReactNode } from 'react';
 import { calculatePageHeight, cssCMToPostScriptPoint } from '../utils/util';
@@ -159,6 +164,7 @@ export async function renderToPDF(options: {
   wrapper?: (template: ReactNode) => ReactNode;
   pdfCreationOptions?: PDFKitDocumentConstructorOptions;
   onFinishPDFCreation?: (pdfFile: Uint8Array) => unknown;
+  data?: DataSet;
 }) {
   //general data
   const fontStorage = options.template.fontStorage;
@@ -168,6 +174,7 @@ export async function renderToPDF(options: {
   const renderTemplate = options.template.drawPaper({
     currentTab: 'RENDER_PDF',
     pdfRenderer: true,
+    dataset: options.data,
   });
   let expectedPages = 0;
   let addedPages = 0;

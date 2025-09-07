@@ -28,6 +28,7 @@ import {
   Template,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import saveAs from 'file-saver';
+import { InvoiceDataSet } from '../template/pfkInvoiceTemplate';
 
 interface HeaderProps {
   burger?: React.ReactNode;
@@ -220,6 +221,10 @@ const Header: React.FC<HeaderProps> = ({
             },
           }}
           onClick={() => {
+            const data : InvoiceDataSet = new InvoiceDataSet();
+            data.city = "Chemnitz";
+            data.adressLine = "Ehrlichstraße 16";
+            data.name = "Fabio Lugert";
             renderToPDF({
               template: template,
               wrapper: (template) => {
@@ -236,6 +241,7 @@ const Header: React.FC<HeaderProps> = ({
                 });
                 saveAs(blob, 'generierte Rechnung.pdf');
               },
+              data: data
             });
           }}
         >

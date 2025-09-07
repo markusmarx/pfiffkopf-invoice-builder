@@ -7,7 +7,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
-import { DragVector, Template } from '@pfiffkopf-webapp-office/pfk-pdf';
+import { DragVector, Template, Unit } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { IconVector } from '@tabler/icons-react';
 
 export enum DragVectorDisplayType {
@@ -41,28 +41,14 @@ export function DragVectorInput(props: DragVectorInputProperties) {
               <NumberInput
                 label="X-Position"
                 placeholder="20"
-                suffix=" px"
                 size={props.isMobile ? 'sm' : 'md'}
-                defaultValue={props.positionVector.x}
-                onChange={(size) => {
-                  if (props.positionVector) {
-                    props.positionVector.x = Number(size);
-                    props.template.redrawView();
-                  }
-                }}
+                {...props.positionVector.getInputPropsX(props.template, Unit.cm)}
               />
               <NumberInput
                 label="Y-Position"
                 placeholder="20"
-                suffix=" px"
                 size={props.isMobile ? 'sm' : 'md'}
-                defaultValue={props.positionVector.y}
-                onChange={(size) => {
-                  if (props.positionVector) {
-                    props.positionVector.y = Number(size);
-                    props.template.redrawView();
-                  }
-                }}
+                {...props.positionVector.getInputPropsY(props.template, Unit.cm)}
               />
             </>
           )}
@@ -72,8 +58,9 @@ export function DragVectorInput(props: DragVectorInputProperties) {
               <NumberInput
                 label="Breite"
                 placeholder="20"
-                suffix=" px"
                 size={props.isMobile ? 'sm' : 'md'}
+                {...props.sizeVector.getInputPropsX(props.template, Unit.cm)}
+                
                 defaultValue={props.sizeVector.x}
                 onChange={(size) => {
                   if (props.sizeVector) {
@@ -85,8 +72,8 @@ export function DragVectorInput(props: DragVectorInputProperties) {
               <NumberInput
                 label="Höhe"
                 placeholder="20"
-                suffix=" px"
                 size={props.isMobile ? 'sm' : 'md'}
+                {...props.sizeVector.getInputPropsY(props.template, Unit.cm)}
                 defaultValue={props.sizeVector.y}
                 onChange={(size) => {
                   if (props.sizeVector) {

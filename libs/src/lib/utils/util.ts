@@ -151,3 +151,43 @@ export async function checkWebFont(font: WebFont, doc: PDFDocument) {
     doc.embedFont(font.name + 'Embed', font.file);
   }
 }
+export enum Unit {px, cm, mm, inch}
+export function pxToUnit(value: number, unitTo: Unit) : number{
+  switch(unitTo){
+    case Unit.cm:
+      return value / cmToPixels;
+    case Unit.inch:
+      return value / cmToPixels * 0.393701;
+      case Unit.mm:
+        return value / cmToPixels / 10;
+    default:
+      return value;
+  }
+}
+export function pxfromUnit(value: number, unitFrom: Unit) : number{
+  switch(unitFrom){
+    case Unit.cm:
+      return value * cmToPixels;
+    case Unit.inch:
+      return value / 2.54 * cmToPixels;
+      case Unit.mm:
+        return value * cmToPixels * 10;
+    default:
+      return value;
+  }
+}
+export function unityToGermanLanguageString(unit: Unit){
+  switch(unit){
+    case Unit.cm:
+      return "cm";
+    case Unit.inch:
+      return "Zoll";
+    case Unit.mm: 
+      return "mm"
+    default:
+      return "px";
+  }
+}
+export function RoundToTwo(value: number){
+  return Number(value.toFixed(2));
+}

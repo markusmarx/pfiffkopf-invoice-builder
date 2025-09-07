@@ -48,6 +48,7 @@
   "dependencies": {
     "@babel/plugin-proposal-class-properties": "^7.18.6",
     "@babel/plugin-proposal-decorators": "^7.25.9",
+    "@e-invoice-eu/core": "^2.1.10",
     "@hello-pangea/dnd": "^18.0.1",
     "@mantine/core": "^8.2.4",
     "@mantine/form": "^8.2.4",
