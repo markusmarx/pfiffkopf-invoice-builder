@@ -42,13 +42,13 @@ export function DragVectorInput(props: DragVectorInputProperties) {
                 label="X-Position"
                 placeholder="20"
                 size={props.isMobile ? 'sm' : 'md'}
-                {...props.positionVector.getInputPropsX(props.template, Unit.cm)}
+                {...props.positionVector.getInputPropsX(props.template, Unit.mm)}
               />
               <NumberInput
                 label="Y-Position"
                 placeholder="20"
                 size={props.isMobile ? 'sm' : 'md'}
-                {...props.positionVector.getInputPropsY(props.template, Unit.cm)}
+                {...props.positionVector.getInputPropsY(props.template, Unit.mm)}
               />
             </>
           )}
@@ -59,7 +59,7 @@ export function DragVectorInput(props: DragVectorInputProperties) {
                 label="Breite"
                 placeholder="20"
                 size={props.isMobile ? 'sm' : 'md'}
-                {...props.sizeVector.getInputPropsX(props.template, Unit.cm)}
+                {...props.sizeVector.getInputPropsX(props.template, Unit.mm)}
                 
                 defaultValue={props.sizeVector.x}
                 onChange={(size) => {
@@ -73,7 +73,7 @@ export function DragVectorInput(props: DragVectorInputProperties) {
                 label="Höhe"
                 placeholder="20"
                 size={props.isMobile ? 'sm' : 'md'}
-                {...props.sizeVector.getInputPropsY(props.template, Unit.cm)}
+                {...props.sizeVector.getInputPropsY(props.template, Unit.mm)}
                 defaultValue={props.sizeVector.y}
                 onChange={(size) => {
                   if (props.sizeVector) {

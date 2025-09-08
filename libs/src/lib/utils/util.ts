@@ -159,7 +159,7 @@ export function pxToUnit(value: number, unitTo: Unit) : number{
     case Unit.inch:
       return value / cmToPixels * 0.393701;
       case Unit.mm:
-        return value / cmToPixels / 10;
+        return value / cmToPixels * 10;
     default:
       return value;
   }
@@ -171,7 +171,7 @@ export function pxfromUnit(value: number, unitFrom: Unit) : number{
     case Unit.inch:
       return value / 2.54 * cmToPixels;
       case Unit.mm:
-        return value * cmToPixels * 10;
+        return value * cmToPixels / 10;
     default:
       return value;
   }

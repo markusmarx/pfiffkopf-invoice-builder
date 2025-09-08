@@ -35,7 +35,7 @@ export interface TableDataInputProps {
 
 export function TableDataInput(props: TableDataInputProps) {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
-  const unit = Unit.cm;
+  const unit = Unit.mm;
   const paperPadding = props.isMobile ? 'md' : 'lg';
   function TableRowContent(propserties: { item: TableEntry; index: number }) {
     return (
@@ -67,7 +67,7 @@ export function TableDataInput(props: TableDataInputProps) {
             <NumberInput
               defaultValue={RoundToTwo(pxToUnit(propserties.item.width || 0, unit))}
               onChange={(event) => {
-                propserties.item.width = pxfromUnit(Number(event), unit);
+                propserties.item.width = pxfromUnit(Number(event), unit);9
                 props.template.redrawView();
               }}
               suffix={" " + unityToGermanLanguageString(unit)}
