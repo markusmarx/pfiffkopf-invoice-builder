@@ -42,8 +42,8 @@ export function DocumentCategory(properties: {
               placeholder="20"
               suffix=" mm"
               size={isMobile ? 'sm' : 'md'}
-              min={0}
-              max={50}
+              min={10}
+              max={25}
               defaultValue={self.pagePaddingTop}
               onChange={(size) => {
                 self.pagePaddingTop = Number(size);
@@ -55,8 +55,8 @@ export function DocumentCategory(properties: {
               placeholder="20"
               suffix=" mm"
               size={isMobile ? 'sm' : 'md'}
-              min={0}
-              max={50}
+              min={10}
+              max={25}
               defaultValue={self.pagePaddingBottom}
               onChange={(size) => {
                 self.pagePaddingBottom = Number(size);
@@ -68,8 +68,8 @@ export function DocumentCategory(properties: {
               placeholder="20"
               suffix=" mm"
               size={isMobile ? 'sm' : 'md'}
-              min={0}
-              max={50}
+              min={10}
+              max={25}
               defaultValue={self.pagePaddingLeft}
               onChange={(size) => {
                 self.pagePaddingLeft = Number(size);
@@ -81,8 +81,8 @@ export function DocumentCategory(properties: {
               placeholder="20"
               suffix=" mm"
               size={isMobile ? 'sm' : 'md'}
-              min={0}
-              max={50}
+              min={10}
+              max={25}
               defaultValue={self.pagePaddingRight}
               onChange={(size) => {
                 self.pagePaddingRight = Number(size);
