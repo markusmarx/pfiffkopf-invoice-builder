@@ -24,6 +24,7 @@ import {
   drawCellCommandFromStyle,
   generateTextCommandFromCSS,
 } from './cssStyleParser';
+import { EInvoice, generateEInvoiceXML } from '../e-invoice/e_invoice';
 
 async function renderHTMLNodeRecursive(
   pdf: PDFDocument,
@@ -158,12 +159,30 @@ async function renderHTMLNodeRecursive(
   }
   return command;
 }
-
+type pdfCallback = 
+{
+  kind: "buffer",
+  callback: (pdfFile: Uint8Array) => unknown
+} | {
+  kind: "pdf",
+  callback: (pdfFile: PDFLibDocument) => unknown
+}
+function fireEndPDFCallback(data: PDFLibDocument, callback?: pdfCallback){
+  if(callback){
+    if(callback.kind === "buffer"){
+      data.save().then((buffer) => {
+        callback.callback(buffer);
+      });
+    }else{
+      callback.callback(data);
+    }
+  }
+}
 export async function renderToPDF(options: {
   template: Template;
   wrapper?: (template: ReactNode) => ReactNode;
   pdfCreationOptions?: PDFKitDocumentConstructorOptions;
-  onFinishPDFCreation?: (pdfFile: Uint8Array) => unknown;
+  onFinishPDFCreation?: pdfCallback;
   data?: DataSet;
 }) {
   //general data
@@ -309,11 +328,7 @@ export async function renderToPDF(options: {
                   page.drawPage(embed);
                   addedPages++;
                   if (addedPages === expectedPages) {
-                    documentPDF.save().then((buffer) => {
-                      if (options.onFinishPDFCreation) {
-                        options.onFinishPDFCreation(buffer);
-                      }
-                    });
+                    fireEndPDFCallback(documentPDF, options.onFinishPDFCreation);
                   }
                 });
               });
@@ -373,4 +388,31 @@ export async function renderToPDF(options: {
       );
     }
   }
+}
+
+export async function generateEInvoice(options: {
+  template: Template;
+  wrapper?: (template: ReactNode) => ReactNode;
+  pdfCreationOptions?: PDFKitDocumentConstructorOptions;
+  onFinishPDFCreation?: pdfCallback;
+  data: EInvoice;
+}) {
+  const eInvoice = generateEInvoiceXML({
+    prepaid: 0,
+    data: options.data
+  });
+  console.log(eInvoice);
+  return;
+  await renderToPDF({
+    template: options.template,
+    wrapper: options.wrapper,
+    pdfCreationOptions: options.pdfCreationOptions,
+    onFinishPDFCreation: {
+      kind: "pdf",
+      callback: (pdf) => {
+        fireEndPDFCallback(pdf, options.onFinishPDFCreation);
+      }
+    },
+    data: options.data as DataSet
+  })
 }

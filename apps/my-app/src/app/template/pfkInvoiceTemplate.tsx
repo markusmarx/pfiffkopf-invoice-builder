@@ -21,6 +21,7 @@ import { RecipentCategory } from './recipentCategory';
 import { InvoiceCategory } from './invoiceCategory';
 import { TableCategory } from './tableCategory';
 import { LogoCategory } from './logoCategory';
+import { BookingAccountType, Contact, CurrencyType, Delivery, EInvoice, ElectronicAdress, InvoiceLine, InvoiceType, PartyRecipent, PartySupplier, PaymentMeans, PostalAdress, UstId } from '@pfiffkopf-webapp-office/pfk-pdf';
 
 export class LogoSection extends TemplateTab {
   letterpaper: BackgroundPDF;
@@ -169,29 +170,59 @@ export class TableSection extends TemplateTab {
     );
   }
 }
-export interface InvoiceLine {
-  pos: number;
-  description: string;
-  time: string;
-  priceSingle: number;
-  tax: number;
-  sum: number;
-}
-export class InvoiceDataSet implements DataSet {
+export class InvoiceDataSet implements DataSet, EInvoice {
+  invoiceNr: string;
+  invoiceDate: Date;
+  invoiceType: InvoiceType;
+  currency: CurrencyType;
+  dueDate?: Date | undefined;
+  derliveryDate?: Date | undefined;
+  billingPeriod?: { from: Date; to: Date; } | undefined;
+  buyerReference?: string | undefined;
+  projectNumber?: string | undefined;
+  contractNumber?: string | undefined;
+  orderNumber?: string | undefined;
+  jobNumber?: string | undefined;
+  goodsReceiptNotification?: { id: string; date: Date; } | undefined;
+  shippingNotice?: { id: string; date: Date; } | undefined;
+  tender?: string | string[] | undefined;
+  objectReference?: string | string[] | undefined;
+  buyerBookingAccount?: { id: string; type: BookingAccountType; }[] | undefined;
+  invoiceReference?: { id: string; date: Date; }[] | undefined;
+  remark?: string | undefined;
+  supplyingParty: PartySupplier;
+  receivingParty: PartyRecipent;
+  paymentDetails: PaymentMeans;
+  deliveryDetails?: Delivery | undefined;
+  positions: InvoiceLine[];
   author?: string;
-  //adress block
-  companyName?: string;
-  name?: string;
-  adressLine?: string;
-  additionalAdressLine?: string;
-  zip?: string;
-  city?: string;
-  //invoice
-  invoiceNr?: string;
-  invoiceDate?: string;
-  serviceDateBeginn?: string;
-  serviceDateEnd?: string;
-  tableEntrys?: InvoiceLine[];
+  constructor(invoiceNr: string, invoiceDate: Date, positions: InvoiceLine[], company: {
+    adress: PostalAdress;
+    id: {
+        sellerIdentifier?: string;
+        registerNumber?: string;
+        ustId?: UstId;
+    };
+    companyName: string;
+    contact: Contact;
+    electronicAdress: ElectronicAdress;
+  },
+  receiver: {
+    electronicAdress: ElectronicAdress,
+    companyName: string,
+    adress: PostalAdress
+  }, paymentDetails: PaymentMeans){
+    this.invoiceNr = invoiceNr;
+    this.invoiceDate = invoiceDate;
+    this.invoiceType = InvoiceType.invoice;
+    this.currency = CurrencyType.euro;
+    this.supplyingParty = company;
+    this.receivingParty = receiver;
+    this.positions = positions;
+    this.paymentDetails = paymentDetails;
+
+  }
+  
 }
 export class PfkInvoiceTemplate extends Template {
   letterpaper?: DocumentSection;
@@ -206,17 +237,18 @@ export class PfkInvoiceTemplate extends Template {
     if (prop.dataset && prop.dataset instanceof InvoiceDataSet) {
       invoiceData = prop.dataset as InvoiceDataSet;
     }
-    let tableSum = invoiceData?.tableEntrys ? 0 : 100;
-    const tableData: TableRow[] = invoiceData?.tableEntrys
-      ? invoiceData.tableEntrys.map((line) => {
-          tableSum += line.sum;
+    let tableSum = invoiceData?.positions ? 0 : 100;
+    const tableData: TableRow[] = invoiceData?.positions
+      ? invoiceData.positions.map((line, idx) => {
+        const sum = line.amount * line.priceSingleUnit; 
+          tableSum += sum;
           return {
             elements: [
-              { label: line.pos.toFixed(0), accessor: 'pos' },
-              { label: line.description, accessor: 'description' },
-              { label: line.time, accessor: 'time' },
+              { label: (idx+1).toFixed(0), accessor: 'pos' },
+              { label: line.detailDescription || "", accessor: 'description' },
+              { label: `${line.amount} x ${line.unit}`, accessor: 'time' },
               {
-                label: `${line.priceSingle.toFixed(2).replace('.', ',')}€`,
+                label: `${line.priceSingleUnit.toFixed(2).replace('.', ',')}€`,
                 accessor: 'single',
               },
               {
@@ -224,7 +256,7 @@ export class PfkInvoiceTemplate extends Template {
                 accessor: 'tax',
               },
               {
-                label: `${line.sum.toFixed(2).replace('.', ',')}€`,
+                label: `${sum.toFixed(2).replace('.', ',')}€`,
                 accessor: 'sum',
               },
             ],
@@ -251,6 +283,9 @@ export class PfkInvoiceTemplate extends Template {
       ],
       accessorControlled: false,
     });
+    function formatDate(date: Date | undefined){
+      return date ? `${date.getDay()+1}.${date.getMonth()+1}.${date.getFullYear()}` : undefined;
+    }
     return Array<JSX.Element>(
       <Page
         format={PageFormat.A4}
@@ -280,22 +315,22 @@ export class PfkInvoiceTemplate extends Template {
           id="recipient"
         >
           <Text style={{ fontSize: fontSize }}>
-            <b>{invoiceData?.companyName || 'Musterfirma'}</b>
+            <b>{invoiceData?.receivingParty.companyName || 'Musterfirma'}</b>
           </Text>
           <Text style={{ fontSize: fontSize }}>
             <b>Etage 0815</b>
           </Text>
           <Text style={{ fontSize: fontSize }}>
-            {invoiceData?.name || 'Maxime Muster'}
+            {'Maxime Muster'}
           </Text>
           <Text style={{ fontSize: fontSize }}>
-            {invoiceData?.adressLine || 'Musterstraße 16'}
+            {invoiceData?.receivingParty.adress.street || 'Musterstraße 16'}
           </Text>
           <Text style={{ fontSize: fontSize }}>
-            {invoiceData?.additionalAdressLine || ' - Zusatz - '}
+            {invoiceData?.receivingParty.adress.street2 || ' - Zusatz - '}
           </Text>
           <Text style={{ fontSize: fontSize }}>
-            {invoiceData?.zip || '01234'} {invoiceData?.city || 'Musterhausen'}
+            {invoiceData?.receivingParty.adress.zip || '01234'} {invoiceData?.receivingParty.adress.city || 'Musterhausen'}
           </Text>
         </MovableBox>
         <MovableBox
@@ -330,13 +365,13 @@ export class PfkInvoiceTemplate extends Template {
                   {invoiceData?.invoiceNr || 'R2025-0001'}
                 </Text>
                 <Text style={{ fontSize: fontSize }}>
-                  {invoiceData?.invoiceDate || '31.01.2025'}
+                  {formatDate(invoiceData?.invoiceDate) || '31.01.2025'}
                 </Text>
                 <Text style={{ fontSize: fontSize }}>
-                  {invoiceData?.serviceDateBeginn || '01.01.2025'}
+                  {formatDate(invoiceData?.billingPeriod?.from) || '01.01.2025'}
                 </Text>
                 <Text style={{ fontSize: fontSize }}>
-                  bis {invoiceData?.serviceDateEnd || '31.01.2025'}
+                  bis {formatDate(invoiceData?.billingPeriod?.to) || '31.01.2025'}
                 </Text>
               </Stack>
             </Group>
@@ -344,7 +379,7 @@ export class PfkInvoiceTemplate extends Template {
         </MovableBox>
         <MovableBox id={'salutation'} x={0} y={300} width={700} heigth={100}>
           <Text style={{ fontSize: fontSize }} fw={700}>
-            Hallo {invoiceData?.name || 'Maxim Mustermann'},
+            Hallo {invoiceData?.receivingParty.companyName || 'Maxim Mustermann'},
           </Text>
           <Text style={{ fontSize: fontSize }}>
             ich erlaube mir eine Rechnung für folgende Leistungen zu stellen.

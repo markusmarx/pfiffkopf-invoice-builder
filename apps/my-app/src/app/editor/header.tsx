@@ -22,10 +22,15 @@ import {
   IconChevronsRight,
 } from '@tabler/icons-react';
 import {
+  CountryCode,
+  ElectronicAdressType,
+  generateEInvoice,
+  NoPaymentMeans,
   PDFKitPDFSubset,
   PDFKitPDFVersion,
-  renderToPDF,
   Template,
+  UnitCode,
+  UstIdCounty,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import saveAs from 'file-saver';
 import { InvoiceDataSet } from '../template/pfkInvoiceTemplate';
@@ -221,11 +226,47 @@ const Header: React.FC<HeaderProps> = ({
             },
           }}
           onClick={() => {
-            const data : InvoiceDataSet = new InvoiceDataSet();
-            data.city = "Chemnitz";
-            data.adressLine = "Ehrlichstraße 16";
-            data.name = "Fabio Lugert";
-            renderToPDF({
+            const paymentDetails: NoPaymentMeans = {
+              id: 1,
+            };
+            const data : InvoiceDataSet = new InvoiceDataSet("0001", new Date(Date.now()), [{
+              name: "Product",
+              amount: 1,
+              priceSingleUnit: 2,
+              unit: UnitCode.zoll,
+              tax: 19
+            }], {
+              id: {
+                ustId: {ust: "NUMM", country: UstIdCounty.Germany}
+              },
+              adress: {
+                street: "Ehrlichstraße 16",
+                city: "Chemnitz",
+                country: CountryCode.DE,
+                zip: "09116",
+                region: "Sachsen"
+              },
+              companyName: "IT-Fabio",
+              contact: {
+                name: "Fabio",
+                mail: "mail@mail.de",
+                telephone: "+49"
+              },
+              electronicAdress: {adress: "mail@mail.de", id: ElectronicAdressType.eMail}
+            }, {
+              electronicAdress: {adress: "mail@mail.de", id: ElectronicAdressType.eMail},
+              companyName: "Firma",
+              adress: {
+                street: "Straße Nummer",
+                city: "Stadt",
+                zip: "00000",
+                country: CountryCode.DE,
+                region: "Region"
+              }
+
+            }, paymentDetails);
+            data.remark = "Ein Remark";
+            generateEInvoice({
               template: template,
               wrapper: (template) => {
                 return <MantineProvider>{template}</MantineProvider>;
@@ -235,11 +276,15 @@ const Header: React.FC<HeaderProps> = ({
                 pdfVersion: PDFKitPDFVersion.oneDSeven,
                 tagged: true,
               },
-              onFinishPDFCreation: (chunks) => {
+              onFinishPDFCreation:
+              {
+                kind: "buffer",
+                callback: (chunks) => {
                 const blob = new Blob([chunks] as BlobPart[], {
                   type: 'application/pdf',
                 });
                 saveAs(blob, 'generierte Rechnung.pdf');
+                }
               },
               data: data
             });

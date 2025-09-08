@@ -1,37 +1,81 @@
-function formatDate(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDay() + 1}`;
+function formatDate(date?: Date): string | undefined {
+  return date ? `${date.getFullYear()}${date.getMonth() + 1}${date.getDay() + 1}` : undefined;
 }
 function formatUSTId(county: UstIdCounty, id: string) {
   return `${county}${id}`;
 }
-enum UstIdCounty {
+function xmlTag(
+  name: string,
+  value?: string,
+  tags?: { tagName: string; tagValue: string }[],
+) {
+  if(!value){
+    return undefined;
+  }
+  return `<${name}${tags ? " "+tags
+    .map((tag) => {
+      return `${tag.tagName}=${tag.tagValue} `;
+    })
+    .join() : ''}>${value}</${name}>`;
+}
+export enum UstIdCounty {
   Germany = 'DE',
   Ukraine = 'UA',
 }
-enum CountryCode {
+export enum CountryCode {
   DE = 'DE',
   EN = 'EN',
 }
-interface UstId {
+export enum ElectronicAdressType {
+  eMail = 'EM',
+  asTwoExchange = 'AS',
+  fileTransferProtocoll = 'AU',
+  xFourHundredAdressForMail = 'AQ',
+  germanLeitwegID = '9958',
+}
+export interface ElectronicAdress {
+  id: ElectronicAdressType;
+  adress: string;
+}
+export interface UstId {
   country: UstIdCounty;
   ust: string;
 }
-interface PostalAdress {
+export interface PostalAdress {
   street: string;
+  street2?: string;
+  aditionalAdressLine?: string;
   city: string;
   zip: string;
   country: CountryCode;
+  region: string;
 }
-interface Party {
-  name: string;
-  mail: string;
-  taxNr?: string;
+export interface PartySupplier {
+  companyName: string;
+  tradingName?: string;
+  id: {
+    sellerIdentifier?: string;
+    registerNumber?: string;
+    ustId?: UstId;
+  };
+  taxNumber?: string;
+  weeeNumber?: string;
+  legalInformation?: string; //for example Kleinunternehmerregelung
+  electronicAdress: ElectronicAdress;
   adress: PostalAdress;
-  ustId: UstId;
-  legalName: string;
   contact: Contact;
 }
-enum TaxType {
+export interface PartyRecipent {
+  companyName: string;
+  tradingName?: string;
+  buyerIdentifier?: string;
+  registerNumber?: string;
+  ustId?: UstId;
+  electronicAdress: ElectronicAdress;
+  adress: PostalAdress;
+  contact?: Contact;
+}
+export enum TaxType {
   standard = 'S',
   k = 'K',
   ae = 'AE',
@@ -42,57 +86,201 @@ enum TaxType {
   o = 'O',
   z = 'Z',
 }
-enum UnitCode {
+export enum UnitCode {
   zoll = 'C62',
 }
 type UstAmount = 0 | 7 | 10 | 13 | 17 | 20 | 19;
-interface InvoiceLine {
+export interface InvoiceLine {
   productNumber?: string;
   name: string;
   amount: number;
-  priceSingleUnity: number;
+  priceSingleUnit: number;
   detailDescription?: string;
   unit: UnitCode;
   taxType?: TaxType;
   tax: UstAmount;
 }
-interface Contact {
+export interface Delivery {
+  receiverName: string;
+  receiverLocation: string;
+  adress: PostalAdress;
+}
+export interface Contact {
   name: string;
   telephone: string;
   mail: string;
 }
-export function generateEInvoiceXML(options: {
-    prepaid: number;
-  data: {
-    invoiceNr: string;
-    issueDate: Date; //Ausstelldatum
-    dueDate: Date; //Fälligkeitsdatum
-    accountingSupplierParty: Party; //Rechnungssteller
-    accountingCustomerParty: Party; //Empfänger
-    invoiceLines: InvoiceLine[];
+export interface PaymentMeans {
+  id: number;
+  paymentTerms?: string;
+}
+export interface NoPaymentMeans extends PaymentMeans{
+  id: 1,
+  usage?: string
+}
+export interface TransferPaymentMeans {
+  id: 30 | 42;
+  name: string;
+  accountAdress: {
+    iban?: string;
+    bancAccountNumber?: string;
   };
+  bicOrSwift: string;
+  bankName?: string;
+}
+export interface SEPAPaymentMeans extends PaymentMeans {
+  iban: string;
+}
+export interface SEPATransferPaymentMeans extends SEPAPaymentMeans {
+  id: 58;
+  accountOwner: string;
+  bic?: string;
+  bankName?: string;
+  usage?: string;
+}
+export interface SEPADirectDebitPaymentMeans extends SEPAPaymentMeans {
+  id: 59;
+  iban: string;
+  mandateReference: string;
+  creditorIdentifier: string;
+}
+export enum InvoiceType {
+  invoice = "380", //Rechnung
+  partialInvoice = "326", //Teilrechnung
+  proformaInvoice = "325", //Proformarechnung
+  creditNote = "381", //Gutschriftsanzeige
+  debitNote = "383", //Belastungsanzeige
+  invoiceCorrection = "384", //Rechnungskorrektur
+  prepaymentInvoice = "386", //Vorauszahlungsrechnung
+  rentalBill = "387", //Mietrechnung
+  taxBill = "388", //Steuerrechnung
+  selfBilledInvoice = "389", //selbst fakturierte Rechnung
+  collectionInvoice = "393", //Inkasso Rechnung
+  leasingInvoice = "394", //Leasingrechnung
+  insuranceBill = "575", //Rechnung des Versicherers
+  forwardingInvoice = "623", //Speditionsrechnung
+  freightInvoice = "780", //Frachtrechnung
+  partialInvoiceForConstructionWork = "875", //Teilrechnung für Bauleistungen
+  partialFinalInvoiceForConstructionWork = "876", //Teilschlussrechnung für Bauleistungen
+  finalInvoiceForConstructionWork = "877", //Schlussrechnung für Bauleistungen
+  customsInvoice = "935", //Zollrechnung
+}
+export enum CurrencyType {
+  euro = 'EUR',
+}
+export enum BookingAccountType {
+  financial = 1,
+  subsidary = 2,
+  budget = 3,
+  costAccount = 4,
+  receivable = 5,
+  payable = 6,
+  jobCostAccounting = 7,
+}
+export interface EInvoice {
+  invoiceNr: string;
+  invoiceDate: Date;
+  invoiceType: InvoiceType;
+  currency: CurrencyType;
+  dueDate?: Date; //Fälligkeitsdatum
+  derliveryDate?: Date; //Leistungs-/Lieferdatum
+  billingPeriod?: { from: Date; to: Date };
+  buyerReference?: string; //Required for authorities
+  projectNumber?: string;
+  contractNumber?: string;
+  orderNumber?: string;
+  jobNumber?: string;
+  goodsReceiptNotification?: { id: string; date: Date };
+  shippingNotice?: { id: string; date: Date };
+  tender?: string | string[]; //Auch Los
+  objectReference?: string | string[]; //Objektreferenz
+  buyerBookingAccount?: { id: string; type: BookingAccountType }[];
+  invoiceReference?: { id: string; date: Date }[];
+  remark?: string;
+  supplyingParty: PartySupplier;
+  receivingParty: PartyRecipent;
+  paymentDetails: PaymentMeans;
+  deliveryDetails?: Delivery;
+  positions: InvoiceLine[];
+}
+export function generateEInvoiceXML(options: {
+  prepaid: number;
+  data: EInvoice;
 }): string {
-    let sumWithoutTax = 0;
-    let tax = 0;
-    options.data.invoiceLines.forEach((line) => {
-        const lineSum = line.priceSingleUnity * line.amount;
-        sumWithoutTax += lineSum;
-        tax += lineSum * (line.tax / 100);
-    });
-    const toPay = sumWithoutTax + tax - options.prepaid;
-    
-  return `
-    <?xml version="1.0" encoding="UTF-8"?>
-<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cec="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
-  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0</cbc:CustomizationID>
-  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
-  <cbc:ID>${options.data.invoiceNr}</cbc:ID>
-  <cbc:IssueDate>${formatDate(options.data.issueDate)}</cbc:IssueDate>
-  <cbc:DueDate>${formatDate(options.data.dueDate)}</cbc:DueDate>
-  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
-  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
-  <cbc:BuyerReference>Leitweg-ID</cbc:BuyerReference>
-  <cac:AccountingSupplierParty>
+  if (options.data.positions.length < 1) {
+    throw 'Invoice needs to have atleast 1 position';
+  }
+
+  let sumWithoutTax = 0;
+  let tax = 0;
+  options.data.positions.forEach((line) => {
+    const lineSum = line.priceSingleUnit * line.amount;
+    sumWithoutTax += lineSum;
+    tax += lineSum * (line.tax / 100);
+  });
+  const toPay = sumWithoutTax + tax - options.prepaid;
+  const dateFormat = "102";
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
+  	<rsm:ExchangedDocumentContext>
+		<ram:BusinessProcessSpecifiedDocumentContextParameter>
+			<ram:ID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</ram:ID>
+		</ram:BusinessProcessSpecifiedDocumentContextParameter>
+		<ram:GuidelineSpecifiedDocumentContextParameter>
+			<ram:ID>urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0</ram:ID>
+		</ram:GuidelineSpecifiedDocumentContextParameter>
+	</rsm:ExchangedDocumentContext>
+  <rsm:ExchangedDocument>
+		${xmlTag("ram:ID", options.data.invoiceNr)}
+		${xmlTag("ram:TypeCode", options.data.invoiceType)}
+    ${xmlTag("ram:IssueDateTime", xmlTag("udt:DateTimeString", formatDate(options.data.invoiceDate), [{tagName: "format", tagValue: dateFormat}]))}
+    ${xmlTag("ram:IncludedNote", xmlTag("ram:Content", options.data.remark))|| ""}
+	</rsm:ExchangedDocument>
+  ${xmlTag("rsm:SupplyChainTradeTransaction", 
+    `${xmlTag("ram:IncludedSupplyChainTradeLineItem", 
+      `Text`
+    )}
+     ${xmlTag("ram:ApplicableHeaderTradeAgreement", 
+      `${xmlTag("ram:SellerTradeParty", 
+       `${xmlTag("ram:ID", )}
+        ${xmlTag("ram:Name", )}
+        ${xmlTag("ram:Description", )}
+        ${xmlTag("ram:SpecifiedLegalOrganization", )}
+        ${xmlTag("ram:DefinedTradeContact", )}
+        ${xmlTag("ram:PostalTradeAddress", )}
+        ${xmlTag("ram:URIUniversalCommunication", )}
+        ${xmlTag("ram:SpecifiedTaxRegistration", )}
+        ${xmlTag("ram:SpecifiedTaxRegistration", )}`
+      )|| ''}` + 
+      `${xmlTag("ram:BuyerTradeParty", 
+        `${xmlTag("ram:ID", )}
+         ${xmlTag("ram:Name", )}`)|| ''}
+         ${xmlTag("ram:SpecifiedLegalOrganization", )}
+         ${xmlTag("ram:DefinedTradeContact", )}
+         ${xmlTag("ram:PostalTradeAddress", )}
+         ${xmlTag("ram:URIUniversalCommunication", )}
+         ${xmlTag("ram:SpecifiedTaxRegistration", )}` + 
+      `${xmlTag("ram:SellerOrderReferencedDocument", xmlTag("ram:IssuerAssignedID", options.data.jobNumber)) || ''}` + 
+      `${xmlTag("ram:BuyerOrderReferencedDocument", xmlTag("ram:IssuerAssignedID", options.data.orderNumber))|| ''}` + 
+      `${xmlTag("ram:ContractReferencedDocument", xmlTag("ram:IssuerAssignedID", options.data.contractNumber))|| ''}` + 
+      `${xmlTag("ram:SpecifiedProcuringProject", 
+        (xmlTag("ram:ID", options.data.projectNumber) || '') +
+        (xmlTag("ram:Name", options.data.projectNumber ? "?" : ''))
+      )|| ''}`
+    )}
+     ${xmlTag("ram:ApplicableHeaderTradeDelivery", 
+      `Text`
+    )}
+     ${xmlTag("ram:ApplicableHeaderTradeSettlement", 
+      `Text`
+    )}
+`
+  )}
+</rsm:CrossIndustryInvoice>
+    `;
+}
+/*
+<cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="EM">${options.data.accountingSupplierParty.mail}</cbc:EndpointID>
       <cac:PartyIdentification>
@@ -161,37 +349,38 @@ export function generateEInvoiceXML(options: {
     </cac:Party>
   </cac:AccountingCustomerParty>
   <cac:Delivery>
-    <cbc:ActualDeliveryDate>2003-07-19</cbc:ActualDeliveryDate>
+    <cbc:ActualDeliveryDate>${formatDate(options.data.delivery.deliveryDate)}</cbc:ActualDeliveryDate>
     <cac:DeliveryLocation>
       <cac:Address>
-        <cbc:CityName>Empfänger-Ort</cbc:CityName>
-        <cbc:PostalZone>Empfänger PLZ</cbc:PostalZone>
+        <cbc:CityName>${options.data.delivery.cityName}</cbc:CityName>
+        <cbc:PostalZone>${options.data.delivery.zip}</cbc:PostalZone>
         <cac:Country>
-          <cbc:IdentificationCode>DE</cbc:IdentificationCode>
+          <cbc:IdentificationCode>${options.data.delivery.country}</cbc:IdentificationCode>
         </cac:Country>
       </cac:Address>
     </cac:DeliveryLocation>
   </cac:Delivery>
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>58</cbc:PaymentMeansCode>
-    <cbc:PaymentID>Verwendungszweck</cbc:PaymentID>
+    <cbc:PaymentID>${options.data.paymentMeans.usage}</cbc:PaymentID>
     <cac:PayeeFinancialAccount>
-      <cbc:ID>IBAN</cbc:ID>
-      <cbc:Name>Kontoinhaber</cbc:Name>
+      <cbc:ID>${options.data.paymentMeans.iban}</cbc:ID>
+      <cbc:Name>${options.data.paymentMeans.accountOwner}</cbc:Name>
       <cac:FinancialInstitutionBranch>
-        <cbc:ID>BIC</cbc:ID>
+        <cbc:ID>${options.data.paymentMeans.bic}</cbc:ID>
       </cac:FinancialInstitutionBranch>
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="EUR">${tax}</cbc:TaxAmount>
-    ${options.data.invoiceLines.map((line) => {
+    ${options.data.positions
+      .map((line) => {
         const priceSum = line.priceSingleUnity * line.amount;
         return `    <cac:TaxSubtotal>
       <cbc:TaxableAmount currencyID="EUR">${priceSum}</cbc:TaxableAmount>
       <cbc:TaxAmount currencyID="EUR">${(line.tax / 100) * priceSum}</cbc:TaxAmount>
       <cac:TaxCategory>
-        <cbc:ID>${line.taxType || "S"}</cbc:ID>
+        <cbc:ID>${line.taxType || 'S'}</cbc:ID>
         <cbc:Percent>${line.tax}</cbc:Percent>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
@@ -200,27 +389,28 @@ export function generateEInvoiceXML(options: {
     </cac:TaxSubtotal>
   </cac:TaxTotal>
         `;
-    }).join()
-    }
+      })
+      .join()}
   <cac:LegalMonetaryTotal>
     <cbc:LineExtensionAmount currencyID="EUR">1.00</cbc:LineExtensionAmount>
     <cbc:TaxExclusiveAmount currencyID="EUR">${sumWithoutTax}</cbc:TaxExclusiveAmount>
-    <cbc:TaxInclusiveAmount currencyID="EUR"${tax+sumWithoutTax}</cbc:TaxInclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR"${tax + sumWithoutTax}</cbc:TaxInclusiveAmount>
     <cbc:AllowanceTotalAmount currencyID="EUR">0.00</cbc:AllowanceTotalAmount>
     <cbc:ChargeTotalAmount currencyID="EUR">0.00</cbc:ChargeTotalAmount>
     <cbc:PrepaidAmount currencyID="EUR">${options.prepaid}</cbc:PrepaidAmount>
     <cbc:PayableAmount currencyID="EUR">${toPay}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
-  ${options.data.invoiceLines
+  ${options.data.positions8
     .map((line, idx) => {
       return `  <cac:InvoiceLine>
     <cbc:ID>${idx + 1}</cbc:ID>
     <cbc:InvoicedQuantity unitCode="${line.unit}">${line.amount}</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="EUR">${line.amount * line.priceSingleUnity}</cbc:LineExtensionAmount>
     <cac:Item>
-      ${line.detailDescription ? 
-       `<cbc:Description>${line.detailDescription}</cbc:Description>`
-        : ''
+      ${
+        line.detailDescription
+          ? `<cbc:Description>${line.detailDescription}</cbc:Description>`
+          : ''
       }
       <cbc:Name>${line.name}</cbc:Name>
       ${
@@ -231,7 +421,7 @@ export function generateEInvoiceXML(options: {
           : ''
       }
       <cac:ClassifiedTaxCategory>
-        <cbc:ID>${line.taxType || "S"}</cbc:ID>
+        <cbc:ID>${line.taxType || 'S'}</cbc:ID>
         <cbc:Percent>${line.tax}</cbc:Percent>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
@@ -245,6 +435,4 @@ export function generateEInvoiceXML(options: {
     })
     .join()}
 
-</Invoice>
-    `;
-}
+    */

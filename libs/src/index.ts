@@ -6,3 +6,4 @@ export * from './lib/components/movable/movableBox';
 export * from './lib/components/page/page';
 export * from './lib/components/table/movableTable';
 export * from './lib/components/baseMovable';
+export * from './lib/e-invoice/e_invoice';
