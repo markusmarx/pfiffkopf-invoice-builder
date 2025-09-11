@@ -311,7 +311,8 @@ export async function renderToPDF(options: {
               //we can't do this directly after generating the page (and use async code),
               // because the data is not directly written after the end call
               PDFLibDocument.load(arrayData).then((load) => {
-                documentPDF.embedPage(load.getPage(0)).then((embed) => {
+                for(let index = 0; index < load.getPageCount(); index++){
+                  documentPDF.embedPage(load.getPage(index)).then((embed) => {
                   const page = documentPDF.addPage([
                     pageDescriptor.width,
                     pageDescriptor.height,
@@ -331,6 +332,8 @@ export async function renderToPDF(options: {
                     fireEndPDFCallback(documentPDF, options.onFinishPDFCreation);
                   }
                 });
+                }
+                
               });
             });
             pdfPage.addPage({

@@ -337,6 +337,7 @@ export class PfkInvoiceTemplate extends Template {
         ? `${date.getDay() + 1}.${date.getMonth() + 1}.${date.getFullYear()}`
         : undefined;
     }
+
     return Array<JSX.Element>(
       <Page
         format={PageFormat.A4}
@@ -433,7 +434,7 @@ export class PfkInvoiceTemplate extends Template {
             </Group>
           </Stack>
         </MovableBox>
-        <MovableBox id={'salutation'} x={0} y={300} width={700} heigth={100}>
+        <MovableBox id={'unmovable'} x={0} y={380} width={700} heigth={100}>
           <Text style={{ fontSize: fontSize }} fw={700}>
             Hallo{' '}
             {invoiceData?.receivingParty.companyName || 'Maxim Mustermann'},
@@ -441,14 +442,15 @@ export class PfkInvoiceTemplate extends Template {
           <Text style={{ fontSize: fontSize }}>
             ich erlaube mir eine Rechnung für folgende Leistungen zu stellen.
           </Text>
-        </MovableBox>
-        <MovableTable
+          <br/>
+          <br/>
+          <MovableTable
           className="table"
           enabled={prop.currentTab === 'table'}
           template={this}
           templateTab={this.table}
-          x={this.table?.pos.x}
-          y={this.table?.pos.y}
+          //x={this.table?.pos.x}
+          //y={this.table?.pos.y}
           width={this.table?.size.x}
           heigth={this.table?.size.y}
           id="table"
@@ -458,8 +460,11 @@ export class PfkInvoiceTemplate extends Template {
           disableMovement={true}
           {...(this.table?.table.dynamicTable() || { header: [] })}
           rows={tableData}
+          insertIntoDocumentFlow={true}
         />
-        <MovableBox id={'salutation'} x={0} y={600} width={700} heigth={100}>
+          <br/>
+          <br/>
+          <br/>
           <Text style={{ fontSize: fontSize }}>
             Vielen Dank für die gute Zusammenarbeit!
           </Text>

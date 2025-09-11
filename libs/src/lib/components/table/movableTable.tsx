@@ -20,6 +20,7 @@ export interface MovableTableParams extends RenderableBlockParams {
     template?: Template,
     tab?: TemplateTab,
   ) => void;
+  insertIntoDocumentFlow?: boolean;
 }
 
 interface ResizableColumnHeaderProps {
@@ -44,8 +45,8 @@ export interface Cell {
   label: string;
   accessor?: string;
   style?: React.CSSProperties;
-  rowSpawn?: number,
-  colSpawn?: number
+  rowSpawn?: number;
+  colSpawn?: number;
 }
 
 function handleResize(
@@ -144,26 +145,8 @@ export function MovableTable(properties: MovableTableParams) {
       }
     }
   }
-
-  return (
-    <BaseMovableBox
-      template={properties.template}
-      templateTab={properties.templateTab}
-      id={properties.id}
-      enabled={properties.enabled}
-      className={properties.className}
-      enableResizing={properties.enableResizing}
-      width={properties.width}
-      heigth={properties.heigth}
-      autoBreakOverMultiplePages={properties.autoBreakOverMultiplePages}
-      onResize={properties.onResize}
-      onSubmitSizeChange={properties.onSubmitSizeChange}
-      disableMovement={properties.disableMovement}
-      x={properties.x}
-      y={properties.y}
-      onSubmitPositionChange={properties.onSubmitPositionChange}
-      onDrag={properties.onDrag}
-    >
+  function Content() {
+    return (
       <div
         id={properties.id}
         style={{
@@ -206,11 +189,13 @@ export function MovableTable(properties: MovableTableParams) {
                     return (
                       <tr>
                         {row.elements.map((cell) => {
-                          if(!cell) {
-                            return "";
+                          if (!cell) {
+                            return '';
                           }
                           return (
-                            <td rowSpan={cell.rowSpawn} colSpan={cell.colSpawn}
+                            <td
+                              rowSpan={cell.rowSpawn}
+                              colSpan={cell.colSpawn}
                               style={Object.assign(
                                 {
                                   position: 'relative',
@@ -240,7 +225,9 @@ export function MovableTable(properties: MovableTableParams) {
                             return <td></td>;
                           }
                           return (
-                            <td rowSpan={cell.rowSpawn} colSpan={cell.colSpawn}
+                            <td
+                              rowSpan={cell.rowSpawn}
+                              colSpan={cell.colSpawn}
                               style={Object.assign(
                                 {
                                   position: 'relative',
@@ -262,6 +249,34 @@ export function MovableTable(properties: MovableTableParams) {
           </div>
         </DndProvider>
       </div>
-    </BaseMovableBox>
+    );
+  }
+
+  return (
+    <>
+      {properties.insertIntoDocumentFlow && <Content />}
+      {!properties.insertIntoDocumentFlow && (
+        <BaseMovableBox
+          template={properties.template}
+          templateTab={properties.templateTab}
+          id={properties.id}
+          enabled={properties.enabled}
+          className={properties.className}
+          enableResizing={properties.enableResizing}
+          width={properties.width}
+          heigth={properties.heigth}
+          autoBreakOverMultiplePages={properties.autoBreakOverMultiplePages}
+          onResize={properties.onResize}
+          onSubmitSizeChange={properties.onSubmitSizeChange}
+          disableMovement={properties.disableMovement}
+          x={properties.x}
+          y={properties.y}
+          onSubmitPositionChange={properties.onSubmitPositionChange}
+          onDrag={properties.onDrag}
+        >
+          <Content />
+        </BaseMovableBox>
+      )}
+    </>
   );
 }
