@@ -108,7 +108,15 @@ export enum UnitCode {
   kilometers = "KMT",
 
 }
-export function unitCodeToHumanReadableString(code: UnitCode){
+export function countryCodeToHumanReadableString(code: CountryCode) : string{
+  switch(code){
+    case CountryCode.DE:
+      return "Deutschland";
+    case CountryCode.EN:
+      return "England"
+  }
+}
+export function unitCodeToHumanReadableString(code: UnitCode) : string{
   switch (code){
     case UnitCode.centimeters:
       return "cm";
@@ -140,7 +148,7 @@ export function unitCodeToHumanReadableString(code: UnitCode){
       return "kg";
     case UnitCode.weight_t:
       return "t";
-    case UnitCode.centimeters:
+    case UnitCode.year:
       return "y";
   }
 }

@@ -16,6 +16,7 @@ import {
   TableRow,
   unitCodeToHumanReadableString,
   UnitCode,
+  countryCodeToHumanReadableString,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { JSX } from 'react';
 import { DocumentCategory } from './documentCategory';
@@ -381,6 +382,11 @@ export class PfkInvoiceTemplate extends Template {
             {invoiceData?.receivingParty.adress.zip || '01234'}{' '}
             {invoiceData?.receivingParty.adress.city || 'Musterhausen'}
           </Text>
+          {invoiceData?.receivingParty.adress.country && invoiceData.receivingParty.adress.country !== invoiceData.supplyingParty.adress.country &&
+            <Text style={{ fontSize: fontSize }}>
+              {countryCodeToHumanReadableString(invoiceData.receivingParty.adress.country)}
+            </Text>
+          }
         </MovableBox>
         <MovableBox
           className="adress"
