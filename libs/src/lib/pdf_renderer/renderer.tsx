@@ -402,7 +402,6 @@ export async function generateEInvoice(options: {
     data: options.data
   });
   console.log(eInvoice);
-  return;
   await renderToPDF({
     template: options.template,
     wrapper: options.wrapper,
@@ -410,6 +409,7 @@ export async function generateEInvoice(options: {
     onFinishPDFCreation: {
       kind: "pdf",
       callback: (pdf) => {
+        pdf.attach(eInvoice, "eInvoice.xml");
         fireEndPDFCallback(pdf, options.onFinishPDFCreation);
       }
     },

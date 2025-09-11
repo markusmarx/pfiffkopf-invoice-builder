@@ -46,7 +46,7 @@ export async function drawCellCommandFromStyle(
     },
     backgroundColor: cssColorToPDFColor(style.backgroundColor),
     align: {
-      x: style.textAlign.replace('middle', 'center'),
+      x: style.textAlign.replace('middle', 'center').replace('beginn', 'left').replace('end', 'right'),
       y: style.verticalAlign.replace('middle', 'center'),
     },
     textStroke: 0.4,

@@ -87,7 +87,62 @@ export enum TaxType {
   z = 'Z',
 }
 export enum UnitCode {
-  zoll = 'C62',
+  pices = "H87",
+  single = "C62",
+  percent = "P1",
+  pachaule = "LS",
+
+  minute = "MIN",
+  hour= "HUR",
+  day= "DAY",
+  week= "WEE",
+  month= "MON",
+  year= "ANN",
+
+  weight_g = "GRM",
+  weight_kg = "KGM",
+  weight_t = "TNE",
+
+  centimeters = "CMT",
+  meters = "MTR",
+  kilometers = "KMT",
+
+}
+export function unitCodeToHumanReadableString(code: UnitCode){
+  switch (code){
+    case UnitCode.centimeters:
+      return "cm";
+    case UnitCode.day:
+      return "d";
+    case UnitCode.kilometers:
+      return "km";
+    case UnitCode.hour:
+      return "h";
+    case UnitCode.meters:
+      return "m";
+    case UnitCode.minute:
+      return "min"; 
+    case UnitCode.month:
+      return "m";
+    case UnitCode.pachaule:
+      return "Pauchale";
+    case UnitCode.percent:
+      return "%";
+    case UnitCode.pices:
+      return "Stück";
+    case UnitCode.single:
+      return "Einzel";
+    case UnitCode.week:
+      return "w";
+    case UnitCode.weight_g:
+      return "g";
+    case UnitCode.weight_kg:
+      return "kg";
+    case UnitCode.weight_t:
+      return "t";
+    case UnitCode.centimeters:
+      return "y";
+  }
 }
 type UstAmount = 0 | 7 | 10 | 13 | 17 | 20 | 19;
 export interface InvoiceLine {

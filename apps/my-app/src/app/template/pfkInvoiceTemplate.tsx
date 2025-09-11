@@ -14,6 +14,8 @@ import {
   BackgroundPDF,
   DataSet,
   TableRow,
+  unitCodeToHumanReadableString,
+  UnitCode,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { JSX } from 'react';
 import { DocumentCategory } from './documentCategory';
@@ -266,7 +268,7 @@ export class PfkInvoiceTemplate extends Template {
             elements: [
               { label: (idx + 1).toFixed(0), accessor: 'pos', style: {textAlign: "center"} },
               { label: line.detailDescription || '', accessor: 'description', style: {textAlign: "start"} },
-              { label: line.unit, accessor: 'unit' },
+              { label: unitCodeToHumanReadableString(line.unit), accessor: 'unit' },
               { label: line.amount.toFixed(), accessor: 'amount' },
               {
                 label: `${line.priceSingleUnit.toFixed(2).replace('.', ',')}€`,
@@ -289,7 +291,7 @@ export class PfkInvoiceTemplate extends Template {
             elements: [
               { label: '1', accessor: 'pos', style: {textAlign: "center"} },
               { label: 'Termin Beschreibung', accessor: 'description', style: {textAlign: "start"} },
-              { label: 'Stunden', accessor: 'unit' },
+              { label: unitCodeToHumanReadableString(UnitCode.hour), accessor: 'unit' },
               { label: '2', accessor: 'amount' },
               { label: '50,00€', accessor: 'single' },
               { label: '0,00%', accessor: 'tax' },
