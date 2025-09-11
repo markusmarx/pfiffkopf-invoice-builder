@@ -28,6 +28,7 @@ import {
   NoPaymentMeans,
   PDFKitPDFSubset,
   PDFKitPDFVersion,
+  renderToPDF,
   Template,
   UnitCode,
   UstIdCounty,
@@ -266,7 +267,7 @@ const Header: React.FC<HeaderProps> = ({
 
             }, paymentDetails);
             data.remark = "Ein Remark";
-            generateEInvoice({
+            renderToPDF({
               template: template,
               wrapper: (template) => {
                 return <MantineProvider>{template}</MantineProvider>;

@@ -215,8 +215,8 @@ export function MovableTable(properties: MovableTableParams) {
                                 {
                                   position: 'relative',
                                 },
-                                cell.style,
                                 properties.cellStyle,
+                                cell.style,
                               )}
                             >
                               {cell.label}
@@ -245,8 +245,8 @@ export function MovableTable(properties: MovableTableParams) {
                                 {
                                   position: 'relative',
                                 },
-                                cell.style,
                                 properties.cellStyle,
+                                cell.style,
                               )}
                             >
                               {cell.label}

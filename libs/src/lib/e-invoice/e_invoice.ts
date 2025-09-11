@@ -48,7 +48,7 @@ export interface PostalAdress {
   city: string;
   zip: string;
   country: CountryCode;
-  region: string;
+  region?: string;
 }
 export interface PartySupplier {
   companyName: string;
@@ -203,6 +203,28 @@ export interface EInvoice {
   deliveryDetails?: Delivery;
   positions: InvoiceLine[];
 }
+function generateContact(contact: Contact){
+  return `${xmlTag("ram:DefinedTradeContact", 
+    `${xmlTag("ram:PersonName", contact.name)}
+    ${xmlTag("ram:TelephoneUniversalCommunication", xmlTag("ram:CompleteNumber", contact.telephone))}
+    ${xmlTag("ram:EmailURIUniversalCommunication", xmlTag("ram:URIID", contact.mail))}`
+  )
+  }`;
+}
+function generatePostalAdress(adress: PostalAdress, title){
+  return xmlTag(title, 
+    `${xmlTag("ram:PostcodeCode", adress.zip)}
+    ${xmlTag("ram:LineOne", adress.street)}
+    ${xmlTag("ram:LineTwo", adress.street2) || ''}
+    ${xmlTag("ram:CityName", adress.city)}
+    ${xmlTag("ram:", adress.region) || ""}
+    ${xmlTag("ram:CountryID", adress.country)}
+    `
+  )
+}
+function generateElectronicAdress(id: ElectronicAdress){
+  return xmlTag("ram:URIUniversalCommunication", xmlTag("ram:URIID", id.adress, [{tagName: "schemeID", tagValue: id.id}]));
+}
 export function generateEInvoiceXML(options: {
   prepaid: number;
   data: EInvoice;
@@ -237,28 +259,35 @@ export function generateEInvoiceXML(options: {
     ${xmlTag("ram:IncludedNote", xmlTag("ram:Content", options.data.remark))|| ""}
 	</rsm:ExchangedDocument>
   ${xmlTag("rsm:SupplyChainTradeTransaction", 
-    `${xmlTag("ram:IncludedSupplyChainTradeLineItem", 
-      `Text`
-    )}
+    `${options.data.positions.map((line) => {
+      return `${xmlTag("ram:IncludedSupplyChainTradeLineItem", 
+        //item data
+      )
+
+      }`;
+    }).join()}
      ${xmlTag("ram:ApplicableHeaderTradeAgreement", 
       `${xmlTag("ram:SellerTradeParty", 
-       `${xmlTag("ram:ID", )}
-        ${xmlTag("ram:Name", )}
-        ${xmlTag("ram:Description", )}
-        ${xmlTag("ram:SpecifiedLegalOrganization", )}
-        ${xmlTag("ram:DefinedTradeContact", )}
-        ${xmlTag("ram:PostalTradeAddress", )}
-        ${xmlTag("ram:URIUniversalCommunication", )}
-        ${xmlTag("ram:SpecifiedTaxRegistration", )}
-        ${xmlTag("ram:SpecifiedTaxRegistration", )}`
+       `${xmlTag("ram:ID", (options.data.supplyingParty.id.ustId ? formatUSTId(options.data.supplyingParty.id.ustId.country, options.data.supplyingParty.id.ustId.ust) : undefined) ||  options.data.supplyingParty.id.sellerIdentifier ||options.data.supplyingParty.id.registerNumber || '')}
+        ${xmlTag("ram:Name", options.data.supplyingParty.companyName)}
+        ${xmlTag("ram:Description", options.data.supplyingParty.legalInformation)}
+        ${xmlTag("ram:SpecifiedLegalOrganization", `
+          ${xmlTag("ram:ID", options.data.supplyingParty.id.registerNumber)}
+          ${xmlTag("ram:TradingBusinessName", options.data.supplyingParty.tradingName)}
+          `)}
+        ${generateContact(options.data.supplyingParty.contact)}
+        ${generatePostalAdress(options.data.supplyingParty.adress, "ram:PostalTradeAddress")}
+        ${generateElectronicAdress(options.data.supplyingParty.electronicAdress)}
+        ${xmlTag("ram:SpecifiedTaxRegistration", xmlTag("ram:ID", (options.data.supplyingParty.id.ustId ? formatUSTId(options.data.supplyingParty.id.ustId.country, options.data.supplyingParty.id.ustId.ust) : undefined),[{tagName: "schemeID", tagValue: "VA"}]))}
+        ${xmlTag("ram:SpecifiedTaxRegistration", xmlTag("ram:ID", options.data.supplyingParty.taxNumber, [{tagName: "schemeID", tagValue: "FC"}]))}`
       )|| ''}` + 
       `${xmlTag("ram:BuyerTradeParty", 
         `${xmlTag("ram:ID", )}
          ${xmlTag("ram:Name", )}`)|| ''}
          ${xmlTag("ram:SpecifiedLegalOrganization", )}
          ${xmlTag("ram:DefinedTradeContact", )}
-         ${xmlTag("ram:PostalTradeAddress", )}
-         ${xmlTag("ram:URIUniversalCommunication", )}
+         ${generatePostalAdress(options.data.receivingParty.adress, "ram:PostalTradeAddress")}
+         ${generateElectronicAdress(options.data.receivingParty.electronicAdress)}
          ${xmlTag("ram:SpecifiedTaxRegistration", )}` + 
       `${xmlTag("ram:SellerOrderReferencedDocument", xmlTag("ram:IssuerAssignedID", options.data.jobNumber)) || ''}` + 
       `${xmlTag("ram:BuyerOrderReferencedDocument", xmlTag("ram:IssuerAssignedID", options.data.orderNumber))|| ''}` + 
