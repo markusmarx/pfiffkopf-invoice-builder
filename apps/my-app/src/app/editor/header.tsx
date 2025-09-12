@@ -238,14 +238,13 @@ const Header: React.FC<HeaderProps> = ({
               tax: 19
             }], {
               id: {
-                ustId: {ust: "NUMM", country: UstIdCounty.Germany}
+                ustId: {ust: "0123456789", country: UstIdCounty.Germany}
               },
               adress: {
                 street: "Ehrlichstraße 16",
                 city: "Chemnitz",
                 country: CountryCode.DE,
-                zip: "09116",
-                region: "Sachsen"
+                zip: "09116"
               },
               companyName: "IT-Fabio",
               contact: {
@@ -261,8 +260,7 @@ const Header: React.FC<HeaderProps> = ({
                 street: "Straße Nummer",
                 city: "Stadt",
                 zip: "00000",
-                country: CountryCode.DE,
-                region: "Region"
+                country: CountryCode.DE
               }
 
             }, paymentDetails);
@@ -299,109 +297,3 @@ const Header: React.FC<HeaderProps> = ({
 };
 
 export default Header;
-
-/*
-<Group>
-            {maxPages !== 1 && (
-              <>
-                <Text size="sm" c="gray.6" fw={500}>
-                  Seite {currentPage} von {maxPages}
-                </Text>
-                <Flex gap="xs">
-                  <Button.Group>
-                    <Tooltip label="Erste Seite">
-                      <ActionIcon
-                        variant="light"
-                        onClick={() => setCurrentPage(1)}
-                        disabled={currentPage === 1}
-                      >
-                        <IconChevronsLeft size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Vorherige Seite">
-                      <ActionIcon
-                        variant="light"
-                        onClick={() =>
-                          setCurrentPage(Math.max(currentPage - 1, 1))
-                        }
-                        disabled={currentPage === 1}
-                      >
-                        <IconChevronLeft size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <NumberInput
-                      styles={{
-                        input: {
-                          textAlign: 'center',
-                          width: 60,
-                          borderRadius: 'var(--mantine-radius-sm)',
-                        },
-                      }}
-                      variant="filled"
-                      size="sm"
-                      clampBehavior="strict"
-                      min={1}
-                      max={maxPages}
-                      decimalScale={0}
-                      hideControls
-                      value={currentPage}
-                      onValueChange={(v) =>
-                        setCurrentPage(v.floatValue ? v.floatValue : 1)
-                      }
-                    />
-                    <Tooltip label="Nächste Seite">
-                      <ActionIcon
-                        variant="light"
-                        onClick={() =>
-                          setCurrentPage(Math.min(currentPage + 1, maxPages))
-                        }
-                        disabled={currentPage === maxPages}
-                      >
-                        <IconChevronRight size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Letzte Seite">
-                      <ActionIcon
-                        variant="light"
-                        onClick={() => setCurrentPage(maxPages)}
-                        disabled={currentPage === maxPages}
-                      >
-                        <IconChevronsRight size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Button.Group>
-                </Flex>
-                <Divider orientation="vertical" />
-              </>
-            )}
-
-            <Button
-              leftSection={<IconFileTypePdf size={18} />}
-              onClick={() =>
-                renderToPDF({
-                  template: properties.template,
-                  wrapper: (template) => {
-                    return <MantineProvider>{template}</MantineProvider>;
-                  },
-                  pdfCreationOptions: {
-                    subset: PDFKitPDFSubset.pdfA_oneA,
-                    pdfVersion: PDFKitPDFVersion.oneDFour,
-                    tagged: true,
-                  },
-                  onFinishPDFCreation: (chunks) => {
-                    const blob = new Blob(chunks as BlobPart[], {
-                      type: 'application/pdf',
-                    });
-                    saveAs(blob, 'generierte Rechnung.pdf');
-                  },
-                })
-              }
-              variant="gradient"
-              gradient={{ from: 'primary', to: 'accent', deg: 45 }}
-              size="sm"
-              radius="md"
-            >
-              PDF Export
-            </Button>
-          </Group>
-*/

@@ -9,6 +9,7 @@ export function RecipentCategory(properties: {
 }) {
   const isMobile = properties.properties.isMobile;
   const self = properties.self;
+  
   const template = properties.properties.template;
   const spacing = isMobile ? 'sm' : 'lg';
   return (

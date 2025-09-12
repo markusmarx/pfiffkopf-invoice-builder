@@ -144,6 +144,7 @@ export function MovableTable(properties: MovableTableParams) {
         return row.elements[i];
       }
     }
+    return undefined;
   }
   function Content() {
     return (

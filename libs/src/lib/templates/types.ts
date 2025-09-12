@@ -417,6 +417,7 @@ export interface RenderableBlockParams {
     template?: Template,
     tab?: TemplateTab,
   ) => void;
+  stretchToFullWidth?: boolean;
 }
 export class BackgroundPDF {
   doc: null | File;

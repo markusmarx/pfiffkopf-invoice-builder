@@ -24,55 +24,96 @@ export function Page(properties: PageProperties) {
         (element) => {
           const movableBox = element.props as RenderableBlockParams;
           if (movableBox) {
-            const positionY = movableBox.y;
-            let elementHeight = movableBox.heigth || 0;
-
-            const elementReference = document.getElementById(movableBox.id);
-            if (elementReference) {
-              const computedStyle = getComputedStyle(elementReference);
-              elementHeight = Number(
-                computedStyle.height.slice(0, computedStyle.height.length - 2),
-              );
-            }
-            if (positionY) {
-              const currentPage = Math.ceil(positionY / (height * cmToPixels));
-              const threshold =
-                (currentPage * height -
-                  (properties.borderTop || 0) -
-                  (properties.borderBottom || 0)) *
-                cmToPixels;
-              if (
-                positionY > threshold ||
-                (positionY + elementHeight > threshold &&
-                  !movableBox.autoBreakOverMultiplePages)
-              ) {
-                if (movableBox.onSubmitPositionChange) {
-                  const newPos =
-                    !properties.alwaysBreakToNewPage &&
-                    (currentPage * height - (properties.borderTop || 0)) *
-                      cmToPixels >
-                      positionY + elementHeight
-                      ? (currentPage * height -
-                          (properties.borderTop || 0) -
-                          (properties.borderBottom || 0)) *
-                          cmToPixels -
-                        elementHeight -
-                        1 //break up
-                      : currentPage * height * cmToPixels; //break down
-                  movableBox.onSubmitPositionChange(
-                    movableBox.x || 0,
-                    Math.ceil(newPos),
-                    movableBox.template,
-                    movableBox.templateTab,
-                  );
-                }
-              } else if (
-                movableBox.autoBreakOverMultiplePages &&
-                positionY + elementHeight > threshold
-              ) {
-                console.log('Break over multiple pages');
-                //const remainingHeight = elementHeight -  (threshold - positionY);
+            const currentRect = {
+              x: movableBox.x,
+              y: movableBox.y,
+              height: movableBox.heigth || 100,
+              width: movableBox.width || 100,
+            };
+            let hasChangePos = false;
+            let hasChangeWidth = false;
+            const usableWidth =
+              (width -
+                (properties.borderRight || 0) -
+                (properties.borderLeft || 0)) *
+              cmToPixels;
+            if (movableBox.stretchToFullWidth) {
+              if(currentRect.x !== usableWidth){
+                currentRect.width = usableWidth;
+                currentRect.x = 0;
+                hasChangeWidth = true;
               }
+            } else {
+              if (currentRect.x) {
+                if (usableWidth < currentRect.width + currentRect.x) {
+                  const dif = usableWidth - currentRect.width - currentRect.x;
+                  currentRect.x += dif;
+                  hasChangePos = true;
+                }
+              }
+            }
+
+            if (currentRect.y) {
+              if (!properties.autoExpand) {
+                const usableHeigth =
+                  (height -
+                    (properties.borderTop || 0) -
+                    (properties.borderBottom || 0)) *
+                  cmToPixels;
+                if (usableHeigth < currentRect.height + currentRect.y) {
+                  const dif = usableHeigth - currentRect.height - currentRect.y;
+                  currentRect.y += dif;
+                  hasChangePos = true;
+                }
+              } else {
+                const currentPage = Math.ceil(
+                  currentRect.y / (height * cmToPixels),
+                );
+                const threshold =
+                  (currentPage * height -
+                    (properties.borderTop || 0) -
+                    (properties.borderBottom || 0)) *
+                  cmToPixels;
+                if (
+                  currentRect.y > threshold ||
+                  (currentRect.y + currentRect.height > threshold &&
+                    !movableBox.autoBreakOverMultiplePages)
+                ) {
+                  if (movableBox.onSubmitPositionChange) {
+                    const newYPos =
+                      !properties.alwaysBreakToNewPage &&
+                      (currentPage * height - (properties.borderTop || 0)) *
+                        cmToPixels >
+                        currentRect.y + currentRect.height
+                        ? (currentPage * height -
+                            (properties.borderTop || 0) -
+                            (properties.borderBottom || 0)) *
+                            cmToPixels -
+                          currentRect.height -
+                          1 //break up
+                        : currentPage * height * cmToPixels; //break down
+                    currentRect.y = Math.ceil(newYPos);
+                    hasChangePos = true;
+                  }
+                } else if (
+                  movableBox.autoBreakOverMultiplePages &&
+                  currentRect.y + currentRect.height > threshold
+                ) {
+                  console.log('Break over multiple pages');
+                  //const remainingHeight = elementHeight -  (threshold - positionY);
+                }
+              }
+            }
+            if(hasChangeWidth && movableBox.onSubmitSizeChange){
+              movableBox.onSubmitSizeChange(currentRect.height, currentRect.width, movableBox.template, movableBox.templateTab);
+            }
+            if (hasChangePos && movableBox.onSubmitPositionChange) {
+              movableBox.onSubmitPositionChange(
+                currentRect.x || 0,
+                currentRect.y || 0,
+                movableBox.template,
+                movableBox.templateTab,
+              );
             }
           }
         },

@@ -284,7 +284,6 @@ export async function renderToPDF(options: {
           const pageCount = page.childNodes.length || 0;
           const pageContainer = (page as HTMLElement)
             .children[0] as HTMLElement;
-          expectedPages += pageCount;
           for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             const pdfPage = new PDFDocument({
               ...options.pdfCreationOptions,
@@ -311,7 +310,9 @@ export async function renderToPDF(options: {
               //we can't do this directly after generating the page (and use async code),
               // because the data is not directly written after the end call
               PDFLibDocument.load(arrayData).then((load) => {
-                for(let index = 0; index < load.getPageCount(); index++){
+                const count = load.getPageCount();
+                expectedPages += count;
+                for(let index = 0; index < count; index++){
                   documentPDF.embedPage(load.getPage(index)).then((embed) => {
                   const page = documentPDF.addPage([
                     pageDescriptor.width,
@@ -329,10 +330,11 @@ export async function renderToPDF(options: {
                   page.drawPage(embed);
                   addedPages++;
                   if (addedPages === expectedPages) {
-                    fireEndPDFCallback(documentPDF, options.onFinishPDFCreation);
+                      fireEndPDFCallback(documentPDF, options.onFinishPDFCreation);
                   }
                 });
                 }
+
                 
               });
             });

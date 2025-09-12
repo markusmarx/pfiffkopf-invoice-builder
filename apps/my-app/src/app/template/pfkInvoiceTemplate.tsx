@@ -18,7 +18,7 @@ import {
   UnitCode,
   countryCodeToHumanReadableString,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
-import { JSX } from 'react';
+import { JSX, useRef } from 'react';
 import { DocumentCategory } from './documentCategory';
 import { RecipentCategory } from './recipentCategory';
 import { InvoiceCategory } from './invoiceCategory';
@@ -267,9 +267,20 @@ export class PfkInvoiceTemplate extends Template {
           sumNoTax += sumPositionWithoutTax;
           return {
             elements: [
-              { label: (idx + 1).toFixed(0), accessor: 'pos', style: {textAlign: "center"} },
-              { label: line.detailDescription || '', accessor: 'description', style: {textAlign: "start"} },
-              { label: unitCodeToHumanReadableString(line.unit), accessor: 'unit' },
+              {
+                label: (idx + 1).toFixed(0),
+                accessor: 'pos',
+                style: { textAlign: 'center' },
+              },
+              {
+                label: line.detailDescription || '',
+                accessor: 'description',
+                style: { textAlign: 'start' },
+              },
+              {
+                label: unitCodeToHumanReadableString(line.unit),
+                accessor: 'unit',
+              },
               { label: line.amount.toFixed(), accessor: 'amount' },
               {
                 label: `${line.priceSingleUnit.toFixed(2).replace('.', ',')}€`,
@@ -290,48 +301,82 @@ export class PfkInvoiceTemplate extends Template {
       : [
           {
             elements: [
-              { label: '1', accessor: 'pos', style: {textAlign: "center"} },
-              { label: 'Termin Beschreibung', accessor: 'description', style: {textAlign: "start"} },
-              { label: unitCodeToHumanReadableString(UnitCode.hour), accessor: 'unit' },
+              { label: '1', accessor: 'pos', style: { textAlign: 'center' } },
+              {
+                label: 'Termin Beschreibung',
+                accessor: 'description',
+                style: { textAlign: 'start' },
+              },
+              {
+                label: unitCodeToHumanReadableString(UnitCode.hour),
+                accessor: 'unit',
+              },
               { label: '2', accessor: 'amount' },
               { label: '50,00€', accessor: 'single' },
               { label: '0,00%', accessor: 'tax' },
-              { label: '100,00€', accessor: 'sum'},
+              { label: '100,00€', accessor: 'sum' },
             ],
             accessorControlled: true,
           },
         ];
-    tableData.push({
-      elements: [
-        {
-          label: 'Zwischensumme (netto)',
-          colSpawn: (this.table?.table.visibleTableCells().length || 0) - 1,
-          style: {borderTop: "0px", borderBottom: "0px", textAlign: "start"}
-        },
-        { label: `${sumNoTax.toFixed(2).replace('.', ',')}€`, style: {borderTop: "0px", borderBottom: "0px",} },
-      ],
-      accessorControlled: false,
-    }, {
-      elements: [
-        {
-          label: 'Umsatzsteuersumme',
-          colSpawn: (this.table?.table.visibleTableCells().length || 0) - 1,
-          style: {borderTop: "0px", borderBottom: "0px", textAlign: "start"}
-        },
-        { label: `${taxSum.toFixed(2).replace('.', ',')}€`, style: {borderTop: "0px", borderBottom: "0px"} },
-      ],
-      accessorControlled: false
-    },{
-      elements: [
-        {
-          label: 'Gesamtbetrag',
-          colSpawn: (this.table?.table.visibleTableCells().length || 0) - 1,
-          style: {borderTop: "0px", textAlign: "start", fontWeight: "bold", verticalAlign: "bottom"}
-        },
-        { label: `${(sumNoTax + taxSum).toFixed(2).replace('.', ',')}€`, style: {borderTop: "0px", fontWeight: "bold", height: "30px", verticalAlign: "bottom"} },
-      ],
-      accessorControlled: false
-    });
+    tableData.push(
+      {
+        elements: [
+          {
+            label: 'Zwischensumme (netto)',
+            colSpawn: (this.table?.table.visibleTableCells().length || 0) - 1,
+            style: { borderBottom: '0px', textAlign: 'start' },
+          },
+          {
+            label: `${sumNoTax.toFixed(2).replace('.', ',')}€`,
+            style: { borderBottom: '0px' },
+          },
+        ],
+        accessorControlled: false,
+      },
+      {
+        elements: [
+          {
+            label: 'Umsatzsteuersumme',
+            colSpawn: (this.table?.table.visibleTableCells().length || 0) - 1,
+            style: {
+              borderTop: '0px',
+              borderBottom: '0px',
+              textAlign: 'start',
+            },
+          },
+          {
+            label: `${taxSum.toFixed(2).replace('.', ',')}€`,
+            style: { borderTop: '0px', borderBottom: '0px' },
+          },
+        ],
+        accessorControlled: false,
+      },
+      {
+        elements: [
+          {
+            label: 'Gesamtbetrag',
+            colSpawn: (this.table?.table.visibleTableCells().length || 0) - 1,
+            style: {
+              borderTop: '0px',
+              textAlign: 'start',
+              fontWeight: 'bold',
+              verticalAlign: 'bottom',
+            },
+          },
+          {
+            label: `${(sumNoTax + taxSum).toFixed(2).replace('.', ',')}€`,
+            style: {
+              borderTop: '0px',
+              fontWeight: 'bold',
+              height: '30px',
+              verticalAlign: 'bottom',
+            },
+          },
+        ],
+        accessorControlled: false,
+      },
+    );
     function formatDate(date: Date | undefined) {
       return date
         ? `${date.getDay() + 1}.${date.getMonth() + 1}.${date.getFullYear()}`
@@ -383,12 +428,17 @@ export class PfkInvoiceTemplate extends Template {
             {invoiceData?.receivingParty.adress.zip || '01234'}{' '}
             {invoiceData?.receivingParty.adress.city || 'Musterhausen'}
           </Text>
-          {invoiceData?.receivingParty.adress.country && invoiceData.receivingParty.adress.country !== invoiceData.supplyingParty.adress.country &&
-            <Text style={{ fontSize: fontSize }}>
-              {countryCodeToHumanReadableString(invoiceData.receivingParty.adress.country)}
-            </Text>
-          }
+          {invoiceData?.receivingParty.adress.country &&
+            invoiceData.receivingParty.adress.country !==
+              invoiceData.supplyingParty.adress.country && (
+              <Text style={{ fontSize: fontSize }}>
+                {countryCodeToHumanReadableString(
+                  invoiceData.receivingParty.adress.country,
+                )}
+              </Text>
+            )}
         </MovableBox>
+
         <MovableBox
           className="adress"
           enabled={prop.currentTab === 'invoice'}
@@ -434,7 +484,7 @@ export class PfkInvoiceTemplate extends Template {
             </Group>
           </Stack>
         </MovableBox>
-        <MovableBox id={'unmovable'} x={0} y={380} width={700} heigth={100}>
+        <div style={{ top: `3cm`, position: "relative" }}>
           <Text style={{ fontSize: fontSize }} fw={700}>
             Hallo{' '}
             {invoiceData?.receivingParty.companyName || 'Maxim Mustermann'},
@@ -442,33 +492,46 @@ export class PfkInvoiceTemplate extends Template {
           <Text style={{ fontSize: fontSize }}>
             ich erlaube mir eine Rechnung für folgende Leistungen zu stellen.
           </Text>
-          <br/>
-          <br/>
+          <br />
+          <br />
           <MovableTable
-          className="table"
-          enabled={prop.currentTab === 'table'}
-          template={this}
-          templateTab={this.table}
-          //x={this.table?.pos.x}
-          //y={this.table?.pos.y}
-          width={this.table?.size.x}
-          heigth={this.table?.size.y}
-          id="table"
-          enableResizing={false}
-          cellStyle={{ borderTop: '1px solid', borderBottom: '1px solid', borderLeft: '1px solid', borderRight: '1px solid', fontSize: fontSize, textAlign: "end" }}
-          headerStyle={{ borderTop: '1px solid', borderBottom: '1px solid', borderLeft: '1px solid', borderRight: '1px solid', fontSize: fontSize }}
-          disableMovement={true}
-          {...(this.table?.table.dynamicTable() || { header: [] })}
-          rows={tableData}
-          insertIntoDocumentFlow={true}
-        />
-          <br/>
-          <br/>
-          <br/>
+            className="table"
+            enabled={prop.currentTab === 'table'}
+            template={this}
+            templateTab={this.table}
+            //x={this.table?.pos.x}
+            //y={this.table?.pos.y}
+            width={this.table?.size.x}
+            heigth={this.table?.size.y}
+            id="table"
+            enableResizing={false}
+            cellStyle={{
+              borderTop: '1px solid',
+              borderBottom: '1px solid',
+              borderLeft: '1px solid',
+              borderRight: '1px solid',
+              fontSize: fontSize,
+              textAlign: 'end',
+            }}
+            headerStyle={{
+              borderTop: '1px solid',
+              borderBottom: '1px solid',
+              borderLeft: '1px solid',
+              borderRight: '1px solid',
+              fontSize: fontSize,
+            }}
+            disableMovement={true}
+            {...(this.table?.table.dynamicTable() || { header: [] })}
+            rows={tableData}
+            insertIntoDocumentFlow={true}
+          />
+          <br />
+          <br />
+          <br />
           <Text style={{ fontSize: fontSize }}>
             Vielen Dank für die gute Zusammenarbeit!
           </Text>
-        </MovableBox>
+        </div>
       </Page>,
     );
   }
