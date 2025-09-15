@@ -1,5 +1,5 @@
 import { JSX, ReactElement, ReactNode } from 'react';
-import { pxfromUnit, pxToUnit, RoundToTwo, Unit, unityToGermanLanguageString } from '../utils/util';
+import { pxfromUnit, pxToUnit, RoundToTwo, Unit, unitToGermanLanguageString } from '../utils/util';
 
 export interface DataSet {
   author?: string;
@@ -180,7 +180,7 @@ export class DragVector implements Vector {
   public getInputPropsX(template?: Template, unit?: Unit) {
     return {
       defaultValue: RoundToTwo(pxToUnit(this.x, unit|| Unit.px)),
-      suffix: " " +  unityToGermanLanguageString(unit || Unit.px),
+      suffix: " " +  unitToGermanLanguageString(unit || Unit.px),
       onChange: (v: string | number) => {
         this.x = pxfromUnit(v as number, unit || Unit.px);
         template?.redrawView();
@@ -191,7 +191,7 @@ export class DragVector implements Vector {
   public getInputPropsY(template?: Template, unit?: Unit) {
     return {
       defaultValue: RoundToTwo(pxToUnit(this.y, unit|| Unit.px)),
-      suffix: " " + unityToGermanLanguageString(unit || Unit.px),
+      suffix: " " + unitToGermanLanguageString(unit || Unit.px),
       onChange: (v: string | number) => {
         this.y =  pxfromUnit(v as number, unit || Unit.px);
         template?.redrawView();

@@ -7,6 +7,9 @@ import {
   TextInput,
   Text,
   Stack,
+  Grid,
+  Center,
+  Flex,
 } from '@mantine/core';
 import {
   pxfromUnit,
@@ -16,7 +19,7 @@ import {
   TableEntry,
   Template,
   Unit,
-  unityToGermanLanguageString,
+  unitToGermanLanguageString as unitToGermanLanguageString,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { IconGripVertical, IconTable } from '@tabler/icons-react';
@@ -39,8 +42,73 @@ export function TableDataInput(props: TableDataInputProps) {
   const paperPadding = props.isMobile ? 'md' : 'lg';
   function TableRowContent(propserties: { item: TableEntry; index: number }) {
     return (
-      <>
-        <Table.Td>
+      <Table.Td>
+        <Stack>
+          <Grid>
+            <Grid.Col span={11}>
+              {props.labelEditing && (
+                <TextInput
+                  defaultValue={propserties.item.label}
+                  onChange={(event) => {
+                    propserties.item.label = event.target.value;
+                    props.template.redrawView();
+                  }}
+                />
+              )}
+              {!props.labelEditing && <Text>{propserties.item.label}</Text>}
+            </Grid.Col>
+            <Grid.Col span={1}>
+              <Checkbox
+                styles={{
+                  root: {
+                    minHeight: '100%',
+                    display: 'grid',
+                    placeItems: 'center',
+                  },
+                }}
+                defaultChecked={propserties.item.enabled}
+                disabled={!props.enableEditing}
+                onChange={(event) => {
+                  propserties.item.enabled = event.currentTarget.checked;
+                  props.template.redrawView();
+                }}
+              />
+            </Grid.Col>
+          </Grid>
+
+          {props.widthEditing && (
+            <Grid>
+              <Grid.Col span={4}>
+                <div
+                  style={{
+                    minHeight: '100%',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <Text>Größe:</Text>
+                </div>
+              </Grid.Col>
+              <Grid.Col span={8}>
+                <NumberInput
+                  defaultValue={RoundToTwo(
+                    pxToUnit(propserties.item.width || 0, unit),
+                  )}
+                  onChange={(event) => {
+                    propserties.item.width = pxfromUnit(Number(event), unit);
+                    props.template.redrawView();
+                  }}
+                  suffix={' ' + unitToGermanLanguageString(unit)}
+                />
+              </Grid.Col>
+            </Grid>
+          )}
+        </Stack>
+      </Table.Td>
+    );
+  }
+  /*
+<Table.Td>
           {props.labelEditing && (
             <TextInput
               defaultValue={propserties.item.label}
@@ -75,9 +143,7 @@ export function TableDataInput(props: TableDataInputProps) {
           )}
           {!props.widthEditing && propserties.item.width}
         </Table.Td>
-      </>
-    );
-  }
+  */
 
   const items = props.tableData.tableEntries.map((item, index) => (
     <Draggable key={item.accessor} index={index} draggableId={item.accessor}>
@@ -112,10 +178,8 @@ export function TableDataInput(props: TableDataInputProps) {
           <Table>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th w={10}></Table.Th>
-                <Table.Th w={80}>Name</Table.Th>
-                <Table.Th w={10}>Aktiviert</Table.Th>
-                <Table.Th w={80}>Breite</Table.Th>
+                <Table.Th />
+                <Table.Th />
               </Table.Tr>
             </Table.Thead>
             <Droppable droppableId="dnd-list" direction="vertical">
@@ -137,10 +201,8 @@ export function TableDataInput(props: TableDataInputProps) {
         <Table>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th w={10}></Table.Th>
-              <Table.Th w={80}>Name</Table.Th>
-              <Table.Th w={10}>Aktiviert</Table.Th>
-              <Table.Th w={80}>Breite</Table.Th>
+              <Table.Th />
+              <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>

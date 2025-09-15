@@ -176,7 +176,7 @@ export function pxfromUnit(value: number, unitFrom: Unit) : number{
       return value;
   }
 }
-export function unityToGermanLanguageString(unit: Unit){
+export function unitToGermanLanguageString(unit: Unit){
   switch(unit){
     case Unit.cm:
       return "cm";
