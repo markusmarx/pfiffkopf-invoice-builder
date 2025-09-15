@@ -107,44 +107,6 @@ export function TableDataInput(props: TableDataInputProps) {
       </Table.Td>
     );
   }
-  /*
-<Table.Td>
-          {props.labelEditing && (
-            <TextInput
-              defaultValue={propserties.item.label}
-              onChange={(event) => {
-                propserties.item.label = event.target.value;
-                props.template.redrawView();
-              }}
-            />
-          )}
-          {!props.labelEditing && propserties.item.label}
-        </Table.Td>
-        <Table.Td>
-          <Checkbox
-            defaultChecked={propserties.item.enabled}
-            disabled={!props.enableEditing}
-            onChange={(event) => {
-              propserties.item.enabled = event.currentTarget.checked;
-              props.template.redrawView();
-            }}
-          />
-        </Table.Td>
-        <Table.Td>
-          {props.widthEditing && (
-            <NumberInput
-              defaultValue={RoundToTwo(pxToUnit(propserties.item.width || 0, unit))}
-              onChange={(event) => {
-                propserties.item.width = pxfromUnit(Number(event), unit);9
-                props.template.redrawView();
-              }}
-              suffix={" " + unityToGermanLanguageString(unit)}
-            />
-          )}
-          {!props.widthEditing && propserties.item.width}
-        </Table.Td>
-  */
-
   const items = props.tableData.tableEntries.map((item, index) => (
     <Draggable key={item.accessor} index={index} draggableId={item.accessor}>
       {(provided) => (
@@ -179,7 +141,6 @@ export function TableDataInput(props: TableDataInputProps) {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th />
-                <Table.Th />
               </Table.Tr>
             </Table.Thead>
             <Droppable droppableId="dnd-list" direction="vertical">
@@ -202,21 +163,13 @@ export function TableDataInput(props: TableDataInputProps) {
           <Table.Thead>
             <Table.Tr>
               <Table.Th />
-              <Table.Th />
+                <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {props.tableData.tableEntries.map((value, index) => {
               return (
                 <Table.Tr>
-                  <Table.Td w={10}>
-                    <div
-                      className={classes.dragHandle}
-                      style={{ color: 'rgba(1,1,1,0)' }}
-                    >
-                      <IconGripVertical size={18} stroke={1.5} />
-                    </div>
-                  </Table.Td>
                   <TableRowContent index={index} item={value} />
                 </Table.Tr>
               );
