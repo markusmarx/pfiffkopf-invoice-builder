@@ -547,7 +547,7 @@ export class PfkInvoiceTemplate extends Template {
               {...this.logo.positionLogo.dragPos()}
               {...this.logo.sizeLogo.dragSize()}
             >
-              <img alt="logo" src={this.logo.logo} width="100%" height="100%" />
+              <img alt="logo" src={this.logo.logo} width="100%" height="100%" style={{pointerEvents: "none"}} />
             </MovableBox>
           )}
         </>

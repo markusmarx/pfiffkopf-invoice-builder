@@ -102,7 +102,6 @@ async function renderHTMLNodeRecursive(
       );
     }else if(element instanceof HTMLImageElement){
       const image = element as HTMLImageElement;
-      console.log(base64);
       command = new StartDrawImageCommand(position.x,
         position.y - pageIndex,
         position.width,

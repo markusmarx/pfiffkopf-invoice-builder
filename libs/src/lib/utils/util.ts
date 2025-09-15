@@ -192,7 +192,6 @@ export function RoundToTwo(value: number){
   return Number(value.toFixed(2));
 }
 export async function resolveImageAsBase64(src:string) : Promise<string> {
-  console.log(src);
   if(src.startsWith("data:image/")){
     return src;
   }else{
@@ -213,7 +212,6 @@ export async function resolveImageAsBase64(src:string) : Promise<string> {
       const context = canvas.getContext('2d');
       if(context){
         context.drawImage(image, 0, 0);
-        console.log(canvas.toDataURL());
         return canvas.toDataURL();
       }
     } 
