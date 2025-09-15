@@ -19,7 +19,7 @@ import {
   TableEntry,
   Template,
   Unit,
-  unitToGermanLanguageString as unitToGermanLanguageString,
+  unitToGermanLanguageString
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { IconGripVertical, IconTable } from '@tabler/icons-react';
@@ -94,6 +94,8 @@ export function TableDataInput(props: TableDataInputProps) {
                   defaultValue={RoundToTwo(
                     pxToUnit(propserties.item.width || 0, unit),
                   )}
+                  min={11.34}
+                  max={100}
                   onChange={(event) => {
                     propserties.item.width = pxfromUnit(Number(event), unit);
                     props.template.redrawView();

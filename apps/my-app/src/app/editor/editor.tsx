@@ -69,7 +69,9 @@ export function Editor(properties: EditorPropertys) {
           template={properties.template}
           pageIndex={currentPage}
           onTabChanges={(n) => {
-            if (currentPropertiesTab !== n) setCurrentPropertiesTab(n);
+            if (currentPropertiesTab !== n) {
+              setCurrentPropertiesTab(n);
+            }
           }}
         />
       </AppShell.Navbar>

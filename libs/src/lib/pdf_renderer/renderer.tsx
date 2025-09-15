@@ -7,7 +7,7 @@ import {
 } from '../templates/types';
 import { PDFDocument, PDFKitDocumentConstructorOptions } from '../pdf';
 import { ReactNode } from 'react';
-import { calculatePageHeight, cssCMToPostScriptPoint } from '../utils/util';
+import { calculatePageHeight, cssCMToPostScriptPoint, resolveImageAsBase64 } from '../utils/util';
 import { parsePositionFromHTML } from './htmlPositionParser';
 import { JSX } from 'react/jsx-runtime';
 import React from 'react';
@@ -17,6 +17,7 @@ import {
   DrawRowCommand,
   GroupCommand,
   SplitCommand,
+  StartDrawImageCommand,
   StartDrawTableCommand,
   StartDrawTextCommand,
 } from './pdfCommands';
@@ -99,6 +100,13 @@ async function renderHTMLNodeRecursive(
         pdf,
         storage,
       );
+    }else if(element instanceof HTMLImageElement){
+      const image = element as HTMLImageElement;
+      console.log(base64);
+      command = new StartDrawImageCommand(position.x,
+        position.y - pageIndex,
+        position.width,
+        position.height, await resolveImageAsBase64(image.src));
     }
     //iterate over all childs recursive
     let elementCounter = 0;

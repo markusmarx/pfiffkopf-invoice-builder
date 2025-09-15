@@ -135,3 +135,18 @@ export class DrawCellCommand extends DrawCommand {
     this.cellStyle = {};
   }
 }
+export class StartDrawImageCommand extends GroupCommand{
+  image: string;
+  override draw(pdf: PDFDocument, commands: Array<DrawCommand>): void {
+    pdf.image({image: this.image, x: this.x, y: this.y, options: {
+      width: this.width,
+      height: this.heigth
+    }});
+  }
+  constructor(x: number, y: number, width: number, heigth: number, src: string){
+    super(x,y,width, heigth);
+    this.image = src;
+
+  }
+  
+}

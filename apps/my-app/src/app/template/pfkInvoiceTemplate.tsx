@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-useless-fragment */
 import { Group, Stack, Text, Title } from '@mantine/core';
 import {
   Template,
@@ -42,6 +43,9 @@ import {
 
 export class LogoSection extends TemplateTab {
   letterpaper: BackgroundPDF;
+  positionLogo: DragVector;
+  sizeLogo: DragVector;
+  logo?: string; //base64image
   public get id(): string {
     return 'logo';
   }
@@ -60,6 +64,8 @@ export class LogoSection extends TemplateTab {
   public constructor() {
     super();
     this.letterpaper = new BackgroundPDF();
+    this.positionLogo = new DragVector(0, 0);
+    this.sizeLogo = new DragVector(100, 100);
     this.drawUI = (properties) => (
       <LogoCategory self={this} properties={properties} />
     );
@@ -484,7 +490,7 @@ export class PfkInvoiceTemplate extends Template {
             </Group>
           </Stack>
         </MovableBox>
-        <div style={{ top: `3cm`, position: "relative" }}>
+        <div style={{ top: `3cm`, position: 'relative' }}>
           <Text style={{ fontSize: fontSize }} fw={700}>
             Hallo{' '}
             {invoiceData?.receivingParty.companyName || 'Maxim Mustermann'},
@@ -499,8 +505,6 @@ export class PfkInvoiceTemplate extends Template {
             enabled={prop.currentTab === 'table'}
             template={this}
             templateTab={this.table}
-            //x={this.table?.pos.x}
-            //y={this.table?.pos.y}
             width={this.table?.size.x}
             heigth={this.table?.size.y}
             id="table"
@@ -532,6 +536,21 @@ export class PfkInvoiceTemplate extends Template {
             Vielen Dank für die gute Zusammenarbeit!
           </Text>
         </div>
+        <>
+          {this.logo?.logo && (
+            <MovableBox
+              template={this}
+              enableResizing={true}
+              templateTab={this.logo}
+              enabled={prop.currentTab === 'logo'}
+              id="logo"
+              {...this.logo.positionLogo.dragPos()}
+              {...this.logo.sizeLogo.dragSize()}
+            >
+              <img alt="logo" src={this.logo.logo} width="100%" height="100%" />
+            </MovableBox>
+          )}
+        </>
       </Page>,
     );
   }

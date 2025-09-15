@@ -191,3 +191,33 @@ export function unitToGermanLanguageString(unit: Unit){
 export function RoundToTwo(value: number){
   return Number(value.toFixed(2));
 }
+export async function resolveImageAsBase64(src:string) : Promise<string> {
+  console.log(src);
+  if(src.startsWith("data:image/")){
+    return src;
+  }else{
+    if(FileReader){
+      const blob = await fetch(src).then((r => r.blob()));
+      return await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    }else{
+      const image = new Image();
+      image.src = src;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d');
+      if(context){
+        context.drawImage(image, 0, 0);
+        console.log(canvas.toDataURL());
+        return canvas.toDataURL();
+      }
+    } 
+  }
+  return "";
+  
+}

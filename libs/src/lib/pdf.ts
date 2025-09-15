@@ -76,8 +76,8 @@ export interface PFFKitTextProps {
 }
 export interface PDFKitCellOptions {
   text?: string;
-  colSpan?: number,
-  rowSpan?: number,
+  colSpan?: number;
+  rowSpan?: number;
   padding?: PDFKitSide | sn;
   border?: PDFKitSide | sn; //pt
   borderColor?: string;
@@ -99,6 +99,15 @@ export interface PDFKitTableOptions {
   columnStyles?: number | number[] | ((collumn: number) => any);
   rowStyles?: number | number[] | ((row: number) => any);
   data: (PDFKitCellOptions | string)[][];
+}
+export interface PDFKitDrawImageOptions {
+  width?: number;
+  height?: number;
+  scale?: number;
+  fit?: number[];
+  align?: 'center' | 'start' | 'end';
+  vallign?: 'center' | 'start' | 'end';
+  cover?: number[];
 }
 export interface PDFKitSetFontProps {
   fontName: string;
@@ -191,6 +200,15 @@ export class PDFDocument {
   //tables
   public table(options?: PDFKitTableOptions) {
     this.doc.table(options);
+    return this;
+  }
+  public image(options: {
+    image: string | Buffer;
+    x?: number;
+    y?: number;
+    options?: PDFKitDrawImageOptions;
+  }) {
+    this.doc.image(options.image, options.x, options.y, options.options);
     return this;
   }
 }
