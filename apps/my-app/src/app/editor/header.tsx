@@ -265,7 +265,7 @@ const Header: React.FC<HeaderProps> = ({
 
             }, paymentDetails);
             data.remark = "Ein Remark";
-            renderToPDF({
+            generateEInvoice({
               template: template,
               wrapper: (template) => {
                 return <MantineProvider>{template}</MantineProvider>;
