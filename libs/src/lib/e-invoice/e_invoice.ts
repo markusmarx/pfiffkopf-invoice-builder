@@ -1,12 +1,19 @@
-import { createXML, renderXML } from "./xml";
+import { createXML, renderXML } from './xml';
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 function formatDate(date?: Date): string | undefined {
-  return date
-    ? `${date.getFullYear()}${date.getMonth() + 1}${date.getDay() + 1}`
-    : undefined;
+  if (!date) {
+    return undefined;
+  }
+  const month = date.getMonth() + 1;
+  const day = date.getDay() + 1;
+  return `${date.getFullYear()}${month < 10 ? `0${month}` : month}${day < 10 ? `0${day}` : day}`;
 }
-function formatUSTId(county: UstIdCounty, id: string) {
+function formatUSTId(county: UstIdCounty| undefined, id: string | undefined) {
+  if(county === undefined || id === undefined)
+  {
+    return undefined;
+  }
   return `${county}${id}`;
 }
 function xmlTag(
@@ -164,13 +171,20 @@ export function unitCodeToHumanReadableString(code: UnitCode): string {
 type UstAmount = 0 | 7 | 10 | 13 | 17 | 20 | 19;
 export interface InvoiceLine {
   productNumber?: string;
+  buyerProductNumber?: string;
   name: string;
   amount: number;
+  baseAmount: number;
   priceSingleUnit: number;
   detailDescription?: string;
   unit: UnitCode;
-  taxType?: TaxType;
-  tax: UstAmount;
+  position?: string;
+  startDate?: Date;
+  endDate?: Date;
+  objectReferences?: string[];
+  //netto = amount/baseamount * priceSingleUnit
+  //tax = (tax / 100) * netto
+  //brutto = netto+tax
 }
 export interface Delivery {
   receiverName: string;
@@ -261,7 +275,7 @@ export interface EInvoice {
   projectNumber?: string;
   contractNumber?: string;
   orderNumber?: string;
-  jobNumber?: string;
+  jobNumber?: string; //Auftragsnummer
   goodsReceiptNotification?: { id: string; date: Date };
   shippingNotice?: { id: string; date: Date };
   tender?: string | string[]; //Auch Los
@@ -274,32 +288,39 @@ export interface EInvoice {
   paymentDetails: PaymentMeans;
   deliveryDetails?: Delivery;
   positions: InvoiceLine[];
+  tax: {
+    taxType: TaxType,
+    tax: UstAmount
+  }
 }
-function generateContact(contact: Contact) {
-  return `${xmlTag(
-    'ram:DefinedTradeContact',
-    `${xmlTag('ram:PersonName', contact.name)}
-    ${xmlTag('ram:TelephoneUniversalCommunication', xmlTag('ram:CompleteNumber', contact.telephone))}
-    ${xmlTag('ram:EmailURIUniversalCommunication', xmlTag('ram:URIID', contact.mail))}`,
-  )}`;
+function generateContact(contact: Contact | undefined) {
+  if (!contact) {
+    return undefined;
+  }
+  return createXML('ram:DefinedTradeContact', [
+    createXML('ram:PersonName', contact.name),
+    createXML('ram:TelephoneUniversalCommunication', [
+      createXML('ram:CompleteNumber', contact.telephone),
+    ]),
+    createXML('ram:EmailURIUniversalCommunication', [
+      createXML('ram:URIID', contact.mail),
+    ]),
+  ]);
 }
 function generatePostalAdress(adress: PostalAdress) {
-  return xmlTag(
-    'ram:PostalTradeAddress',
-    `${xmlTag('ram:PostcodeCode', adress.zip)}
-    ${xmlTag('ram:LineOne', adress.street)}
-    ${xmlTag('ram:LineTwo', adress.street2) || ''}
-    ${xmlTag('ram:CityName', adress.city)}
-    ${xmlTag('ram:', adress.region) || ''}
-    ${xmlTag('ram:CountryID', adress.country)}
-    `,
-  );
+  return createXML('ram:PostalTradeAddress', [
+    createXML('ram:PostcodeCode', adress.zip),
+    createXML('ram:LineOne', adress.street),
+    createXML('ram:LineTwo', adress.street2),
+    createXML('ram:CityName', adress.city),
+    createXML('ram:', adress.region),
+    createXML('ram:CountryID', adress.country),
+  ]);
 }
 function generateElectronicAdress(id: ElectronicAdress) {
-  return xmlTag(
-    'ram:URIUniversalCommunication',
-    xmlTag('ram:URIID', id.adress, [{ tagName: 'schemeID', tagValue: id.id }]),
-  );
+  return createXML('ram:URIUniversalCommunication', [
+    createXML('ram:URIID', id.adress, [['schemeID', id.id]]),
+  ]);
 }
 
 /* XML*/
@@ -316,141 +337,263 @@ export function generateEInvoiceXML(options: {
   options.data.positions.forEach((line) => {
     const lineSum = line.priceSingleUnit * line.amount;
     sumWithoutTax += lineSum;
-    tax += lineSum * (line.tax / 100);
+    tax += lineSum * (options.data.tax.tax / 100);
   });
   const toPay = sumWithoutTax + tax - options.prepaid;
   const dateFormat = '102';
 
-  const xmlTree = 
-    createXML(
-      'rsm:CrossIndustryInvoice',
-      [
-        /*Document Context*/
-        createXML('rsm:ExchangedDocumentContext', [
-          createXML('ram:BusinessProcessSpecifiedDocumentContextParameter', [
-            createXML('ram:Id', 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'),
-          ]),
-          createXML('ram:GuidelineSpecifiedDocumentContextParameter', [
-            createXML(
-              'ram:Id',
-              'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0',
+  const xmlTree = createXML(
+    'rsm:CrossIndustryInvoice',
+    [
+      /*Document Context*/
+      createXML('rsm:ExchangedDocumentContext', [
+        createXML('ram:BusinessProcessSpecifiedDocumentContextParameter', [
+          createXML('ram:Id', 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'),
+        ]),
+        createXML('ram:GuidelineSpecifiedDocumentContextParameter', [
+          createXML(
+            'ram:Id',
+            'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0',
+          ),
+        ]),
+      ]),
+      /*Basic Document data (id, date, type, note)*/
+      createXML('rsm:ExchangedDocument', [
+        createXML('ram:ID', options.data.invoiceNr),
+        createXML('ram:TypeCode', options.data.invoiceType),
+        createXML('ram:IssueDateTime', [
+          createXML(
+            'udt:DateTimeString',
+            formatDate(options.data.invoiceDate),
+            [['format', '102']],
+          ),
+        ]),
+        createXML('ram:IncludedNote', [
+          createXML('ram:Content', options.data.remark),
+        ]),
+      ]),
+      /*Actual Invoice */
+      /*Invoice positions*/
+      createXML('rsm:SupplyChainTradeTransaction', [
+        ...options.data.positions.map((pos, idx) => {
+          return createXML('ram:IncludedSupplyChainTradeLineItem', [
+            createXML('ram:AssociatedDocumentLineDocument', [
+              createXML('ram:LineID', `${idx + 1}`),
+            ]),
+            createXML('ram:SpecifiedTradeProduct', [
+              createXML('ram:SellerAssignedID', pos.productNumber),
+              createXML('ram:BuyerAssignedID', pos.buyerProductNumber),
+              createXML('ram:Name', pos.name),
+              createXML('ram:Description', pos.detailDescription),
+            ]),
+            createXML('ram:SpecifiedLineTradeAgreement', [
+              createXML('ram:BuyerOrderReferencedDocument', pos.position),
+              createXML('ram:NetPriceProductTradePrice', [
+                createXML('ram:ChargeAmount', pos.priceSingleUnit),
+                createXML('ram:BasisQuantity', pos.baseAmount, [
+                  ['unitCode', pos.unit],
+                ]),
+              ]),
+            ]),
+            createXML('ram:SpecifiedLineTradeDelivery', [
+              createXML('ram:BilledQuantity', pos.amount, [
+                ['unitCode', pos.unit],
+              ]),
+            ]),
+            createXML('ram:SpecifiedLineTradeSettlement', [
+              createXML('ram:ApplicableTradeTax', [
+                createXML('ram:TypeCode', 'VAT'),
+                createXML('ram:ExemptionReason'), //TODO: For type Z
+                createXML('ram:CategoryCode', options.data.tax.taxType),
+                createXML('ram:RateApplicablePercent', options.data.tax.tax),
+              ]),
+              createXML('ram:BillingSpecifiedPeriod', [
+                createXML('ram:StartDateTime', [
+                  createXML('udt:DateTimeString', formatDate(pos.endDate), [
+                    ['format', '102'],
+                  ]),
+                ]),
+                createXML('ram:EndDateTime', [
+                  createXML('udt:DateTimeString', formatDate(pos.endDate), [
+                    ['format', '102'],
+                  ]),
+                ]),
+              ]),
+              createXML('ram:SpecifiedTradeSettlementLineMonetarySummation', [
+                createXML(
+                  'ram:LineTotalAmount',
+                  (pos.amount / pos.baseAmount) * pos.priceSingleUnit,
+                ),
+              ]),
+            ]),
+            ...(pos.objectReferences || []).map((reference) =>
+              createXML('ram:AdditionalReferencedDocument', [
+                createXML('ram:IssuerAssignedID', reference),
+                createXML('ram:TypeCode', '130'),
+              ]),
             ),
+          ]);
+        }),
+        createXML('ram:ApplicableHeaderTradeAgreement', [
+          //Seller
+          createXML('ram:SellerTradeParty', [
+            createXML('ram:ID', options.data.supplyingParty.id.sellerIdentifier),
+            createXML('ram:Name', options.data.supplyingParty.companyName),
+            createXML('ram:SpecifiedLegalOrganization', [
+              createXML(
+                'ram:TradingBusinessName',
+                options.data.supplyingParty.tradingName,
+              ),
+              createXML("ram:ID", options.data.supplyingParty.id.registerNumber)
+            ]),
+            createXML('ram:Description'),
+            generateContact(options.data.supplyingParty.contact),
+            generatePostalAdress(options.data.supplyingParty.adress),
+            generateElectronicAdress(
+              options.data.supplyingParty.electronicAdress,
+            ),
+            createXML('ram:SpecifiedTaxRegistration', [createXML("ram:ID", formatUSTId(options.data.supplyingParty.id.ustId?.country, options.data.supplyingParty.id.ustId?.ust))]),
+          ]),
+          //Buyer
+          createXML('ram:BuyerTradeParty', [
+            createXML('ram:Name', options.data.receivingParty.companyName),
+            createXML('ram:SpecifiedLegalOrganization', [
+              createXML(
+                'ram:TradingBusinessName',
+                options.data.receivingParty.tradingName,
+              ),
+              createXML("ram:ID", options.data.receivingParty.registerNumber)
+            ]),
+            generateContact(options.data.receivingParty.contact),
+            generatePostalAdress(options.data.receivingParty.adress),
+            generateElectronicAdress(
+              options.data.receivingParty.electronicAdress,
+            ),
+            createXML('ram:SpecifiedTaxRegistration', [createXML("ram:ID", formatUSTId(options.data.receivingParty.ustId?.country, options.data.receivingParty.ustId?.ust))]),
+          ]),
+          createXML('ram:SellerOrderReferencedDocument', [
+            createXML('ram:IssuerAssignedID', options.data.jobNumber),
+          ]),
+          createXML('ram:BuyerOrderReferencedDocument', [
+            createXML('ram:IssuerAssignedID', options.data.orderNumber),
+          ]),
+          createXML('ram:ContractReferencedDocument', [
+            createXML('ram:IssuerAssignedID', options.data.contractNumber),
+          ]),
+          createXML('ram:SpecifiedProcuringProject', [
+            createXML('ram:ID',  options.data.projectNumber),
+            createXML('ram:Name', '?'),
           ]),
         ]),
-        createXML('rsm:ExchangedDocument', [
-          createXML('ram:ID', options.data.invoiceNr),
-          createXML('ram:TypeCode', options.data.invoiceType),
-          createXML('ram:IssueDateTime', [
-            createXML(
-              'udt:DateTimeString',
-              formatDate(options.data.invoiceDate)!,
-              [['format', '102']],
-            ),
+        createXML(
+          'ram:ApplicableHeaderTradeDelivery',
+          options.data.deliveryDetails
+            ? [
+                createXML('ram:ActualDeliverySupplyChainEvent', [
+                  createXML('rram:OccurrenceDateTime', [
+                    createXML(
+                      'udt:DateTimeString',
+                      formatDate(options.data.derliveryDate),
+                      [['format', '102']],
+                    ),
+                  ]),
+                ]),
+                createXML('ram:DespatchAdviceReferencedDocument', [
+                  createXML('ram:IssuerAssignedID', options.data.shippingNotice?.id),
+                ]),
+                createXML('ram:ReceivingAdviceReferencedDocument', [
+                  createXML('ram:IssuerAssignedID', options.data.goodsReceiptNotification?.id),
+                ]),
+              ]
+            : [],
+        ),
+        createXML('ram:ApplicableHeaderTradeSettlement', [
+          createXML('ram:PaymentReference', 'Verwendungszweck'),
+          createXML('ram:InvoiceCurrencyCode', options.data.currency),
+          createXML('ram:SpecifiedTradeSettlementPaymentMeans', [
+            createXML('ram:TypeCode', `${options.data.paymentDetails.id}`),
           ]),
-          createXML('ram:IncludedNote', [
-            createXML('ram:Content', options.data.remark),
+          createXML('ram:ApplicableTradeTax', [
+            createXML('ram:CalculatedAmount', tax),
+            createXML('ram:TypeCode', 'VAT'),
+            createXML('ram:BasisAmount', sumWithoutTax),
+            createXML('ram:CategoryCode', options.data.tax.taxType),
+            createXML('ram:RateApplicablePercent', options.data.tax.tax), 
           ]),
+          createXML('ram:BillingSpecifiedPeriod', [
+            createXML('ram:StartDateTime', [
+              createXML(
+                'udt:DateTimeString',
+                formatDate(options.data.billingPeriod?.from),
+                [['format', '102']],
+              ),
+            ]),
+            createXML('ram:EndDateTime', [
+              createXML(
+                'udt:DateTimeString',
+                formatDate(options.data.billingPeriod?.to),
+                [['format', '102']],
+              ),
+            ]),
+          ]),
+          createXML('ram:SpecifiedTradePaymentTerms', [
+            createXML('ram:Description', 'Zahlungsziel*'),
+            createXML('ram:DueDateDateTime', [
+              createXML(
+                'udt:DateTimeString',
+                formatDate(options.data.dueDate),
+                [['format', '102']],
+              ),
+            ]),
+          ]),
+          createXML('ram:SpecifiedTradeSettlementHeaderMonetarySummation', [
+            createXML('ram:LineTotalAmount', sumWithoutTax),
+            createXML('ram:TaxBasisTotalAmount', sumWithoutTax),
+            createXML('ram:TaxTotalAmount', tax, [
+              ['currencyID', options.data.currency],
+            ]),
+            createXML('ram:GrandTotalAmount', tax + sumWithoutTax),
+            createXML('ram:DuePayableAmount', tax + sumWithoutTax),
+          ]),
+          ...(options.data.invoiceReference || []).map((el) =>
+            createXML('ram:InvoiceReferencedDocument', [
+              createXML('ram:IssuerAssignedID', el.id),
+              createXML('ram:FormattedIssueDateTime', [
+                createXML('qdt:DateTimeString', formatDate(el.date), [
+                  ['format', '102'],
+                ]),
+              ]),
+            ]),
+          ),
+          ...(options.data.buyerBookingAccount || []).map((el) =>
+            createXML('ram:ReceivableSpecifiedTradeAccountingAccount', [
+              createXML('ram:ID', el.id),
+              createXML('ram:TypeCode', `${el.type}`),
+            ]),
+          ),
         ]),
-        createXML('rsm:SupplyChainTradeTransaction', []),
+      ]),
+    ],
+    [
+      [
+        'xmlns:rsm',
+        'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100',
       ],
       [
-        [
-          'xmlns:rsm',
-          'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100',
-        ],
-        [
-          'xmlns:qdt',
-          'urn:un:unece:uncefact:data:standard:QualifiedDataType:100',
-        ],
-        [
-          'xmlns:ram',
-          'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100',
-        ],
-        [
-          'xmlns:udt',
-          'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100',
-        ],
+        'xmlns:qdt',
+        'urn:un:unece:uncefact:data:standard:QualifiedDataType:100',
       ],
-    );
+      [
+        'xmlns:ram',
+        'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100',
+      ],
+      [
+        'xmlns:udt',
+        'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100',
+      ],
+    ],
+  );
   return renderXML(xmlTree);
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
-  	<rsm:ExchangedDocumentContext>
-		<ram:BusinessProcessSpecifiedDocumentContextParameter>
-			<ram:ID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</ram:ID>
-		</ram:BusinessProcessSpecifiedDocumentContextParameter>
-		<ram:GuidelineSpecifiedDocumentContextParameter>
-			<ram:ID>urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0</ram:ID>
-		</ram:GuidelineSpecifiedDocumentContextParameter>
-	</rsm:ExchangedDocumentContext>
-  <rsm:ExchangedDocument>
-		${xmlTag('ram:ID', options.data.invoiceNr)}
-		${xmlTag('ram:TypeCode', options.data.invoiceType)}
-    ${xmlTag('ram:IssueDateTime', xmlTag('udt:DateTimeString', formatDate(options.data.invoiceDate), [{ tagName: 'format', tagValue: dateFormat }]))}
-    ${xmlTag('ram:IncludedNote', xmlTag('ram:Content', options.data.remark)) || ''}
-	</rsm:ExchangedDocument>
-  ${xmlTag(
-    'rsm:SupplyChainTradeTransaction',
-    `${options.data.positions
-      .map((line) => {
-        return `${xmlTag(
-          'ram:IncludedSupplyChainTradeLineItem',
-          xmlTag('ram:AssociatedDocumentLineDocument'),
-        )}`;
-      })
-      .join()}
-     ${xmlTag(
-       'ram:ApplicableHeaderTradeAgreement',
-       `${
-         xmlTag(
-           'ram:SellerTradeParty',
-           `${xmlTag('ram:ID', (options.data.supplyingParty.id.ustId ? formatUSTId(options.data.supplyingParty.id.ustId.country, options.data.supplyingParty.id.ustId.ust) : undefined) || options.data.supplyingParty.id.sellerIdentifier || options.data.supplyingParty.id.registerNumber || '')}
-        ${xmlTag('ram:Name', options.data.supplyingParty.companyName)}
-        ${xmlTag('ram:Description', options.data.supplyingParty.legalInformation)}
-        ${xmlTag(
-          'ram:SpecifiedLegalOrganization',
-          `
-          ${xmlTag('ram:ID', options.data.supplyingParty.id.registerNumber)}
-          ${xmlTag('ram:TradingBusinessName', options.data.supplyingParty.tradingName)}
-          `,
-        )}
-        ${generateContact(options.data.supplyingParty.contact)}
-        ${generatePostalAdress(options.data.supplyingParty.adress)}
-        ${generateElectronicAdress(options.data.supplyingParty.electronicAdress)}
-        ${xmlTag('ram:SpecifiedTaxRegistration', xmlTag('ram:ID', options.data.supplyingParty.id.ustId ? formatUSTId(options.data.supplyingParty.id.ustId.country, options.data.supplyingParty.id.ustId.ust) : undefined, [{ tagName: 'schemeID', tagValue: 'VA' }]))}
-        ${xmlTag('ram:SpecifiedTaxRegistration', xmlTag('ram:ID', options.data.supplyingParty.taxNumber, [{ tagName: 'schemeID', tagValue: 'FC' }]))}`,
-         ) || ''
-       }` +
-         `${
-           xmlTag(
-             'ram:BuyerTradeParty',
-             `${xmlTag('ram:ID')}
-         ${xmlTag('ram:Name')}`,
-           ) || ''
-         }
-         ${xmlTag('ram:SpecifiedLegalOrganization')}
-         ${xmlTag('ram:DefinedTradeContact')}
-         ${generatePostalAdress(options.data.receivingParty.adress)}
-         ${generateElectronicAdress(options.data.receivingParty.electronicAdress)}
-         ${xmlTag('ram:SpecifiedTaxRegistration')}` +
-         `${xmlTag('ram:SellerOrderReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.jobNumber)) || ''}` +
-         `${xmlTag('ram:BuyerOrderReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.orderNumber)) || ''}` +
-         `${xmlTag('ram:ContractReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.contractNumber)) || ''}` +
-         `${
-           xmlTag(
-             'ram:SpecifiedProcuringProject',
-             (xmlTag('ram:ID', options.data.projectNumber) || '') +
-               xmlTag('ram:Name', options.data.projectNumber ? '?' : ''),
-           ) || ''
-         }`,
-     )}
-     ${xmlTag('ram:ApplicableHeaderTradeDelivery', `Text`)}
-     ${xmlTag('ram:ApplicableHeaderTradeSettlement', `Text`)}
-`,
-  )}
-</rsm:CrossIndustryInvoice>
-    `;
 }
 /*
 <cac:AccountingSupplierParty>
@@ -607,5 +750,81 @@ export function generateEInvoiceXML(options: {
   </cac:InvoiceLine>`;
     })
     .join()}
-
+return `<?xml version="1.0" encoding="UTF-8"?>
+<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
+  	<rsm:ExchangedDocumentContext>
+		<ram:BusinessProcessSpecifiedDocumentContextParameter>
+			<ram:ID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</ram:ID>
+		</ram:BusinessProcessSpecifiedDocumentContextParameter>
+		<ram:GuidelineSpecifiedDocumentContextParameter>
+			<ram:ID>urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0</ram:ID>
+		</ram:GuidelineSpecifiedDocumentContextParameter>
+	</rsm:ExchangedDocumentContext>
+  <rsm:ExchangedDocument>
+		${xmlTag('ram:ID', options.data.invoiceNr)}
+		${xmlTag('ram:TypeCode', options.data.invoiceType)}
+    ${xmlTag('ram:IssueDateTime', xmlTag('udt:DateTimeString', formatDate(options.data.invoiceDate), [{ tagName: 'format', tagValue: dateFormat }]))}
+    ${xmlTag('ram:IncludedNote', xmlTag('ram:Content', options.data.remark)) || ''}
+	</rsm:ExchangedDocument>
+  ${xmlTag(
+    'rsm:SupplyChainTradeTransaction',
+    `${options.data.positions
+      .map((line) => {
+        return `${xmlTag(
+          'ram:IncludedSupplyChainTradeLineItem',
+          xmlTag('ram:AssociatedDocumentLineDocument'),
+        )}`;
+      })
+      .join()}
+     ${xmlTag(
+       'ram:ApplicableHeaderTradeAgreement',
+       `${
+         xmlTag(
+           'ram:SellerTradeParty',
+           `${xmlTag('ram:ID', (options.data.supplyingParty.id.ustId ? formatUSTId(options.data.supplyingParty.id.ustId.country, options.data.supplyingParty.id.ustId.ust) : undefined) || options.data.supplyingParty.id.sellerIdentifier || options.data.supplyingParty.id.registerNumber || '')}
+        ${xmlTag('ram:Name', options.data.supplyingParty.companyName)}
+        ${xmlTag('ram:Description', options.data.supplyingParty.legalInformation)}
+        ${xmlTag(
+          'ram:SpecifiedLegalOrganization',
+          `
+          ${xmlTag('ram:ID', options.data.supplyingParty.id.registerNumber)}
+          ${xmlTag('ram:TradingBusinessName', options.data.supplyingParty.tradingName)}
+          `,
+        )}
+        ${generateContact(options.data.supplyingParty.contact)}
+        ${generatePostalAdress(options.data.supplyingParty.adress)}
+        ${generateElectronicAdress(options.data.supplyingParty.electronicAdress)}
+        ${xmlTag('ram:SpecifiedTaxRegistration', xmlTag('ram:ID', options.data.supplyingParty.id.ustId ? formatUSTId(options.data.supplyingParty.id.ustId.country, options.data.supplyingParty.id.ustId.ust) : undefined, [{ tagName: 'schemeID', tagValue: 'VA' }]))}
+        ${xmlTag('ram:SpecifiedTaxRegistration', xmlTag('ram:ID', options.data.supplyingParty.taxNumber, [{ tagName: 'schemeID', tagValue: 'FC' }]))}`,
+         ) || ''
+       }` +
+         `${
+           xmlTag(
+             'ram:BuyerTradeParty',
+             `${xmlTag('ram:ID')}
+         ${xmlTag('ram:Name')}`,
+           ) || ''
+         }
+         ${xmlTag('ram:SpecifiedLegalOrganization')}
+         ${xmlTag('ram:DefinedTradeContact')}
+         ${generatePostalAdress(options.data.receivingParty.adress)}
+         ${generateElectronicAdress(options.data.receivingParty.electronicAdress)}
+         ${xmlTag('ram:SpecifiedTaxRegistration')}` +
+         `${xmlTag('ram:SellerOrderReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.jobNumber)) || ''}` +
+         `${xmlTag('ram:BuyerOrderReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.orderNumber)) || ''}` +
+         `${xmlTag('ram:ContractReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.contractNumber)) || ''}` +
+         `${
+           xmlTag(
+             'ram:SpecifiedProcuringProject',
+             (xmlTag('ram:ID', options.data.projectNumber) || '') +
+               xmlTag('ram:Name', options.data.projectNumber ? '?' : ''),
+           ) || ''
+         }`,
+     )}
+     ${xmlTag('ram:ApplicableHeaderTradeDelivery', `Text`)}
+     ${xmlTag('ram:ApplicableHeaderTradeSettlement', `Text`)}
+`,
+  )}
+</rsm:CrossIndustryInvoice>
+    `;
     */

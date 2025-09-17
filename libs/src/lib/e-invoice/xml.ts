@@ -1,7 +1,7 @@
 export interface XMLElement {
   id: string;
   tags?: [tagName: string, tagValue: string][];
-  childs: (XMLElement | undefined)[] | string | undefined;
+  childs: (XMLElement | undefined)[] | string | number | undefined;
 }
 export function renderXML(root: XMLElement | undefined): string {
   if (!root) {
@@ -38,7 +38,7 @@ export function renderXML(root: XMLElement | undefined): string {
       }
       node.childs = node.childs.filter((el) => el !== undefined);
     }
-    if(node.childs === undefined || node.childs.length === 0){
+    if(node.childs === undefined || (node.childs instanceof Array && node.childs.length === 0)){
       return undefined;
     }
     return node;
@@ -49,10 +49,10 @@ export function renderXML(root: XMLElement | undefined): string {
 }
 export function createXML(
   id: string,
-  childs?: (XMLElement | undefined)[] | string | undefined,
+  childs?: (XMLElement | undefined)[] | string | number | undefined,
   tags?: [tagName: string, tagValue: string][],
 ): XMLElement | undefined {
-  if (!childs || childs.length === 0) {
+  if (!childs || childs instanceof Array && childs.length === 0) {
     return undefined;
   }
   return {
