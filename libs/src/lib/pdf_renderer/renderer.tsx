@@ -541,18 +541,19 @@ export async function generateEInvoice(options: {
     data: options.data,
   });
   console.log(eInvoice);
-  await generatePDFA({
+  await renderToPDF({
     template: options.template,
     wrapper: options.wrapper,
     pdfCreationOptions: options.pdfCreationOptions,
     onFinishPDFCreation: {
       kind: 'pdf',
       callback: async (pdf) => {
-        pdf.attach(eInvoice, 'eInvoice.xml');
+        const encoder = new TextEncoder();
+        pdf.attach(encoder.encode(eInvoice), 'einvoice.xml');
         fireEndPDFCallback(pdf, options.onFinishPDFCreation);
       },
     },
-    pdfAData: options.pdfAData,
+    //pdfAData: options.pdfAData,
     data: options.data as DataSet,
   });
 }
