@@ -18,6 +18,7 @@ import {
   unitCodeToHumanReadableString,
   UnitCode,
   countryCodeToHumanReadableString,
+  TaxType,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import { JSX, useRef } from 'react';
 import { DocumentCategory } from './documentCategory';
@@ -219,6 +220,7 @@ export class InvoiceDataSet implements DataSet, EInvoice {
   deliveryDetails?: Delivery | undefined;
   positions: InvoiceLine[];
   author?: string;
+  tax: { taxType: TaxType; tax: 0 | 10 | 20 | 7 | 13 | 17 | 19; };
   constructor(
     invoiceNr: string,
     invoiceDate: Date,
@@ -249,6 +251,7 @@ export class InvoiceDataSet implements DataSet, EInvoice {
     this.receivingParty = receiver;
     this.positions = positions;
     this.paymentDetails = paymentDetails;
+    this.tax = {taxType: TaxType.standard, tax: 19}
   }
 }
 export class PfkInvoiceTemplate extends Template {
@@ -269,7 +272,7 @@ export class PfkInvoiceTemplate extends Template {
     const tableData: TableRow[] = invoiceData?.positions
       ? invoiceData.positions.map((line, idx) => {
           const sumPositionWithoutTax = line.amount * line.priceSingleUnit;
-          taxSum += sumPositionWithoutTax * (line.tax / 100);
+          taxSum += sumPositionWithoutTax * (invoiceData.tax.tax / 100);
           sumNoTax += sumPositionWithoutTax;
           return {
             elements: [
@@ -293,7 +296,7 @@ export class PfkInvoiceTemplate extends Template {
                 accessor: 'single',
               },
               {
-                label: `${line.tax.toFixed(2).replace('.', ',')}%`,
+                label: `${invoiceData.tax.tax.toFixed(2).replace('.', ',')}%`,
                 accessor: 'tax',
               },
               {

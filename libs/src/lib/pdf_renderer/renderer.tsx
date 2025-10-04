@@ -7,11 +7,21 @@ import {
 } from '../templates/types';
 import { PDFDocument, PDFKitDocumentConstructorOptions } from '../pdf';
 import { ReactNode } from 'react';
-import { calculatePageHeight, cssCMToPostScriptPoint, resolveImageAsBase64 } from '../utils/util';
+import {
+  calculatePageHeight,
+  cssCMToPostScriptPoint,
+  fetchBuffer,
+  resolveImageAsBase64,
+} from '../utils/util';
 import { parsePositionFromHTML } from './htmlPositionParser';
 import { JSX } from 'react/jsx-runtime';
 import React from 'react';
-import { PDFEmbeddedPage, PDFDocument as PDFLibDocument } from 'pdf-lib';
+import {
+  PDFEmbeddedPage,
+  PDFDocument as PDFLibDocument,
+  PDFName,
+  PDFString,
+} from 'pdf-lib';
 import {
   DrawCommand,
   DrawRowCommand,
@@ -26,6 +36,15 @@ import {
   generateTextCommandFromCSS,
 } from './cssStyleParser';
 import { EInvoice, generateEInvoiceXML } from '../e-invoice/e_invoice';
+import { PDFHexString } from 'pdf-lib';
+//dates need to be in utc timezone
+interface PDFADescriptor {
+  author: string;
+  title: string;
+  date: Date;
+  version: number;
+  conformance: "A" | "B";
+}
 
 async function renderHTMLNodeRecursive(
   pdf: PDFDocument,
@@ -100,12 +119,15 @@ async function renderHTMLNodeRecursive(
         pdf,
         storage,
       );
-    }else if(element instanceof HTMLImageElement){
+    } else if (element instanceof HTMLImageElement) {
       const image = element as HTMLImageElement;
-      command = new StartDrawImageCommand(position.x,
+      command = new StartDrawImageCommand(
+        position.x,
         position.y - pageIndex,
         position.width,
-        position.height, await resolveImageAsBase64(image.src));
+        position.height,
+        await resolveImageAsBase64(image.src),
+      );
     }
     //iterate over all childs recursive
     let elementCounter = 0;
@@ -166,21 +188,22 @@ async function renderHTMLNodeRecursive(
   }
   return command;
 }
-type pdfCallback = 
-{
-  kind: "buffer",
-  callback: (pdfFile: Uint8Array) => unknown
-} | {
-  kind: "pdf",
-  callback: (pdfFile: PDFLibDocument) => unknown
-}
-function fireEndPDFCallback(data: PDFLibDocument, callback?: pdfCallback){
-  if(callback){
-    if(callback.kind === "buffer"){
+type pdfCallback =
+  | {
+      kind: 'buffer';
+      callback: (pdfFile: Uint8Array) =>  unknown;
+    }
+  | {
+      kind: 'pdf';
+      callback: (pdfFile: PDFLibDocument) => unknown;
+    };
+function fireEndPDFCallback(data: PDFLibDocument, callback?: pdfCallback) {
+  if (callback) {
+    if (callback.kind === 'buffer') {
       data.save().then((buffer) => {
         callback.callback(buffer);
       });
-    }else{
+    } else {
       callback.callback(data);
     }
   }
@@ -319,30 +342,33 @@ export async function renderToPDF(options: {
               PDFLibDocument.load(arrayData).then((load) => {
                 const count = load.getPageCount();
                 expectedPages += count;
-                for(let index = 0; index < count; index++){
+                for (let index = 0; index < count; index++) {
                   documentPDF.embedPage(load.getPage(index)).then((embed) => {
-                  const page = documentPDF.addPage([
-                    pageDescriptor.width,
-                    pageDescriptor.height,
-                  ]);
-                  if (backgroundPDF) {
-                    console.log(backgroundOffset);
-                    page.drawPage(backgroundPDF, {
-                      x: backgroundOffset.x,
-                      y: backgroundOffset.y,
-                      width: backgroundOffset.width,
-                      height: backgroundOffset.height,
-                    });
-                  }
-                  page.drawPage(embed);
-                  addedPages++;
-                  if (addedPages === expectedPages) {
-                      fireEndPDFCallback(documentPDF, options.onFinishPDFCreation);
-                  }
-                });
+                    const page = documentPDF.addPage([
+                      pageDescriptor.width,
+                      pageDescriptor.height,
+                    ]);
+                    //PDF/A Confirmance
+                    page.setTrimBox(0, 0, page.getWidth(), page.getHeight());
+                    if (backgroundPDF) {
+                      console.log(backgroundOffset);
+                      page.drawPage(backgroundPDF, {
+                        x: backgroundOffset.x,
+                        y: backgroundOffset.y,
+                        width: backgroundOffset.width,
+                        height: backgroundOffset.height,
+                      });
+                    }
+                    page.drawPage(embed);
+                    addedPages++;
+                    if (addedPages === expectedPages) {
+                      fireEndPDFCallback(
+                        documentPDF,
+                        options.onFinishPDFCreation,
+                      );
+                    }
+                  });
                 }
-
-                
               });
             });
             pdfPage.addPage({
@@ -401,6 +427,106 @@ export async function renderToPDF(options: {
     }
   }
 }
+function formatDate(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDay() + 1}T${date.getHours()}:${date.getMinutes()}:00Z`;
+}
+export async function generatePDFA(options: {
+  template: Template;
+  wrapper?: (template: ReactNode) => ReactNode;
+  pdfCreationOptions?: PDFKitDocumentConstructorOptions;
+  onFinishPDFCreation?: pdfCallback;
+  data?: DataSet;
+  pdfAData: PDFADescriptor;
+}) {
+  await renderToPDF({
+    template: options.template,
+    wrapper: options.wrapper,
+    pdfCreationOptions: options.pdfCreationOptions,
+    onFinishPDFCreation: {
+      kind: 'pdf',
+      callback: async (pdf) => {
+        //attach pdfa data
+        //generate pdf id
+        const randomBuffer = crypto.getRandomValues( new Uint8Array(16));
+        let documentId = ""; //PDF/A asks for an even number of characters
+        randomBuffer.forEach((value) => {
+          documentId += value.toString(16).padStart(2, "0");
+        });
+        const id = PDFHexString.of(documentId);
+        pdf.context.trailerInfo.ID = pdf.context.obj([id, id]);
+        const iccBuffer = new Uint8Array(await fetchBuffer("sRGB2014.icc"));
+        const iccStream = pdf.context.stream(iccBuffer, {
+          Length: iccBuffer.length,
+          N: 3,
+        })
+        const outputIntent = pdf.context.obj({
+          Type: "OutputIntent",
+          S: "GTS_PDFA1",
+          OutputConditionIdentifier: PDFString.of("sRGB"),
+          DestOutputProfile: pdf.context.register(iccStream),
+        })
+        const outputIntentRef = pdf.context.register(outputIntent)
+        pdf.catalog.set(PDFName.of("OutputIntents"), pdf.context.obj([outputIntentRef]))
+        //Native Metadata
+        pdf.setAuthor(options.pdfAData.author);
+        pdf.setProducer(options.pdfAData.author);
+        pdf.setCreator(options.pdfAData.author);
+        pdf.setTitle(options.pdfAData.title);
+        pdf.setCreationDate(options.pdfAData.date);
+        pdf.setModificationDate(options.pdfAData.date);
+        //Metadata pdfa
+        const metadataXML = `
+    <?xpacket begin="" id="${documentId}"?>
+      <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.2-c001 63.139439, 2010/09/27-13:37:26        ">
+        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  
+          <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <dc:format>application/pdf</dc:format>
+            <dc:creator>
+              <rdf:Seq>
+                <rdf:li>${options.pdfAData.author}</rdf:li>
+              </rdf:Seq>
+            </dc:creator>
+            <dc:title>
+               <rdf:Alt>
+                  <rdf:li xml:lang="x-default">${options.pdfAData.title}</rdf:li>
+               </rdf:Alt>
+            </dc:title>
+          </rdf:Description>
+  
+          <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/">
+            <xmp:CreatorTool>Pfiffkopf</xmp:CreatorTool>
+            <xmp:CreateDate>${formatDate(options.pdfAData.date)}</xmp:CreateDate>
+            <xmp:ModifyDate>${formatDate(options.pdfAData.date)}</xmp:ModifyDate>
+            <xmp:MetadataDate>${formatDate(options.pdfAData.date)}</xmp:MetadataDate>
+          </rdf:Description>
+  
+          <rdf:Description rdf:about="" xmlns:pdf="http://ns.adobe.com/pdf/1.3/">
+            <pdf:Producer>${options.pdfAData.author}</pdf:Producer>
+          </rdf:Description>
+  
+          <rdf:Description rdf:about="" xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/">
+            <pdfaid:part>${options.pdfAData.version}</pdfaid:part>
+            <pdfaid:conformance>${options.pdfAData.conformance}</pdfaid:conformance>
+          </rdf:Description>
+        </rdf:RDF>
+      </x:xmpmeta>
+    <?xpacket end="w"?>
+    `.trim();
+        const metadataStream = pdf.context.stream(metadataXML, {
+          Type: 'Metadata',
+          Subtype: 'XML',
+          Length: metadataXML.length,
+        });
+        const metadataStreamRef = pdf.context.register(metadataStream);
+        pdf.catalog.set(PDFName.of('Metadata'), metadataStreamRef);
+
+        fireEndPDFCallback(pdf, options.onFinishPDFCreation);
+      },
+    },
+    data: options.data as DataSet,
+  });
+}
 
 export async function generateEInvoice(options: {
   template: Template;
@@ -408,23 +534,25 @@ export async function generateEInvoice(options: {
   pdfCreationOptions?: PDFKitDocumentConstructorOptions;
   onFinishPDFCreation?: pdfCallback;
   data: EInvoice;
+  pdfAData: PDFADescriptor;
 }) {
   const eInvoice = generateEInvoiceXML({
     prepaid: 0,
-    data: options.data
+    data: options.data,
   });
   console.log(eInvoice);
-  await renderToPDF({
+  await generatePDFA({
     template: options.template,
     wrapper: options.wrapper,
     pdfCreationOptions: options.pdfCreationOptions,
     onFinishPDFCreation: {
-      kind: "pdf",
-      callback: (pdf) => {
-        pdf.attach(eInvoice, "eInvoice.xml");
+      kind: 'pdf',
+      callback: async (pdf) => {
+        pdf.attach(eInvoice, 'eInvoice.xml');
         fireEndPDFCallback(pdf, options.onFinishPDFCreation);
-      }
+      },
     },
-    data: options.data as DataSet
-  })
+    pdfAData: options.pdfAData,
+    data: options.data as DataSet,
+  });
 }

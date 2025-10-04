@@ -25,6 +25,7 @@ import {
   CountryCode,
   ElectronicAdressType,
   generateEInvoice,
+  generatePDFA,
   NoPaymentMeans,
   PDFKitPDFSubset,
   PDFKitPDFVersion,
@@ -235,7 +236,7 @@ const Header: React.FC<HeaderProps> = ({
               amount: 1,
               priceSingleUnit: 2,
               unit: UnitCode.minute,
-              tax: 19
+              baseAmount: 1
             }], {
               id: {
                 ustId: {ust: "0123456789", country: UstIdCounty.Germany}
@@ -265,15 +266,10 @@ const Header: React.FC<HeaderProps> = ({
 
             }, paymentDetails);
             data.remark = "Ein Remark";
-            generateEInvoice({
+            generatePDFA({
               template: template,
               wrapper: (template) => {
                 return <MantineProvider>{template}</MantineProvider>;
-              },
-              pdfCreationOptions: {
-                subset: PDFKitPDFSubset.pdfA_threeA,
-                pdfVersion: PDFKitPDFVersion.oneDSeven,
-                tagged: true,
               },
               onFinishPDFCreation:
               {
@@ -285,7 +281,14 @@ const Header: React.FC<HeaderProps> = ({
                 saveAs(blob, 'generierte Rechnung.pdf');
                 }
               },
-              data: data
+              data: data,
+              pdfAData: {
+                author: "Pfiffkopf",
+                date: new Date(Date.now()),
+                title: "Rechnung",
+                version: 3,
+                conformance: "B"
+              }
             });
           }}
         >
