@@ -540,7 +540,6 @@ export async function generateEInvoice(options: {
     prepaid: 0,
     data: options.data,
   });
-  console.log(eInvoice);
   await renderToPDF({
     template: options.template,
     wrapper: options.wrapper,

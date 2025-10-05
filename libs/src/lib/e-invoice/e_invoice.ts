@@ -322,7 +322,11 @@ function generateElectronicAdress(id: ElectronicAdress) {
     createXML('ram:URIID', id.adress, [['schemeID', id.id]]),
   ]);
 }
-
+function formatNumber(number: number | undefined) : string | undefined{
+  if(number === undefined)
+    return undefined;
+  return number.toFixed(2);
+}
 /* XML*/
 export function generateEInvoiceXML(options: {
   prepaid: number;
@@ -348,11 +352,11 @@ export function generateEInvoiceXML(options: {
       /*Document Context*/
       createXML('rsm:ExchangedDocumentContext', [
         createXML('ram:BusinessProcessSpecifiedDocumentContextParameter', [
-          createXML('ram:Id', 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'),
+          createXML('ram:ID', 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'),
         ]),
         createXML('ram:GuidelineSpecifiedDocumentContextParameter', [
           createXML(
-            'ram:Id',
+            'ram:ID',
             'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0',
           ),
         ]),
@@ -389,8 +393,8 @@ export function generateEInvoiceXML(options: {
             createXML('ram:SpecifiedLineTradeAgreement', [
               createXML('ram:BuyerOrderReferencedDocument', pos.position),
               createXML('ram:NetPriceProductTradePrice', [
-                createXML('ram:ChargeAmount', pos.priceSingleUnit),
-                createXML('ram:BasisQuantity', pos.baseAmount, [
+                createXML('ram:ChargeAmount', formatNumber(pos.priceSingleUnit)),
+                createXML('ram:BasisQuantity', formatNumber(pos.baseAmount), [
                   ['unitCode', pos.unit],
                 ]),
               ]),
@@ -422,7 +426,7 @@ export function generateEInvoiceXML(options: {
               createXML('ram:SpecifiedTradeSettlementLineMonetarySummation', [
                 createXML(
                   'ram:LineTotalAmount',
-                  (pos.amount / pos.baseAmount) * pos.priceSingleUnit,
+                  formatNumber((pos.amount / pos.baseAmount) * pos.priceSingleUnit),
                 ),
               ]),
             ]),
@@ -436,6 +440,7 @@ export function generateEInvoiceXML(options: {
         }),
         createXML('ram:ApplicableHeaderTradeAgreement', [
           //Seller
+          createXML("ram:BuyerReference", options.data.buyerReference || "0"),
           createXML('ram:SellerTradeParty', [
             createXML('ram:ID', options.data.supplyingParty.id.sellerIdentifier),
             createXML('ram:Name', options.data.supplyingParty.companyName),
@@ -452,7 +457,7 @@ export function generateEInvoiceXML(options: {
             generateElectronicAdress(
               options.data.supplyingParty.electronicAdress,
             ),
-            createXML('ram:SpecifiedTaxRegistration', [createXML("ram:ID", formatUSTId(options.data.supplyingParty.id.ustId?.country, options.data.supplyingParty.id.ustId?.ust))]),
+            createXML('ram:SpecifiedTaxRegistration', [createXML("ram:ID", formatUSTId(options.data.supplyingParty.id.ustId?.country, options.data.supplyingParty.id.ustId?.ust), [["schemeID", "VA"]])]),
           ]),
           //Buyer
           createXML('ram:BuyerTradeParty', [
@@ -469,7 +474,7 @@ export function generateEInvoiceXML(options: {
             generateElectronicAdress(
               options.data.receivingParty.electronicAdress,
             ),
-            createXML('ram:SpecifiedTaxRegistration', [createXML("ram:ID", formatUSTId(options.data.receivingParty.ustId?.country, options.data.receivingParty.ustId?.ust))]),
+            createXML('ram:SpecifiedTaxRegistration', [createXML("ram:ID", formatUSTId(options.data.receivingParty.ustId?.country, options.data.receivingParty.ustId?.ust), [["schemeID", "VA"]])]),
           ]),
           createXML('ram:SellerOrderReferencedDocument', [
             createXML('ram:IssuerAssignedID', options.data.jobNumber),
@@ -483,12 +488,11 @@ export function generateEInvoiceXML(options: {
           createXML('ram:SpecifiedProcuringProject', [
             createXML('ram:ID',  options.data.projectNumber),
             createXML('ram:Name', '?'),
-          ]),
+          ], [], 2),
         ]),
         createXML(
           'ram:ApplicableHeaderTradeDelivery',
-          options.data.deliveryDetails
-            ? [
+           [
                 createXML('ram:ActualDeliverySupplyChainEvent', [
                   createXML('rram:OccurrenceDateTime', [
                     createXML(
@@ -504,9 +508,12 @@ export function generateEInvoiceXML(options: {
                 createXML('ram:ReceivingAdviceReferencedDocument', [
                   createXML('ram:IssuerAssignedID', options.data.goodsReceiptNotification?.id),
                 ]),
-              ]
-            : [],
-        ),
+              ],
+        ) || {
+          id: "ram:ApplicableHeaderTradeDelivery",
+          childs: [],
+          forceKeep: true
+        },
         createXML('ram:ApplicableHeaderTradeSettlement', [
           createXML('ram:PaymentReference', 'Verwendungszweck'),
           createXML('ram:InvoiceCurrencyCode', options.data.currency),
@@ -514,9 +521,9 @@ export function generateEInvoiceXML(options: {
             createXML('ram:TypeCode', `${options.data.paymentDetails.id}`),
           ]),
           createXML('ram:ApplicableTradeTax', [
-            createXML('ram:CalculatedAmount', tax),
+            createXML('ram:CalculatedAmount', formatNumber(tax)),
             createXML('ram:TypeCode', 'VAT'),
-            createXML('ram:BasisAmount', sumWithoutTax),
+            createXML('ram:BasisAmount', formatNumber(sumWithoutTax)),
             createXML('ram:CategoryCode', options.data.tax.taxType),
             createXML('ram:RateApplicablePercent', options.data.tax.tax), 
           ]),
@@ -547,13 +554,13 @@ export function generateEInvoiceXML(options: {
             ]),
           ]),
           createXML('ram:SpecifiedTradeSettlementHeaderMonetarySummation', [
-            createXML('ram:LineTotalAmount', sumWithoutTax),
-            createXML('ram:TaxBasisTotalAmount', sumWithoutTax),
-            createXML('ram:TaxTotalAmount', tax, [
+            createXML('ram:LineTotalAmount', formatNumber(sumWithoutTax)),
+            createXML('ram:TaxBasisTotalAmount', formatNumber(sumWithoutTax)),
+            createXML('ram:TaxTotalAmount', formatNumber(tax), [
               ['currencyID', options.data.currency],
             ]),
-            createXML('ram:GrandTotalAmount', tax + sumWithoutTax),
-            createXML('ram:DuePayableAmount', tax + sumWithoutTax),
+            createXML('ram:GrandTotalAmount', formatNumber(tax + sumWithoutTax)),
+            createXML('ram:DuePayableAmount', formatNumber(tax + sumWithoutTax)),
           ]),
           ...(options.data.invoiceReference || []).map((el) =>
             createXML('ram:InvoiceReferencedDocument', [

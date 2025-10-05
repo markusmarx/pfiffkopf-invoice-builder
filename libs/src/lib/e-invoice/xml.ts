@@ -2,6 +2,7 @@ export interface XMLElement {
   id: string;
   tags?: [tagName: string, tagValue: string][];
   childs: (XMLElement | undefined)[] | string | number | undefined;
+  forceKeep?: boolean;
 }
 export function renderXML(root: XMLElement | undefined): string {
   if (!root) {
@@ -10,6 +11,9 @@ export function renderXML(root: XMLElement | undefined): string {
   function renderNode(node: XMLElement | undefined, depth: string): string {
     if (!node) {
       return '';
+    }
+    if(!node.childs || node.childs instanceof Array && node.childs.length === 0){
+      return `${depth}<${node.id}/>\n`
     }
     const newDepth = depth + '\t';
     const tags = node.tags
@@ -38,7 +42,7 @@ export function renderXML(root: XMLElement | undefined): string {
       }
       node.childs = node.childs.filter((el) => el !== undefined);
     }
-    if(node.childs === undefined || (node.childs instanceof Array && node.childs.length === 0)){
+    if(node.childs === undefined || (node.childs instanceof Array && node.childs.length === 0 && !node.forceKeep)){
       return undefined;
     }
     return node;
@@ -51,8 +55,16 @@ export function createXML(
   id: string,
   childs?: (XMLElement | undefined)[] | string | number | undefined,
   tags?: [tagName: string, tagValue: string][],
+  expectedChilds?: number
 ): XMLElement | undefined {
-  if (!childs || childs instanceof Array && childs.length === 0) {
+  if(childs instanceof Array){
+    for(let i = childs.length -1; i >= 0; i--){
+      if(!childs[i]){
+        childs.splice(i, 1);
+      }
+    }
+  }
+  if (!childs || childs instanceof Array && childs.length === 0 || (expectedChilds && ((childs instanceof Array && childs.length !== expectedChilds) || !(childs instanceof Array)))) {
     return undefined;
   }
   return {

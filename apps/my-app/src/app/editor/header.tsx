@@ -26,6 +26,7 @@ import {
   ElectronicAdressType,
   generateEInvoice,
   generatePDFA,
+  InvoiceType,
   NoPaymentMeans,
   PDFKitPDFSubset,
   PDFKitPDFVersion,
@@ -231,10 +232,10 @@ const Header: React.FC<HeaderProps> = ({
             const paymentDetails: NoPaymentMeans = {
               id: 1,
             };
-            const data : InvoiceDataSet = new InvoiceDataSet("0001", new Date(Date.now()), [{
-              name: "Product",
+            const data : InvoiceDataSet = new InvoiceDataSet("0000", new Date(Date.UTC(2003, 6, 18)), [{
+              name: "Name",
               amount: 1,
-              priceSingleUnit: 2,
+              priceSingleUnit: 1,
               unit: UnitCode.minute,
               baseAmount: 1
             }], {
@@ -242,30 +243,31 @@ const Header: React.FC<HeaderProps> = ({
                 ustId: {ust: "0123456789", country: UstIdCounty.Germany}
               },
               adress: {
-                street: "Ehrlichstraße 16",
-                city: "Chemnitz",
+                street: "Straße 1",
+                city: "Ort",
                 country: CountryCode.DE,
-                zip: "09116"
+                zip: "12345"
               },
-              companyName: "IT-Fabio",
+              companyName: "Unternehmensname",
               contact: {
-                name: "Fabio",
+                name: "Name",
                 mail: "mail@mail.de",
-                telephone: "+49"
+                telephone: "+49 30 1234567"
               },
               electronicAdress: {adress: "mail@mail.de", id: ElectronicAdressType.eMail}
             }, {
               electronicAdress: {adress: "mail@mail.de", id: ElectronicAdressType.eMail},
-              companyName: "Firma",
+              companyName: "Name",
               adress: {
-                street: "Straße Nummer",
-                city: "Stadt",
-                zip: "00000",
+                street: "Straße 1",
+                city: "Ort",
+                zip: "12345",
                 country: CountryCode.DE
               }
 
             }, paymentDetails);
-            data.remark = "Ein Remark";
+            data.invoiceType = InvoiceType.invoice;
+            data.dueDate = new Date(Date.UTC(2003, 6, 18));
             generateEInvoice({
               template: template,
               wrapper: (template) => {
