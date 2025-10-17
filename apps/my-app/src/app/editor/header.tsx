@@ -31,6 +31,7 @@ import {
   PDFKitPDFSubset,
   PDFKitPDFVersion,
   renderToPDF,
+  TaxType,
   Template,
   UnitCode,
   UstIdCounty,
@@ -268,6 +269,8 @@ const Header: React.FC<HeaderProps> = ({
             }, paymentDetails);
             data.invoiceType = InvoiceType.invoice;
             data.dueDate = new Date(Date.UTC(2003, 6, 18));
+            data.tax.tax = 0;
+            data.tax.taxType = TaxType.zero_rated_goods;
             generateEInvoice({
               template: template,
               wrapper: (template) => {

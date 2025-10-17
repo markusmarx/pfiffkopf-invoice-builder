@@ -1,3 +1,4 @@
+import { CountryCode } from './country_code';
 import { createXML, renderXML } from './xml';
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
@@ -16,32 +17,9 @@ function formatUSTId(county: UstIdCounty| undefined, id: string | undefined) {
   }
   return `${county}${id}`;
 }
-function xmlTag(
-  name: string,
-  value?: string,
-  tags?: { tagName: string; tagValue: string }[],
-) {
-  if (!value) {
-    return undefined;
-  }
-  return `<${name}${
-    tags
-      ? ' ' +
-        tags
-          .map((tag) => {
-            return `${tag.tagName}=${tag.tagValue} `;
-          })
-          .join()
-      : ''
-  }>${value}</${name}>`;
-}
 export enum UstIdCounty {
   Germany = 'DE',
   Ukraine = 'UA',
-}
-export enum CountryCode {
-  DE = 'DE',
-  EN = 'EN',
 }
 export enum ElectronicAdressType {
   eMail = 'EM',
@@ -93,15 +71,17 @@ export interface PartyRecipent {
   contact?: Contact;
 }
 export enum TaxType {
-  standard = 'S',
-  k = 'K',
-  ae = 'AE',
-  e = 'E',
-  g = 'G',
-  l = 'L',
-  m = 'M',
-  o = 'O',
-  z = 'Z',
+  standard = 'S', //19%
+  export_no_tax = 'K',
+  reverse_charge = 'AE',
+  exemed = 'E', //UST free
+  free_export = 'G',
+  intra_community_supply = 'L',
+  margin_scheme = 'M', //Differenzbesteuerung
+  not_taxable = 'O',
+  zero_rated_goods = 'Z', //Steuerfrei, aber steuerbarer Umsatz
+  lower_rate = 'AA', //7%
+  service_outside_scope = 'B'
 }
 export enum UnitCode {
   pices = 'H87',
@@ -123,14 +103,6 @@ export enum UnitCode {
   centimeters = 'CMT',
   meters = 'MTR',
   kilometers = 'KMT',
-}
-export function countryCodeToHumanReadableString(code: CountryCode): string {
-  switch (code) {
-    case CountryCode.DE:
-      return 'Deutschland';
-    case CountryCode.EN:
-      return 'England';
-  }
 }
 export function unitCodeToHumanReadableString(code: UnitCode): string {
   switch (code) {
@@ -345,7 +317,7 @@ export function generateEInvoiceXML(options: {
   });
   const toPay = sumWithoutTax + tax - options.prepaid;
   const dateFormat = '102';
-
+  console.log(options.data.tax.tax);
   const xmlTree = createXML(
     'rsm:CrossIndustryInvoice',
     [
@@ -409,7 +381,7 @@ export function generateEInvoiceXML(options: {
                 createXML('ram:TypeCode', 'VAT'),
                 createXML('ram:ExemptionReason'), //TODO: For type Z
                 createXML('ram:CategoryCode', options.data.tax.taxType),
-                createXML('ram:RateApplicablePercent', options.data.tax.tax),
+                createXML('ram:RateApplicablePercent', options.data.tax.tax || "0"),
               ]),
               createXML('ram:BillingSpecifiedPeriod', [
                 createXML('ram:StartDateTime', [
@@ -525,7 +497,7 @@ export function generateEInvoiceXML(options: {
             createXML('ram:TypeCode', 'VAT'),
             createXML('ram:BasisAmount', formatNumber(sumWithoutTax)),
             createXML('ram:CategoryCode', options.data.tax.taxType),
-            createXML('ram:RateApplicablePercent', options.data.tax.tax), 
+            createXML('ram:RateApplicablePercent', options.data.tax.tax || "0"), 
           ]),
           createXML('ram:BillingSpecifiedPeriod', [
             createXML('ram:StartDateTime', [

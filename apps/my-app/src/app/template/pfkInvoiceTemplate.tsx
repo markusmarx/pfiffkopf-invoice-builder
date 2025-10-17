@@ -262,7 +262,8 @@ export class PfkInvoiceTemplate extends Template {
   logo?: LogoSection;
 
   drawPaper(prop: TemplateDrawProperties): Array<JSX.Element> {
-    const fontSize = `${(this.letterpaper?.fontSize || 1) * (4 / 3)}px`;
+    const dataFontSize = this.letterpaper?.fontSize || 1 + (this.letterpaper?.font.family() === "Courier" ? -1 : 0); 
+    const fontSize = `${dataFontSize * (4 / 3)}px`;
     let invoiceData: undefined | InvoiceDataSet = undefined;
     if (prop.dataset && prop.dataset instanceof InvoiceDataSet) {
       invoiceData = prop.dataset as InvoiceDataSet;
