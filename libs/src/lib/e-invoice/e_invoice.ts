@@ -1,4 +1,5 @@
 import { CountryCode } from './country_code';
+import { generatePaymentXML, PaymentMeans, readStringOrNull } from './payment_means';
 import { createXML, renderXML } from './xml';
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
@@ -168,40 +169,7 @@ export interface Contact {
   telephone: string;
   mail: string;
 }
-export interface PaymentMeans {
-  id: number;
-  paymentTerms?: string;
-}
-export interface NoPaymentMeans extends PaymentMeans {
-  id: 1;
-  usage?: string;
-}
-export interface TransferPaymentMeans {
-  id: 30 | 42;
-  name: string;
-  accountAdress: {
-    iban?: string;
-    bancAccountNumber?: string;
-  };
-  bicOrSwift: string;
-  bankName?: string;
-}
-export interface SEPAPaymentMeans extends PaymentMeans {
-  iban: string;
-}
-export interface SEPATransferPaymentMeans extends SEPAPaymentMeans {
-  id: 58;
-  accountOwner: string;
-  bic?: string;
-  bankName?: string;
-  usage?: string;
-}
-export interface SEPADirectDebitPaymentMeans extends SEPAPaymentMeans {
-  id: 59;
-  iban: string;
-  mandateReference: string;
-  creditorIdentifier: string;
-}
+
 export enum InvoiceType {
   invoice = '380', //Rechnung
   partialInvoice = '326', //Teilrechnung
@@ -341,7 +309,7 @@ export function generateEInvoiceXML(options: {
           createXML(
             'udt:DateTimeString',
             formatDate(options.data.invoiceDate),
-            [['format', '102']],
+            [['format', dateFormat]],
           ),
         ]),
         createXML('ram:IncludedNote', [
@@ -379,19 +347,19 @@ export function generateEInvoiceXML(options: {
             createXML('ram:SpecifiedLineTradeSettlement', [
               createXML('ram:ApplicableTradeTax', [
                 createXML('ram:TypeCode', 'VAT'),
-                createXML('ram:ExemptionReason'), //TODO: For type Z
+                createXML('ram:ExemptionReason'), //TODO: Not required but nice to have
                 createXML('ram:CategoryCode', options.data.tax.taxType),
                 createXML('ram:RateApplicablePercent', options.data.tax.tax || "0"),
               ]),
               createXML('ram:BillingSpecifiedPeriod', [
                 createXML('ram:StartDateTime', [
                   createXML('udt:DateTimeString', formatDate(pos.endDate), [
-                    ['format', '102'],
+                    ['format', dateFormat],
                   ]),
                 ]),
                 createXML('ram:EndDateTime', [
                   createXML('udt:DateTimeString', formatDate(pos.endDate), [
-                    ['format', '102'],
+                    ['format', dateFormat],
                   ]),
                 ]),
               ]),
@@ -470,7 +438,7 @@ export function generateEInvoiceXML(options: {
                     createXML(
                       'udt:DateTimeString',
                       formatDate(options.data.derliveryDate),
-                      [['format', '102']],
+                      [['format', dateFormat]],
                     ),
                   ]),
                 ]),
@@ -487,11 +455,10 @@ export function generateEInvoiceXML(options: {
           forceKeep: true
         },
         createXML('ram:ApplicableHeaderTradeSettlement', [
-          createXML('ram:PaymentReference', 'Verwendungszweck'),
+          createXML("ram:CreditorReferenceID",  readStringOrNull(options.data.paymentDetails, "creditorIdentifier")), 
+          createXML('ram:PaymentReference', readStringOrNull(options.data.paymentDetails, "reference")),
           createXML('ram:InvoiceCurrencyCode', options.data.currency),
-          createXML('ram:SpecifiedTradeSettlementPaymentMeans', [
-            createXML('ram:TypeCode', `${options.data.paymentDetails.id}`),
-          ]),
+          generatePaymentXML(options.data.paymentDetails),
           createXML('ram:ApplicableTradeTax', [
             createXML('ram:CalculatedAmount', formatNumber(tax)),
             createXML('ram:TypeCode', 'VAT'),
@@ -504,24 +471,25 @@ export function generateEInvoiceXML(options: {
               createXML(
                 'udt:DateTimeString',
                 formatDate(options.data.billingPeriod?.from),
-                [['format', '102']],
+                [['format', dateFormat]],
               ),
             ]),
             createXML('ram:EndDateTime', [
               createXML(
                 'udt:DateTimeString',
                 formatDate(options.data.billingPeriod?.to),
-                [['format', '102']],
+                [['format', dateFormat]],
               ),
             ]),
           ]),
           createXML('ram:SpecifiedTradePaymentTerms', [
-            createXML('ram:Description', 'Zahlungsziel*'),
+            createXML('ram:Description', readStringOrNull(options.data.paymentDetails, "paymentTerms")), //TODO
+            createXML("ram:DirectDebitMandateID", readStringOrNull(options.data.paymentDetails, "mandateReference")),
             createXML('ram:DueDateDateTime', [
               createXML(
                 'udt:DateTimeString',
                 formatDate(options.data.dueDate),
-                [['format', '102']],
+                [['format', dateFormat]],
               ),
             ]),
           ]),
@@ -539,7 +507,7 @@ export function generateEInvoiceXML(options: {
               createXML('ram:IssuerAssignedID', el.id),
               createXML('ram:FormattedIssueDateTime', [
                 createXML('qdt:DateTimeString', formatDate(el.date), [
-                  ['format', '102'],
+                  ['format', dateFormat],
                 ]),
               ]),
             ]),
@@ -574,236 +542,3 @@ export function generateEInvoiceXML(options: {
   );
   return renderXML(xmlTree);
 }
-/*
-<cac:AccountingSupplierParty>
-    <cac:Party>
-      <cbc:EndpointID schemeID="EM">${options.data.accountingSupplierParty.mail}</cbc:EndpointID>
-      <cac:PartyIdentification>
-        <cbc:ID>${formatUSTId(options.data.accountingSupplierParty.ustId.country, options.data.accountingSupplierParty.ustId.ust)}</cbc:ID>
-      </cac:PartyIdentification>
-      <cac:PartyName>
-        <cbc:Name>${options.data.accountingSupplierParty.name}</cbc:Name>
-      </cac:PartyName>
-      <cac:PostalAddress>
-        <cbc:StreetName>${options.data.accountingSupplierParty.adress.street}</cbc:StreetName>
-        <cbc:CityName>${options.data.accountingSupplierParty.adress.city}</cbc:CityName>
-        <cbc:PostalZone>${options.data.accountingSupplierParty.adress.zip}</cbc:PostalZone>
-        <cac:Country>
-          <cbc:IdentificationCode>${options.data.accountingSupplierParty.adress.country}</cbc:IdentificationCode>
-        </cac:Country>
-      </cac:PostalAddress>
-      <cac:PartyTaxScheme>
-        <cbc:CompanyID>${formatUSTId(options.data.accountingSupplierParty.ustId.country, options.data.accountingSupplierParty.ustId.ust)}</cbc:CompanyID>
-        <cac:TaxScheme>
-          <cbc:ID>VAT</cbc:ID>
-        </cac:TaxScheme>
-      </cac:PartyTaxScheme>
-      ${
-        options.data.accountingSupplierParty.taxNr
-          ? `      <cac:PartyTaxScheme>
-        <cbc:CompanyID>${options.data.accountingSupplierParty.taxNr}</cbc:CompanyID>
-        <cac:TaxScheme>
-          <cbc:ID>FC</cbc:ID>
-        </cac:TaxScheme>
-      </cac:PartyTaxScheme>`
-          : ''
-      }
-      <cac:PartyLegalEntity>
-        <cbc:RegistrationName>${options.data.accountingSupplierParty.legalName}</cbc:RegistrationName>
-      </cac:PartyLegalEntity>
-      <cac:Contact>
-        <cbc:Name>${options.data.accountingSupplierParty.contact.name}</cbc:Name>
-        <cbc:Telephone>${options.data.accountingSupplierParty.contact.telephone}</cbc:Telephone>
-        <cbc:ElectronicMail>${options.data.accountingSupplierParty.contact.mail}</cbc:ElectronicMail>
-      </cac:Contact>
-    </cac:Party>
-  </cac:AccountingSupplierParty>
-  <cac:AccountingCustomerParty>
-    <cac:Party>
-      <cbc:EndpointID schemeID="EM">${options.data.accountingCustomerParty.mail}</cbc:EndpointID>
-      <cac:PartyName>
-        <cbc:Name>${options.data.accountingCustomerParty.name}</cbc:Name>
-      </cac:PartyName>
-      <cac:PostalAddress>
-        <cbc:StreetName>${options.data.accountingCustomerParty.adress.street}</cbc:StreetName>
-        <cbc:CityName>${options.data.accountingCustomerParty.adress.city}</cbc:CityName>
-        <cbc:PostalZone>${options.data.accountingCustomerParty.adress.zip}</cbc:PostalZone>
-        <cac:Country>
-          <cbc:IdentificationCode>${options.data.accountingCustomerParty.adress.country}</cbc:IdentificationCode>
-        </cac:Country>
-      </cac:PostalAddress>
-      <cac:PartyTaxScheme>
-        <cbc:CompanyID>${formatUSTId(options.data.accountingCustomerParty.ustId.country, options.data.accountingCustomerParty.ustId.ust)}</cbc:CompanyID>
-        <cac:TaxScheme>
-          <cbc:ID>VAT</cbc:ID>
-        </cac:TaxScheme>
-      </cac:PartyTaxScheme>
-      <cac:PartyLegalEntity>
-        <cbc:RegistrationName>${options.data.accountingCustomerParty.legalName}</cbc:RegistrationName>
-      </cac:PartyLegalEntity>
-    </cac:Party>
-  </cac:AccountingCustomerParty>
-  <cac:Delivery>
-    <cbc:ActualDeliveryDate>${formatDate(options.data.delivery.deliveryDate)}</cbc:ActualDeliveryDate>
-    <cac:DeliveryLocation>
-      <cac:Address>
-        <cbc:CityName>${options.data.delivery.cityName}</cbc:CityName>
-        <cbc:PostalZone>${options.data.delivery.zip}</cbc:PostalZone>
-        <cac:Country>
-          <cbc:IdentificationCode>${options.data.delivery.country}</cbc:IdentificationCode>
-        </cac:Country>
-      </cac:Address>
-    </cac:DeliveryLocation>
-  </cac:Delivery>
-  <cac:PaymentMeans>
-    <cbc:PaymentMeansCode>58</cbc:PaymentMeansCode>
-    <cbc:PaymentID>${options.data.paymentMeans.usage}</cbc:PaymentID>
-    <cac:PayeeFinancialAccount>
-      <cbc:ID>${options.data.paymentMeans.iban}</cbc:ID>
-      <cbc:Name>${options.data.paymentMeans.accountOwner}</cbc:Name>
-      <cac:FinancialInstitutionBranch>
-        <cbc:ID>${options.data.paymentMeans.bic}</cbc:ID>
-      </cac:FinancialInstitutionBranch>
-    </cac:PayeeFinancialAccount>
-  </cac:PaymentMeans>
-  <cac:TaxTotal>
-    <cbc:TaxAmount currencyID="EUR">${tax}</cbc:TaxAmount>
-    ${options.data.positions
-      .map((line) => {
-        const priceSum = line.priceSingleUnity * line.amount;
-        return `    <cac:TaxSubtotal>
-      <cbc:TaxableAmount currencyID="EUR">${priceSum}</cbc:TaxableAmount>
-      <cbc:TaxAmount currencyID="EUR">${(line.tax / 100) * priceSum}</cbc:TaxAmount>
-      <cac:TaxCategory>
-        <cbc:ID>${line.taxType || 'S'}</cbc:ID>
-        <cbc:Percent>${line.tax}</cbc:Percent>
-        <cac:TaxScheme>
-          <cbc:ID>VAT</cbc:ID>
-        </cac:TaxScheme>
-      </cac:TaxCategory>
-    </cac:TaxSubtotal>
-  </cac:TaxTotal>
-        `;
-      })
-      .join()}
-  <cac:LegalMonetaryTotal>
-    <cbc:LineExtensionAmount currencyID="EUR">1.00</cbc:LineExtensionAmount>
-    <cbc:TaxExclusiveAmount currencyID="EUR">${sumWithoutTax}</cbc:TaxExclusiveAmount>
-    <cbc:TaxInclusiveAmount currencyID="EUR"${tax + sumWithoutTax}</cbc:TaxInclusiveAmount>
-    <cbc:AllowanceTotalAmount currencyID="EUR">0.00</cbc:AllowanceTotalAmount>
-    <cbc:ChargeTotalAmount currencyID="EUR">0.00</cbc:ChargeTotalAmount>
-    <cbc:PrepaidAmount currencyID="EUR">${options.prepaid}</cbc:PrepaidAmount>
-    <cbc:PayableAmount currencyID="EUR">${toPay}</cbc:PayableAmount>
-  </cac:LegalMonetaryTotal>
-  ${options.data.positions8
-    .map((line, idx) => {
-      return `  <cac:InvoiceLine>
-    <cbc:ID>${idx + 1}</cbc:ID>
-    <cbc:InvoicedQuantity unitCode="${line.unit}">${line.amount}</cbc:InvoicedQuantity>
-    <cbc:LineExtensionAmount currencyID="EUR">${line.amount * line.priceSingleUnity}</cbc:LineExtensionAmount>
-    <cac:Item>
-      ${
-        line.detailDescription
-          ? `<cbc:Description>${line.detailDescription}</cbc:Description>`
-          : ''
-      }
-      <cbc:Name>${line.name}</cbc:Name>
-      ${
-        line.productNumber
-          ? `      <cac:SellersItemIdentification>
-        <cbc:ID>${line.productNumber}</cbc:ID>
-      </cac:SellersItemIdentification>`
-          : ''
-      }
-      <cac:ClassifiedTaxCategory>
-        <cbc:ID>${line.taxType || 'S'}</cbc:ID>
-        <cbc:Percent>${line.tax}</cbc:Percent>
-        <cac:TaxScheme>
-          <cbc:ID>VAT</cbc:ID>
-        </cac:TaxScheme>
-      </cac:ClassifiedTaxCategory>
-    </cac:Item>
-    <cac:Price>
-      <cbc:PriceAmount currencyID="EUR">${line.priceSingleUnity}</cbc:PriceAmount>
-    </cac:Price>
-  </cac:InvoiceLine>`;
-    })
-    .join()}
-return `<?xml version="1.0" encoding="UTF-8"?>
-<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
-  	<rsm:ExchangedDocumentContext>
-		<ram:BusinessProcessSpecifiedDocumentContextParameter>
-			<ram:ID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</ram:ID>
-		</ram:BusinessProcessSpecifiedDocumentContextParameter>
-		<ram:GuidelineSpecifiedDocumentContextParameter>
-			<ram:ID>urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0</ram:ID>
-		</ram:GuidelineSpecifiedDocumentContextParameter>
-	</rsm:ExchangedDocumentContext>
-  <rsm:ExchangedDocument>
-		${xmlTag('ram:ID', options.data.invoiceNr)}
-		${xmlTag('ram:TypeCode', options.data.invoiceType)}
-    ${xmlTag('ram:IssueDateTime', xmlTag('udt:DateTimeString', formatDate(options.data.invoiceDate), [{ tagName: 'format', tagValue: dateFormat }]))}
-    ${xmlTag('ram:IncludedNote', xmlTag('ram:Content', options.data.remark)) || ''}
-	</rsm:ExchangedDocument>
-  ${xmlTag(
-    'rsm:SupplyChainTradeTransaction',
-    `${options.data.positions
-      .map((line) => {
-        return `${xmlTag(
-          'ram:IncludedSupplyChainTradeLineItem',
-          xmlTag('ram:AssociatedDocumentLineDocument'),
-        )}`;
-      })
-      .join()}
-     ${xmlTag(
-       'ram:ApplicableHeaderTradeAgreement',
-       `${
-         xmlTag(
-           'ram:SellerTradeParty',
-           `${xmlTag('ram:ID', (options.data.supplyingParty.id.ustId ? formatUSTId(options.data.supplyingParty.id.ustId.country, options.data.supplyingParty.id.ustId.ust) : undefined) || options.data.supplyingParty.id.sellerIdentifier || options.data.supplyingParty.id.registerNumber || '')}
-        ${xmlTag('ram:Name', options.data.supplyingParty.companyName)}
-        ${xmlTag('ram:Description', options.data.supplyingParty.legalInformation)}
-        ${xmlTag(
-          'ram:SpecifiedLegalOrganization',
-          `
-          ${xmlTag('ram:ID', options.data.supplyingParty.id.registerNumber)}
-          ${xmlTag('ram:TradingBusinessName', options.data.supplyingParty.tradingName)}
-          `,
-        )}
-        ${generateContact(options.data.supplyingParty.contact)}
-        ${generatePostalAdress(options.data.supplyingParty.adress)}
-        ${generateElectronicAdress(options.data.supplyingParty.electronicAdress)}
-        ${xmlTag('ram:SpecifiedTaxRegistration', xmlTag('ram:ID', options.data.supplyingParty.id.ustId ? formatUSTId(options.data.supplyingParty.id.ustId.country, options.data.supplyingParty.id.ustId.ust) : undefined, [{ tagName: 'schemeID', tagValue: 'VA' }]))}
-        ${xmlTag('ram:SpecifiedTaxRegistration', xmlTag('ram:ID', options.data.supplyingParty.taxNumber, [{ tagName: 'schemeID', tagValue: 'FC' }]))}`,
-         ) || ''
-       }` +
-         `${
-           xmlTag(
-             'ram:BuyerTradeParty',
-             `${xmlTag('ram:ID')}
-         ${xmlTag('ram:Name')}`,
-           ) || ''
-         }
-         ${xmlTag('ram:SpecifiedLegalOrganization')}
-         ${xmlTag('ram:DefinedTradeContact')}
-         ${generatePostalAdress(options.data.receivingParty.adress)}
-         ${generateElectronicAdress(options.data.receivingParty.electronicAdress)}
-         ${xmlTag('ram:SpecifiedTaxRegistration')}` +
-         `${xmlTag('ram:SellerOrderReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.jobNumber)) || ''}` +
-         `${xmlTag('ram:BuyerOrderReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.orderNumber)) || ''}` +
-         `${xmlTag('ram:ContractReferencedDocument', xmlTag('ram:IssuerAssignedID', options.data.contractNumber)) || ''}` +
-         `${
-           xmlTag(
-             'ram:SpecifiedProcuringProject',
-             (xmlTag('ram:ID', options.data.projectNumber) || '') +
-               xmlTag('ram:Name', options.data.projectNumber ? '?' : ''),
-           ) || ''
-         }`,
-     )}
-     ${xmlTag('ram:ApplicableHeaderTradeDelivery', `Text`)}
-     ${xmlTag('ram:ApplicableHeaderTradeSettlement', `Text`)}
-`,
-  )}
-</rsm:CrossIndustryInvoice>
-    `;
-    */

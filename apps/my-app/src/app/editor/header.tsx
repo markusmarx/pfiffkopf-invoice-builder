@@ -25,16 +25,15 @@ import {
   CountryCode,
   ElectronicAdressType,
   generateEInvoice,
-  generatePDFA,
   InvoiceType,
   NoPaymentMeans,
-  PDFKitPDFSubset,
-  PDFKitPDFVersion,
-  renderToPDF,
+  SEPATransferPaymentMeans,
+  TransferPaymentMeans,
   TaxType,
   Template,
   UnitCode,
   UstIdCounty,
+  SEPADirectDebitPaymentMeans,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
 import saveAs from 'file-saver';
 import { InvoiceDataSet } from '../template/pfkInvoiceTemplate';
@@ -230,8 +229,11 @@ const Header: React.FC<HeaderProps> = ({
             },
           }}
           onClick={() => {
-            const paymentDetails: NoPaymentMeans = {
-              id: 1,
+            const paymentDetails: SEPADirectDebitPaymentMeans = {
+              id: 59,
+              iban: "IBAN",
+              mandateReference: "Mandatsreferenz",
+              creditorIdentifier: "Creditor Identifier"
             };
             const data : InvoiceDataSet = new InvoiceDataSet("0000", new Date(Date.UTC(2003, 6, 18)), [{
               name: "Name",

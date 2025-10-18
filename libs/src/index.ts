@@ -8,3 +8,4 @@ export * from './lib/components/table/movableTable';
 export * from './lib/components/baseMovable';
 export * from './lib/e-invoice/country_code';
 export * from './lib/e-invoice/e_invoice';
+export * from './lib/e-invoice/payment_means';
