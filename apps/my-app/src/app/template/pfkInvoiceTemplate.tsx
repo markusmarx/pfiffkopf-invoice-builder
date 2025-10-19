@@ -20,7 +20,7 @@ import {
   countryCodeToHumanReadableString,
   TaxType,
 } from '@pfiffkopf-webapp-office/pfk-pdf';
-import { JSX, useRef } from 'react';
+import { JSX } from 'react';
 import { DocumentCategory } from './documentCategory';
 import { RecipentCategory } from './recipentCategory';
 import { InvoiceCategory } from './invoiceCategory';
